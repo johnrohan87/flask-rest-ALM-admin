@@ -22,8 +22,8 @@ class Person(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    password_salt = db.Column(db.String(255), nullable=False)
-    password_hash = db.Column(db.String(255), nullable=False)
+    roles = db.Column(db.Integer, unique=False, nullable=False)
+    password = db.Column(db.String(255), nullable=False)
 
     # tell python how to print the class object on the console
     def __repr__(self):
@@ -33,5 +33,6 @@ class Person(db.Model):
     def serialize(self):
         return {
             "username": self.username,
-            "email": self.email
+            "email": self.email,
+            "roles": self.roles
         }
