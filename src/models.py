@@ -36,3 +36,8 @@ class Person(db.Model):
             "email": self.email,
             "roles": self.roles
         }
+
+    # NOTE: In a real application make sure to properly hash and salt passwords
+    def check_password(self, password):
+        #return compare_digest(password, "password")
+        return password == self.password

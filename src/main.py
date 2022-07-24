@@ -8,11 +8,12 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User
+from models import db, User, Person
 #from models import Person
 
 from flask_jwt_extended import create_access_token
 from flask_jwt_extended import get_jwt_identity
+from flask_jwt_extended import current_user
 from flask_jwt_extended import jwt_required
 from flask_jwt_extended import JWTManager
 
@@ -60,10 +61,12 @@ if __name__ == '__main__':
 def login():
     username = request.json.get("username", None)
     password = request.json.get("password", None)
-    if username != "test" or password != "test":
-        return jsonify({"msg": "Bad username or password"}), 401
+    person = Person.query.filter_by(username=username).one_or_none()
+    if not person or not person.check_password(password):
+        return jsonify("Wrong username or password"), 401
 
-    access_token = create_access_token(identity=username)
+    # Notice that we are passing in the actual sqlalchemy user object here
+    access_token = create_access_token(identity=person)
     return jsonify(access_token=access_token)
 
 
@@ -76,6 +79,20 @@ def protected():
     current_user = get_jwt_identity()
     return jsonify(logged_in_as=current_user), 200
 
+# Register a callback function that takes whatever object is passed in as the
+# identity when creating JWTs and converts it to a JSON serializable format.
+@jwt.user_identity_loader
+def user_identity_lookup(Person):
+    return Person.id
+
+# Register a callback function that loads a user from your database whenever
+# a protected route is accessed. This should return any python object on a
+# successful lookup, or None if the lookup failed for any reason (for example
+# if the user has been deleted from the database).
+@jwt.user_lookup_loader
+def user_lookup_callback(_jwt_header, jwt_data):
+    identity = jwt_data["sub"]
+    return Person.query.filter_by(id=identity).one_or_none()
 
 if __name__ == "__main__":
     app.run()
