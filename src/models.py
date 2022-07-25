@@ -1,3 +1,5 @@
+import os
+from hashlib import pbkdf2_hmac
 from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
@@ -24,6 +26,7 @@ class Person(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     roles = db.Column(db.Integer, unique=False, nullable=False)
     password = db.Column(db.String(255), nullable=False)
+    salt = db.Column(db.String(255), nullable=False)
 
     # tell python how to print the class object on the console
     def __repr__(self):
@@ -34,10 +37,25 @@ class Person(db.Model):
         return {
             "username": self.username,
             "email": self.email,
-            "roles": self.roles
+            "roles": self.roles,
+            "password": self.password,
+            "salt": self.salt
         }
 
     # NOTE: In a real application make sure to properly hash and salt passwords
     def check_password(self, password):
         #return compare_digest(password, "password")
         return password == self.password
+
+    def generate_salt():
+        salt = os.urandom(16)
+        return salt.hex()
+
+    def generate_hash(plain_password, password_salt):
+        password_hash = pbkdf2_hmac(
+            "sha256",
+            b"%b" % bytes(plain_password, "utf-8"),
+            b"%b" % bytes(password_salt, "utf-8"),
+            10000,
+        )
+        return password_hash.hex()
