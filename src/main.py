@@ -96,15 +96,17 @@ def protected():
             raise APIException('You need to specify the role', status_code=400)
 
         tmp_salt = Person.generate_salt()
-        tmp_hash = Person.generate_hash(plain_password=body.password, password_salt=tmp_salt)
+        print("tmp_salt - " + tmp_salt)
+        tmp_hash = Person.generate_hash(plain_password=body['password'], password_salt=tmp_salt)
+        print("tmp_hash - " + tmp_hash)
         # at this point, all data has been validated, we can proceed to inster into the bd
-        user1 = Person(email=body['email'], roles=body['roles'], password=tmp_hash, salt=body['salt'])
+        user1 = Person(email=body['email'], roles=body['roles'], password=tmp_hash, salt=tmp_salt)
         db.session.add(user1)
         db.session.commit()
         return {
-                "email":body.email,
-                "roles":body.roles,
-                "password":body.password,
+                "email":body['email'],
+                "roles":body['roles'],
+                "password":body['password'],
                 "password hashed":tmp_hash,
                 "salt":tmp_salt
             }, 200
