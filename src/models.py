@@ -22,7 +22,6 @@ class User(db.Model):
 
 class Person(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     roles = db.Column(db.Integer, unique=False, nullable=False)
     password = db.Column(db.String(255), nullable=False)
@@ -35,7 +34,6 @@ class Person(db.Model):
     # tell python how convert the class object into a dictionary ready to jsonify
     def serialize(self):
         return {
-            "username": self.username,
             "email": self.email,
             "roles": self.roles,
             "password": self.password,

@@ -59,11 +59,11 @@ if __name__ == '__main__':
 # create_access_token() function is used to actually generate the JWT.
 @app.route("/login", methods=["POST"])
 def login():
-    username = request.json.get("username", None)
+    email = request.json.get("email", None)
     password = request.json.get("password", None)
-    person = Person.query.filter_by(username=username).one_or_none()
+    person = Person.query.filter_by(email=email).one_or_none()
     if not person or not person.check_password(password):
-        return jsonify("Wrong username or password"), 401
+        return jsonify("Wrong email or password"), 401
 
     # Notice that we are passing in the actual sqlalchemy user object here
     access_token = create_access_token(identity=person)
@@ -72,13 +72,42 @@ def login():
 
 # Protect a route with jwt_required, which will kick out requests
 # without a valid JWT present.
-@app.route("/protected", methods=["GET"])
+@app.route("/protected", methods=["POST", "GET"])
 @jwt_required()
 def protected():
-    # Access the identity of the current user with get_jwt_identity
-    current_identity = get_jwt_identity()
-    current_email = Person.serialize(current_user)
-    return jsonify(logged_in_as=current_identity,email=current_email), 200
+    
+
+    if request.method == 'GET':
+        # Access the identity of the current user with get_jwt_identity
+        current_identity = get_jwt_identity()
+        current_email = Person.serialize(current_user)
+        return jsonify(logged_in_as=current_identity,email=current_email), 200
+    
+    if request.method == 'POST':
+        body = request.get_json()
+
+        if body is None:
+            raise APIException("You need to specify the request body as a json object", status_code=400)
+        if 'email' not in body:
+            raise APIException('You need to specify the email', status_code=400)
+        if 'password' not in body:
+            raise APIException('You need to specify the password', status_code=400)
+        if 'roles' not in body:
+            raise APIException('You need to specify the role', status_code=400)
+
+        tmp_salt = Person.generate_salt()
+        tmp_hash = Person.generate_hash(plain_password=body.password, password_salt=tmp_salt)
+        # at this point, all data has been validated, we can proceed to inster into the bd
+        user1 = Person(email=body['email'], roles=body['roles'], password=tmp_hash, salt=body['salt'])
+        db.session.add(user1)
+        db.session.commit()
+        return {
+                "email":body.email,
+                "roles":body.roles,
+                "password":body.password,
+                "password hashed":tmp_hash,
+                "salt":tmp_salt
+            }, 200
 
 # Register a callback function that takes whatever object is passed in as the
 # identity when creating JWTs and converts it to a JSON serializable format.
