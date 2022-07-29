@@ -1,6 +1,7 @@
 """
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
+import email
 import os
 from flask import Flask, request, jsonify, url_for
 from flask_migrate import Migrate
@@ -53,7 +54,7 @@ def handle_hello():
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':
     PORT = int(os.environ.get('PORT', 3000))
-    app.run(host='0.0.0.0', port=PORT, debug=False)
+    app.run(host='0.0.0.0', port=PORT, debug=True)
 
 # Create a route to authenticate your users and return JWTs. The
 # create_access_token() function is used to actually generate the JWT.
@@ -72,7 +73,7 @@ def login():
 
 # Protect a route with jwt_required, which will kick out requests
 # without a valid JWT present.
-@app.route("/protected", methods=["POST", "GET"])
+@app.route("/protected", methods=["GET", "POST", "PUT"])
 @jwt_required()
 def protected():
     
@@ -83,6 +84,7 @@ def protected():
         current_email = Person.serialize(current_user)
         return jsonify(logged_in_as=current_identity,email=current_email), 200
     
+
     if request.method == 'POST':
         body = request.get_json()
 
@@ -99,9 +101,9 @@ def protected():
         print("tmp_salt - " + tmp_salt)
         tmp_hash = Person.generate_hash(plain_password=body['password'], password_salt=tmp_salt)
         print("tmp_hash - " + tmp_hash)
-        # at this point, all data has been validated, we can proceed to inster into the bd
-        post_payload = Person(email=body['email'], roles=body['roles'], password=tmp_hash, salt=tmp_salt)
-        db.session.add(post_payload)
+        # at this point, all data has been validated, we can proceed to search and update db
+        put_payload = Person(email=body['email'], roles=body['roles'], password=tmp_hash, salt=tmp_salt)
+        db.session.add(put_payload)
         db.session.commit()
         return {
                 "email":body['email'],
@@ -110,6 +112,44 @@ def protected():
                 "password hashed":tmp_hash,
                 "salt":tmp_salt
             }, 200
+
+    if request.method == 'PUT':
+        body = request.get_json()
+
+        if body is None:
+            raise APIException("You need to specify the request body as a json object", status_code=400)
+        if 'email' not in body:
+            raise APIException('You need to specify the email', status_code=400)
+        if 'salt' not in body:
+            raise APIException('You need to specify the salt', status_code=400)
+        if 'password' not in body:
+            raise APIException('You need to specify the password', status_code=400)
+        if 'roles' not in body:
+            raise APIException('You need to specify the role', status_code=400)
+
+        
+        # at this point, all data has been validated
+
+        # converting password to hash for comparison
+        tmp_user_hashed_password = Person.generate_hash(plain_password=body['password'], password_salt=body['salt'])
+
+        db_query_results = Person.query.filter_by(email=str(body['email']))
+
+        return {
+                "email":body['email'],
+                "roles":body['roles'],
+                "password":body['password'],
+                "salt":body['salt'],
+            'db request email':db_query_results[0].email
+            }, 200
+    else:
+        raise APIException({'issue':'identical data',
+            'db email':Person.query.get(body['email']),
+            'db password':Person.query.get(body['password']),
+            'db roles':Person.query.get(body['roles']),
+            'request':body}, status_code=400)
+
+
 
 # Register a callback function that takes whatever object is passed in as the
 # identity when creating JWTs and converts it to a JSON serializable format.
