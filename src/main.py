@@ -100,8 +100,8 @@ def protected():
         tmp_hash = Person.generate_hash(plain_password=body['password'], password_salt=tmp_salt)
         print("tmp_hash - " + tmp_hash)
         # at this point, all data has been validated, we can proceed to inster into the bd
-        user1 = Person(email=body['email'], roles=body['roles'], password=tmp_hash, salt=tmp_salt)
-        db.session.add(user1)
+        post_payload = Person(email=body['email'], roles=body['roles'], password=tmp_hash, salt=tmp_salt)
+        db.session.add(post_payload)
         db.session.commit()
         return {
                 "email":body['email'],
