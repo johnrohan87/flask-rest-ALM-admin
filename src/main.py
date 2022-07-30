@@ -133,21 +133,45 @@ def protected():
         # converting password to hash for comparison
         tmp_user_hashed_password = Person.generate_hash(plain_password=body['password'], password_salt=body['salt'])
 
-        db_query_results = Person.query.filter_by(email=str(body['email']))
+        # check db for user request
+        try:
+            db_query_results = Person.query.filter_by(email=str(body['email']))
+            try:
+                if tmp_user_hashed_password != db_query_results[0].password or \
+                    body['roles'] != db_query_results[0].roles:
 
-        return {
-                "email":body['email'],
-                "roles":body['roles'],
-                "password":body['password'],
+                    # found new data update db
+                    db_query_results[0].password = tmp_user_hashed_password
+                    db_query_results[0].salt = body['salt']
+                    db_query_results[0].roles = body['roles']
+                    db.session.commit()
+
+                    return {
+                        'status':'db successfully updated', 
+                        'request':body
+                        }, 200
+
+            # requested user data not found
+            except:
+                raise APIException({
+                'issue':'PUT request failed - no new data',
+                'request':body, 
+                'hashed user password':tmp_user_hashed_password,
+                'db request email':db_query_results[0].email,
+                'db request password':db_query_results[0].password,
+                'db results - roles':db_query_results[0].roles},
+                status_code=400)
+        except:
+            # error send requested and retrieved data
+            raise APIException({
+                'issue':'PUT request failed - user data not found',
+                'request':body, 
+                'hashed user password':tmp_user_hashed_password,
                 "salt":body['salt'],
-            'db request email':db_query_results[0].email
-            }, 200
-    else:
-        raise APIException({'issue':'identical data',
-            'db email':Person.query.get(body['email']),
-            'db password':Person.query.get(body['password']),
-            'db roles':Person.query.get(body['roles']),
-            'request':body}, status_code=400)
+                'db request email':db_query_results[0].email,
+                'db request password':db_query_results[0].password,
+                'db results - roles':db_query_results[0].roles},
+                status_code=400)
 
 
 
