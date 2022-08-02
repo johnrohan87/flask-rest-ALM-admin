@@ -39,6 +39,7 @@ class Person(db.Model):
     # tell python how convert the class object into a dictionary ready to jsonify
     def serialize(self):
         return {
+            "id": self.id,
             "email": self.email,
             "roles": self.roles,
             "password": self.password,
