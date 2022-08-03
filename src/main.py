@@ -18,6 +18,8 @@ from flask_jwt_extended import current_user
 from flask_jwt_extended import jwt_required
 from flask_jwt_extended import JWTManager
 
+from ratelimiter import RateLimiter
+
 app = Flask(__name__)
 app.url_map.strict_slashes = False
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DB_CONNECTION_STRING')
@@ -33,15 +35,18 @@ CORS(app)
 setup_admin(app)
 
 # Handle/serialize errors like a JSON object
+@RateLimiter(max_calls=10, period=1)
 @app.errorhandler(APIException)
 def handle_invalid_usage(error):
     return jsonify(error.to_dict()), error.status_code
 
 # generate sitemap with all your endpoints
+@RateLimiter(max_calls=10, period=1)
 @app.route('/')
 def sitemap():
     return generate_sitemap(app)
 
+@RateLimiter(max_calls=10, period=1)
 @app.route('/user', methods=['GET'])
 def handle_hello():
 
@@ -58,6 +63,7 @@ if __name__ == '__main__':
 
 # Create a route to authenticate your users and return JWTs. The
 # create_access_token() function is used to actually generate the JWT.
+@RateLimiter(max_calls=10, period=1)
 @app.route("/login", methods=["POST"])
 def login():
     email = request.json.get("email", None)
@@ -73,6 +79,7 @@ def login():
 
 # Protect a route with jwt_required, which will kick out requests
 # without a valid JWT present.
+@RateLimiter(max_calls=10, period=1)
 @app.route("/protected", methods=["GET", "POST", "PUT"])
 @jwt_required()
 def protected():
