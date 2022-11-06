@@ -89,7 +89,8 @@ def protected():
         # Access the identity of the current user with get_jwt_identity
         current_identity = get_jwt_identity()
         current_email = Person.serialize(current_user)
-        payload = {{current_identity},current_email}
+        payload = current_email
+        payload['userinfo'].append(current_identity)
         return jsonify(payload), 200
     
 
