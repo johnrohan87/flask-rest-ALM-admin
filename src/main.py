@@ -90,7 +90,7 @@ def protected():
         current_identity = get_jwt_identity()
         current_email = Person.serialize(current_user)
         payload = current_email
-        payload['current_identity'] = current_identity
+        payload.update({'current_identity' : current_identity})
         return jsonify(payload), 200
     
 
