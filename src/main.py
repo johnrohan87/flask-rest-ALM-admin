@@ -111,17 +111,15 @@ def protected():
         tmp_hash = Person.generate_hash(plain_password=body['password'], password_salt=tmp_salt)
         print("tmp_hash - " + tmp_hash)
         # at this point, all data has been validated, we can proceed to search and update db
-        put_payload = Person(email=body['email'], roles=body['roles'])
-        #***Testing Only***
-        #, password=tmp_hash, salt=tmp_salt
+        put_payload = Person(email=body['email'], roles=body['roles'], password=tmp_hash, salt=tmp_salt)
         db.session.add(put_payload)
         db.session.commit()
         return {
                 "email":body['email'],
                 "roles":body['roles'],
                 "password":body['password'],
-                "password hashed":tmp_hash,
-                "salt":tmp_salt
+                #"password hashed":tmp_hash,
+                #"salt":tmp_salt
             }, 200
 
     if request.method == 'PUT':
