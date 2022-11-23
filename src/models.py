@@ -42,9 +42,10 @@ class Person(db.Model):
             "id": self.id,
             "email": self.email,
             "roles": self.roles,
-            "password": self.password,
-            "salt": self.salt
         }
+            #***Testing only***
+            #"password": self.password,
+            #"salt": self.salt
 
     # NOTE: In a real application make sure to properly hash and salt passwords
     def check_password(self, password):
