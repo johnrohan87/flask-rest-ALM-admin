@@ -26,6 +26,7 @@ class Person(db.Model):
     roles = db.Column(db.Integer, unique=False, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     salt = db.Column(db.String(255), nullable=False)
+    text_files = db.relationship('TextFile', cascade='all,delete')
 
     # tell python how to print the class object on the console
     def __repr__(self):
@@ -64,3 +65,28 @@ class Person(db.Model):
             10000,
         )
         return password_hash.hex()
+
+class TextFile(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    person_id = db.Column(db.Integer, db.ForeignKey('person.id'))
+    ip = db.Column(db.String(20),unique=False)
+    text = db.Column(db.Text)
+
+
+    # tell python how to print the class object on the console
+    def __repr__(self):
+        return {
+            "file id": self.id,
+            "person id": self.person_id,
+            "ip": self.ip,
+            "File Text": self.text
+        }
+
+    # tell python how convert the class object into a dictionary ready to jsonify
+    def serialize(self):
+        return {
+            "file id": self.id,
+            "person id": self.person_id,
+            "ip": self.ip,
+            "File Text": self.text
+        }

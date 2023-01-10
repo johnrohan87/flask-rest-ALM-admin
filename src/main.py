@@ -77,6 +77,25 @@ def login():
     return jsonify(access_token=access_token)
 
 
+@RateLimiter(max_calls=10, period=1)
+@app.route("/textfile", methods=["GET", "POST", "PUT"])
+@jwt_required()
+def textfile():
+    if request.method == 'PUT':
+        body = request.get_json()
+        if body is None:
+            raise APIException("You need to specify the request body as a json object", status_code=400)
+        if 'ip' not in body:
+            raise APIException('You need to specify the ip', status_code=400)
+        if 'textfile' not in body:
+            raise APIException('You need to specify the textfile', status_code=400)
+        current_identity = get_jwt_identity()
+        current_email = Person.serialize(current_user)
+        payload = current_email
+        payload.update({'current_identity' : current_identity})
+        return jsonify(payload), 200
+
+
 # Protect a route with jwt_required, which will kick out requests
 # without a valid JWT present.
 @RateLimiter(max_calls=10, period=1)
