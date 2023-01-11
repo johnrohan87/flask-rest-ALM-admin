@@ -26,7 +26,7 @@ class Person(db.Model):
     roles = db.Column(db.Integer, unique=False, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     salt = db.Column(db.String(255), nullable=False)
-    text_files = db.relationship('TextFile', cascade='all,delete')
+    text_files = db.relationship('TextFile', backref='person', lazy=True, cascade='all,delete')
 
     # tell python how to print the class object on the console
     def __repr__(self):
@@ -34,7 +34,8 @@ class Person(db.Model):
             "email": self.email,
             "roles": self.roles,
             "password": self.password,
-            "salt": self.salt
+            "salt": self.salt,
+            "text_files": self.text_files
         }
 
     # tell python how convert the class object into a dictionary ready to jsonify
@@ -43,6 +44,7 @@ class Person(db.Model):
             "id": self.id,
             "email": self.email,
             "roles": self.roles,
+            "text_files": self.text_files
         }
             #***Testing only***
             #"password": self.password,
@@ -68,9 +70,11 @@ class Person(db.Model):
 
 class TextFile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    person_id = db.Column(db.Integer, db.ForeignKey('person.id'))
-    ip = db.Column(db.String(20),unique=False)
-    text = db.Column(db.Text)
+    person_id = db.Column(db.Integer, db.ForeignKey('person.id'), nullable=False)
+    ip = db.Column(db.String(20),unique=False, nullable=False)
+    update_feed = db.Column(db.Boolean, nullable=False)
+    url = db.Column(db.Text, nullable=False)
+    text = db.Column(db.Text, nullable=False)
 
 
     # tell python how to print the class object on the console
@@ -79,7 +83,9 @@ class TextFile(db.Model):
             "file id": self.id,
             "person id": self.person_id,
             "ip": self.ip,
-            "File Text": self.text
+            "update feed": self.update_feed,
+            "url": self.url,
+            "file text": self.text
         }
 
     # tell python how convert the class object into a dictionary ready to jsonify
@@ -88,5 +94,7 @@ class TextFile(db.Model):
             "file id": self.id,
             "person id": self.person_id,
             "ip": self.ip,
-            "File Text": self.text
+            "update feed": self.update_feed,
+            "url": self.url,
+            "file text": self.text
         }

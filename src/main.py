@@ -87,6 +87,10 @@ def textfile():
             raise APIException("You need to specify the request body as a json object", status_code=400)
         if 'ip' not in body:
             raise APIException('You need to specify the ip', status_code=400)
+        if 'update_feed' not in body:
+            raise APIException('You need to specify the update_feed', status_code=400)
+        if 'url' not in body:
+            raise APIException('You need to specify the url', status_code=400)
         if 'textfile' not in body:
             raise APIException('You need to specify the textfile', status_code=400)
         current_identity = get_jwt_identity()
