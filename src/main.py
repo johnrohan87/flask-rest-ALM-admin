@@ -103,12 +103,11 @@ def textfile():
             db.session.commit()
 
             return jsonify({"payload" : payload,
-            "request":body,"db_payload":put_payload}), 200
+            "request":body}), 200
         except:
-            put_payload = TextFile(ip=body['ip'], url=body['url'], update_feed=body['update_feed'], text=body['textfile'])
             raise APIException({
             'issue':'PUT request failed - no new data',
-            'request':body,"db_payload":put_payload},
+            'request':body},
             status_code=400)
 
 # Protect a route with jwt_required, which will kick out requests
