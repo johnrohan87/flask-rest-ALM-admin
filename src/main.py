@@ -107,7 +107,7 @@ def textfile():
         except:
             raise APIException({
             'issue':'PUT request failed - no new data',
-            'request':body},
+            'request':body,"db_payload":put_payload},
             status_code=400)
 
 # Protect a route with jwt_required, which will kick out requests
