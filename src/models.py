@@ -35,7 +35,7 @@ class Person(db.Model):
             "roles": self.roles,
             "password": self.password,
             "salt": self.salt,
-            "text_files": self.text_files
+            "text_files": self.text_files.to_dict()
         }
 
     # tell python how convert the class object into a dictionary ready to jsonify
@@ -44,7 +44,7 @@ class Person(db.Model):
             "id": self.id,
             "email": self.email,
             "roles": self.roles,
-            "text_files": self.text_files
+            "text_files": self.text_files.to_dict()
         }
             #***Testing only***
             #"password": self.password,
