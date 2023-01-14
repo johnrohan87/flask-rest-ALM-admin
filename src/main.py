@@ -98,14 +98,14 @@ def textfile():
         payload = current_email
         payload.update({'current_identity' : current_identity})
         try:
-            put_payload = TextFile(ip=body['ip'], url=body['url'], update_feed=body['update_feed'], textfile=body['textfile'])
+            put_payload = TextFile(ip=body['ip'], url=body['url'], update_feed=body['update_feed'], text=body['textfile'])
             db.session.add(put_payload)
             db.session.commit()
 
             return jsonify({"payload" : payload,
             "request":body,"db_payload":put_payload}), 200
         except:
-            put_payload = TextFile(ip=body['ip'], url=body['url'], update_feed=body['update_feed'], textfile=body['textfile'])
+            put_payload = TextFile(ip=body['ip'], url=body['url'], update_feed=body['update_feed'], text=body['textfile'])
             raise APIException({
             'issue':'PUT request failed - no new data',
             'request':body,"db_payload":put_payload},
