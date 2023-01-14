@@ -97,8 +97,20 @@ def textfile():
         current_email = Person.serialize(current_user)
         payload = current_email
         payload.update({'current_identity' : current_identity})
-        return jsonify(payload), 200
+        try:
 
+            return jsonify({"payload" : payload,
+            "request":body}), 200
+        except:
+                raise APIException({
+                'issue':'PUT request failed - no new data',
+                'request':body, 
+                'hashed user password':tmp_user_hashed_password,
+                'db request id':db_query_results[0].id,
+                'db request email':db_query_results[0].email,
+                'db request password':db_query_results[0].password,
+                'db results - roles':db_query_results[0].roles},
+                status_code=400)
 
 # Protect a route with jwt_required, which will kick out requests
 # without a valid JWT present.
