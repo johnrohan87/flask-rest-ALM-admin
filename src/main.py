@@ -9,7 +9,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User, Person
+from models import db, User, Person, TextFile
 #from models import Person
 
 from flask_jwt_extended import create_access_token
@@ -98,19 +98,17 @@ def textfile():
         payload = current_email
         payload.update({'current_identity' : current_identity})
         try:
+            put_payload = TextFile(ip=body['ip'], url=body['url'], update_feed=body['update_feed'], textfile=body['textfile'])
+            db.session.add(put_payload)
+            db.session.commit()
 
             return jsonify({"payload" : payload,
-            "request":body}), 200
+            "request":body,"db_payload":put_payload}), 200
         except:
-                raise APIException({
-                'issue':'PUT request failed - no new data',
-                'request':body, 
-                'hashed user password':tmp_user_hashed_password,
-                'db request id':db_query_results[0].id,
-                'db request email':db_query_results[0].email,
-                'db request password':db_query_results[0].password,
-                'db results - roles':db_query_results[0].roles},
-                status_code=400)
+            raise APIException({
+            'issue':'PUT request failed - no new data',
+            'request':body},
+            status_code=400)
 
 # Protect a route with jwt_required, which will kick out requests
 # without a valid JWT present.
