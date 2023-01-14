@@ -98,7 +98,7 @@ def textfile():
         payload = current_email
         payload.update({'current_identity' : current_identity})
         try:
-            put_payload = TextFile(ip=body['ip'], url=body['url'], update_feed=body['update_feed'], text=body['textfile'])
+            put_payload = TextFile(person_id=current_identity, ip=body['ip'], url=body['url'], update_feed=body['update_feed'], text=body['textfile'])
             db.session.add(put_payload)
             db.session.commit()
 
