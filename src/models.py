@@ -1,7 +1,7 @@
 import os
 from hashlib import pbkdf2_hmac
 from flask_sqlalchemy import SQLAlchemy
-from flask import jsonify
+from flask import jsonify, dumps
 
 db = SQLAlchemy()
 
@@ -36,7 +36,7 @@ class Person(db.Model):
             "roles": self.roles,
             "password": self.password,
             "salt": self.salt,
-            "text_files": jsonify(self.text_files)
+            "text_files": dumps(self.text_files)
         }
 
     # tell python how convert the class object into a dictionary ready to jsonify
@@ -45,7 +45,7 @@ class Person(db.Model):
             "id": self.id,
             "email": self.email,
             "roles": self.roles,
-            "text_files": jsonify(self.text_files)
+            "text_files": dumps(self.text_files)
         }
             #***Testing only***
             #"password": self.password,
