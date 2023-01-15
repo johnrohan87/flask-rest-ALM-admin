@@ -83,7 +83,6 @@ def login():
 def textfile():
     if request.method == 'GET':
         files = TextFile.query.all() 
-        print(dumps(files))
         return (files)
 
     if request.method == 'PUT':
