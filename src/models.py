@@ -1,7 +1,6 @@
 import os
 from hashlib import pbkdf2_hmac
 from flask_sqlalchemy import SQLAlchemy
-from flask import jsonify, dumps
 
 db = SQLAlchemy()
 
