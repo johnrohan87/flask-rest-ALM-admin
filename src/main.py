@@ -84,6 +84,7 @@ def login():
 def textfile():
     if request.method == 'GET':
         files = TextFile.query.all() 
+        text = ""
         for file in files:
             text = text + json.dumps(file)
         return text
