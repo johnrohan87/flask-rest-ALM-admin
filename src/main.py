@@ -119,12 +119,18 @@ def protected():
     
 
     if request.method == 'GET':
-        # Access the identity of the current user with get_jwt_identity
-        current_identity = get_jwt_identity()
-        current_email = Person.serialize(current_user)
-        payload = current_email
-        payload.update({'current_identity' : current_identity})
-        return jsonify(payload), 200
+        try:
+            # Access the identity of the current user with get_jwt_identity
+            current_identity = get_jwt_identity()
+            current_email = Person.serialize(current_user)
+            payload = current_email
+            payload.update({'current_identity' : current_identity})
+            return jsonify(payload), 200
+        except Exception as e:
+            print(e)
+            raise APIException({
+                'issue':'GET request failed'},
+                status_code=400)
     
 
     if request.method == 'POST':
