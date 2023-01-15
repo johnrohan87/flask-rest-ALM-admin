@@ -3,6 +3,7 @@ This module takes care of starting the API Server, Loading the DB and Adding the
 """
 import email
 import os
+import json
 from flask import Flask, request, jsonify, url_for
 from flask_migrate import Migrate
 from flask_swagger import swagger
@@ -83,7 +84,7 @@ def login():
 def textfile():
     if request.method == 'GET':
         files = TextFile.query.all() 
-        return str(files)
+        return json.dumps(files)
 
     if request.method == 'PUT':
         body = request.get_json()
