@@ -82,7 +82,8 @@ def login():
 @jwt_required()
 def textfile():
     if request.method == 'GET':
-        return  TextFile.query.all() 
+        files = TextFile.query.all() 
+        return jsonify(files)
 
     if request.method == 'PUT':
         body = request.get_json()
