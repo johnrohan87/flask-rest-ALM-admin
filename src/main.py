@@ -81,6 +81,9 @@ def login():
 @app.route("/textfile", methods=["GET", "POST", "PUT"])
 @jwt_required()
 def textfile():
+    if request.method == 'GET':
+        return  TextFile.query.all() 
+
     if request.method == 'PUT':
         body = request.get_json()
         if body is None:
@@ -119,18 +122,12 @@ def protected():
     
 
     if request.method == 'GET':
-        try:
-            # Access the identity of the current user with get_jwt_identity
-            current_identity = get_jwt_identity()
-            current_email = Person.serialize(current_user)
-            payload = current_email
-            payload.update({'current_identity' : current_identity})
-            return jsonify(payload), 200
-        except Exception as e:
-            print(e)
-            raise APIException({
-                'issue':'GET request failed'},
-                status_code=400)
+        # Access the identity of the current user with get_jwt_identity
+        current_identity = get_jwt_identity()
+        current_email = Person.serialize(current_user)
+        payload = current_email
+        payload.update({'current_identity' : current_identity})
+        return jsonify(payload), 200
     
 
     if request.method == 'POST':

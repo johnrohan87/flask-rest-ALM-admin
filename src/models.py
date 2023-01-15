@@ -34,8 +34,7 @@ class Person(db.Model):
             "email": self.email,
             "roles": self.roles,
             "password": self.password,
-            "salt": self.salt,
-            "text_files": self.text_files[0]
+            "salt": self.salt
         }
 
     # tell python how convert the class object into a dictionary ready to jsonify
@@ -43,8 +42,7 @@ class Person(db.Model):
         return {
             "id": self.id,
             "email": self.email,
-            "roles": self.roles,
-            "text_files": self.text_files[0]
+            "roles": self.roles
         }
             #***Testing only***
             #"password": self.password,
