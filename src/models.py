@@ -36,7 +36,7 @@ class Person(db.Model):
             "roles": self.roles,
             "password": self.password,
             "salt": self.salt,
-            "text_files": dumps(self.text_files)
+            "text_files": [ item.serialize() for item in self.text_files ]
         }
 
     # tell python how convert the class object into a dictionary ready to jsonify
@@ -45,7 +45,7 @@ class Person(db.Model):
             "id": self.id,
             "email": self.email,
             "roles": self.roles,
-            "text_files": dumps(self.text_files)
+            "text_files": [ item.serialize() for item in self.text_files ]
         }
             #***Testing only***
             #"password": self.password,
