@@ -83,8 +83,8 @@ def login():
 def textfile():
     if request.method == 'GET':
         files = TextFile.query.all() 
-        print(files)
-        return jsonify(files)
+        print(jsonify(files))
+        return (files)
 
     if request.method == 'PUT':
         body = request.get_json()
