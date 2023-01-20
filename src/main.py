@@ -83,11 +83,11 @@ def login():
 @jwt_required()
 def textfile():
     if request.method == 'GET':
-        files = TextFile.query.all() 
-        text = ""
-        for file in files:
-            text = text + json.dumps(file)
-        return text
+        files = TextFile.query.all()
+        values = []
+        for item in range(len(files)):
+            values.append({'list position': item, 'persons id': files[item].id, 'ip': files[item].ip, "update feed": files[item].update_feed, "url": files[item].url, "file text": files[item].text}) 
+        return values
 
     if request.method == 'PUT':
         body = request.get_json()
@@ -102,15 +102,15 @@ def textfile():
         if 'textfile' not in body:
             raise APIException('You need to specify the textfile', status_code=400)
         current_identity = get_jwt_identity()
-        current_email = Person.serialize(current_user)
-        payload = current_email
-        payload.update({'current_identity' : current_identity})
+        #current_email = Person.serialize(current_user)
+        #payload = current_email
+        #payload.update({'current_identity' : current_identity})
         try:
-            put_payload = TextFile(person_id=current_identity, ip=body['ip'], url=body['url'], update_feed=body['update_feed'], text=body['textfile'])
+            put_payload = TextFile(person_id=body['person_id'], ip=body['ip'], url=body['url'], update_feed=body['update_feed'], text=body['textfile'])
             db.session.add(put_payload)
             db.session.commit()
 
-            return jsonify({"payload" : payload,
+            return jsonify({
             "request":body}), 200
         except:
             raise APIException({

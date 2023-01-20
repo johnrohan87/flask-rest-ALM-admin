@@ -21,6 +21,7 @@ class User(db.Model):
         }
 
 class Person(db.Model):
+    __tablename__ = "person"
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     roles = db.Column(db.Integer, unique=False, nullable=False)
@@ -67,8 +68,9 @@ class Person(db.Model):
         return password_hash.hex()
 
 class TextFile(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    person_id = db.Column(db.Integer, db.ForeignKey('person.id'), nullable=False)
+    __tablename__ = "textfile"
+    id = db.Column('textfile_id', db.Integer, primary_key=True)
+    person_id = db.Column('owner_id', db.Integer, db.ForeignKey('person.id'), nullable=False)
     ip = db.Column(db.String(20),unique=False, nullable=False)
     update_feed = db.Column(db.Boolean, nullable=False)
     url = db.Column(db.Text, nullable=False)
@@ -77,14 +79,7 @@ class TextFile(db.Model):
 
     # tell python how to print the class object on the console
     def __repr__(self):
-        return {
-            "file id": self.id,
-            "person id": self.person_id,
-            "ip": self.ip,
-            "update feed": self.update_feed,
-            "url": self.url,
-            "file text": self.text
-        }
+        return f'<File_id {self.id}>'
 
     # tell python how convert the class object into a dictionary ready to jsonify
     def serialize(self):
