@@ -72,7 +72,7 @@ class Person(db.Model):
 class TextFile(db.Model):
     __tablename__ = "textfile"
     id = db.Column('textfile_id', db.Integer, primary_key=True)
-    person_id = db.Column('owner_id', db.Integer, db.ForeignKey('person_account.id'), nullable=False)
+    person_id = db.Column('owner_id', db.Integer, db.ForeignKey('person_account.id'))
     ip = db.Column(db.String(20),unique=False, nullable=False)
     update_feed = db.Column(db.Boolean, nullable=False)
     url = db.Column(db.Text, nullable=False)
