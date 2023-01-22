@@ -1,6 +1,7 @@
 import os
 from hashlib import pbkdf2_hmac
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import relationship
 
 db = SQLAlchemy()
 
@@ -21,22 +22,23 @@ class User(db.Model):
         }
 
 class Person(db.Model):
-    __tablename__ = "person"
+    __tablename__ = "person_account"
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     roles = db.Column(db.Integer, unique=False, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     salt = db.Column(db.String(255), nullable=False)
-    text_files = db.relationship('TextFile', backref='person', lazy=True, cascade='all,delete')
+    text_files = db.relationship('TextFile', back_populates='person', lazy=True, cascade='all,delete')
 
     # tell python how to print the class object on the console
     def __repr__(self):
-        return {
+        '''return {
             "email": self.email,
             "roles": self.roles,
             "password": self.password,
             "salt": self.salt
-        }
+        }'''
+        return f"User(id={self.id!r}, email={self.email!r}, roles={self.roles!r}, password={self.password!r}, salt={self.salt!r})"
 
     # tell python how convert the class object into a dictionary ready to jsonify
     def serialize(self):
@@ -70,16 +72,17 @@ class Person(db.Model):
 class TextFile(db.Model):
     __tablename__ = "textfile"
     id = db.Column('textfile_id', db.Integer, primary_key=True)
-    person_id = db.Column('owner_id', db.Integer, db.ForeignKey('person.id'), nullable=False)
+    person_id = db.Column('owner_id', db.Integer, db.ForeignKey('person_account.id'), nullable=False)
     ip = db.Column(db.String(20),unique=False, nullable=False)
     update_feed = db.Column(db.Boolean, nullable=False)
     url = db.Column(db.Text, nullable=False)
     text = db.Column(db.Text, nullable=False)
 
+    person = relationship("Person", back_populates="text_files")
 
     # tell python how to print the class object on the console
     def __repr__(self):
-        return f'<File_id {self.id}>'
+        return f"TextFile(id={self.id!r}, person_id={self.person_id!r}, ip={self.ip!r})"
 
     # tell python how convert the class object into a dictionary ready to jsonify
     def serialize(self):

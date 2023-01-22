@@ -20,6 +20,7 @@ mysqlclient = "*"
 flask-admin = "*"
 flask-jwt-extended = "*"
 ratelimiter = "*"
+sqlalchemy-orm = "*"
 
 [requires]
 python_version = "3.8"
