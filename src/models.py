@@ -38,7 +38,7 @@ class Person(db.Model):
             "password": self.password,
             "salt": self.salt
         }'''
-        return f"User(id={self.id!r}, email={self.email!r}, roles={self.roles!r}, password={self.password!r}, salt={self.salt!r})"
+        return f"User(id={self.id!r}, email={self.email!r}, roles={self.roles!r})"
 
     # tell python how convert the class object into a dictionary ready to jsonify
     def serialize(self):
