@@ -22,7 +22,7 @@ class User(db.Model):
         }
 
 class Person(db.Model):
-    __tablename__ = "person_account"
+    #__tablename__ = "person_account"
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     roles = db.Column(db.Integer, unique=False, nullable=False)
@@ -72,7 +72,7 @@ class Person(db.Model):
 class TextFile(db.Model):
     __tablename__ = "textfile"
     id = db.Column('textfile_id', db.Integer, primary_key=True)
-    person_id = db.Column('owner_id', db.Integer, db.ForeignKey('person_account.id'))
+    person_id = db.Column('owner_id', db.Integer, db.ForeignKey('person.id'))
     ip = db.Column(db.String(20),unique=False, nullable=False)
     update_feed = db.Column(db.Boolean, nullable=False)
     url = db.Column(db.Text, nullable=False)
