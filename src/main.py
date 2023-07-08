@@ -94,20 +94,21 @@ def textfile():
         body = request.get_json()
         if body is None:
             raise APIException("You need to specify the request body as a json object", status_code=400)
-        if 'ip' not in body:
-            raise APIException('You need to specify the ip', status_code=400)
         if 'update_feed' not in body:
             raise APIException('You need to specify the update_feed', status_code=400)
         if 'url' not in body:
             raise APIException('You need to specify the url', status_code=400)
         if 'textfile' not in body:
             raise APIException('You need to specify the textfile', status_code=400)
-        current_identity = get_jwt_identity()
+        ip_addr = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
+        #if 'ip' not in body:
+            #raise APIException('You need to specify the ip', status_code=400)
+        #current_identity = get_jwt_identity()
         #current_email = Person.serialize(current_user)
         #payload = current_email
         #payload.update({'current_identity' : current_identity})
         try:
-            put_payload = TextFile(person_id=body['person_id'], ip=body['ip'], url=body['url'], update_feed=body['update_feed'], text=body['textfile'])
+            put_payload = TextFile(person_id=body['person_id'], ip=ip_addr, url=body['url'], update_feed=body['update_feed'], text=body['textfile'])
             db.session.add(put_payload)
             db.session.commit()
 
