@@ -9,6 +9,7 @@ from flask import Flask, request, jsonify, url_for
 from flask_migrate import Migrate
 from flask_swagger import swagger
 from flask_cors import CORS
+from logging import FileHandler,WARNING
 from utils import APIException, generate_sitemap
 from admin import setup_admin
 from models import db, User, Person, TextFile
@@ -23,6 +24,8 @@ from flask_jwt_extended import JWTManager
 from ratelimiter import RateLimiter
 
 app = Flask(__name__)
+file_handler = FileHandler('errorlog.txt')
+file_handler.setLevel(WARNING)
 app.url_map.strict_slashes = False
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DB_CONNECTION_STRING')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
