@@ -110,8 +110,8 @@ def textfile():
         #payload = current_email
         #payload.update({'current_identity' : current_identity})
         try:
-            ip_addr = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
-            put_payload = TextFile(person_id=body['person_id'], ip=ip_addr, url=body['url'], update_feed=body['update_feed'], text=body['textfile'])
+            #ip_addr = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
+            put_payload = TextFile(person_id=body['person_id'], ip="ip_addr", url=body['url'], update_feed=body['update_feed'], text=body['textfile'])
             db.session.add(put_payload)
             db.session.commit()
 
