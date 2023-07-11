@@ -117,11 +117,11 @@ def textfile():
 
             return jsonify({
             "request":body}), 200
-        except:
+        except Exception as error:
             raise APIException({
-            'issue':'PUT request failed - no new data',
-            'request':body},
-            status_code=400)
+            'args':error.args,
+            'error':error},
+            status_code=500)
 
 # Protect a route with jwt_required, which will kick out requests
 # without a valid JWT present.
