@@ -118,10 +118,7 @@ def textfile():
             return jsonify({
             "request":body}), 200
         except Exception as error:
-            raise APIException({
-            'args':error.args,
-            'error':error},
-            status_code=500)
+            return "!!!" + {'args':error.args,'error':error}
 
 # Protect a route with jwt_required, which will kick out requests
 # without a valid JWT present.
