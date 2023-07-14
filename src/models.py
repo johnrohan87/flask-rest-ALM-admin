@@ -28,7 +28,7 @@ class Person(db.Model):
     roles = db.Column(db.Integer, unique=False, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     salt = db.Column(db.String(255), nullable=False)
-    #text_files = db.relationship('TextFile', back_populates='person', lazy=True, cascade='all,delete')
+    text_files = db.relationship('TextFile', back_populates='person', lazy=True, cascade='all,delete')
 
     # tell python how to print the class object on the console
     def __repr__(self):
@@ -78,7 +78,7 @@ class TextFile(db.Model):
     url = db.Column(db.Text, nullable=False)
     text = db.Column(db.Text, nullable=False)
 
-    person = relationship("Person", back_populates="text_files")
+    #person = relationship("Person", back_populates="text_files")
 
     # tell python how to print the class object on the console
     def __repr__(self):
