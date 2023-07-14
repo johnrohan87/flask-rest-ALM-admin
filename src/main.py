@@ -83,7 +83,7 @@ def login():
 
 
 @RateLimiter(max_calls=10, period=1)
-@app.route("/textfile", methods=["GET", "POST", "PUT"])
+@app.route("/textfile", methods=["GET", "PUT"])
 @jwt_required()
 def textfile():
     if request.method == 'GET':
