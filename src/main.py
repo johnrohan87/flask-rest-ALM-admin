@@ -112,7 +112,7 @@ def textfile():
         try:
             #ip_addr = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
             print(body)
-            put_payload = TextFile(person_id=body['person_id'], ip="0.0.0.0", url=body['url'], update_feed=body['update_feed'], text=body['textfile'])
+            put_payload = TextFile(id=body['person_id'], ip="0.0.0.0", url=body['url'], update_feed=body['update_feed'], text=body['textfile'])
             db.session.add(put_payload)
             db.session.commit()
 
