@@ -1,6 +1,6 @@
 import os
 from hashlib import pbkdf2_hmac
-from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy, Integer, String, Boolean
 from sqlalchemy.orm import relationship, mapped_column, DeclarativeBase
 
 db = SQLAlchemy()
@@ -26,11 +26,11 @@ class User(db.Model):
 
 class Person(Base):
     __tablename__ = "person_account"
-    id = mapped_column(db.Integer, primary_key=True)
-    email = mapped_column(db.String(120), unique=True, nullable=False)
-    roles = mapped_column(db.Integer, unique=False, nullable=False)
-    password = mapped_column(db.String(255), nullable=False)
-    salt = mapped_column(db.String(255), nullable=False)
+    id = mapped_column(Integer, primary_key=True)
+    email = mapped_column(String(120), unique=True, nullable=False)
+    roles = mapped_column(Integer, unique=False, nullable=False)
+    password = mapped_column(String(255), nullable=False)
+    salt = mapped_column(String(255), nullable=False)
     text_files = relationship('TextFile', back_populates='person', lazy=True, cascade='all,delete')
 
     # tell python how to print the class object on the console
@@ -74,12 +74,12 @@ class Person(Base):
 
 class TextFile(Base):
     __tablename__ = "textfile"
-    id = mapped_column('textfile_id', db.Integer, primary_key=True)
-    person_id = mapped_column('owner_id', db.Integer, db.ForeignKey('person_account.id'))
-    ip = mapped_column(db.String(20),unique=False, nullable=False)
-    update_feed = mapped_column(db.Boolean, nullable=False)
-    url = mapped_column(db.Text, nullable=False)
-    text = mapped_column(db.Text, nullable=False)
+    id = mapped_column('textfile_id', Integer, primary_key=True)
+    person_id = mapped_column('owner_id', Integer, ForeignKey('person_account.id'))
+    ip = mapped_column(String(20),unique=False, nullable=False)
+    update_feed = mapped_column(Boolean, nullable=False)
+    url = mapped_column(Text, nullable=False)
+    text = mapped_column(Text, nullable=False)
 
     person = relationship("Person", back_populates="textfile")
 
