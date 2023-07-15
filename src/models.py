@@ -3,7 +3,7 @@ from hashlib import pbkdf2_hmac
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Integer, String, Boolean, Text, ForeignKey, Column
 from sqlalchemy.orm import relationship, mapped_column, DeclarativeBase
-
+ 
 db = SQLAlchemy()
 
 class Base(DeclarativeBase):
