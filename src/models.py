@@ -1,6 +1,6 @@
 import os
 from hashlib import pbkdf2_hmac
-from sqlalchemy import Integer, String, Boolean, Text, ForeignKey
+from sqlalchemy import Integer, String, Boolean, Text, ForeignKey, Column
 from sqlalchemy.orm import relationship, mapped_column, DeclarativeBase
 
 #db = SQLAlchemy()
