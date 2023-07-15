@@ -1,6 +1,6 @@
 import os
 from hashlib import pbkdf2_hmac
-from flask_sqlalchemy import SQLAlchemy, Integer, String, Boolean
+from flask_sqlalchemy import SQLAlchemy, Integer, String, Boolean, Text
 from sqlalchemy.orm import relationship, mapped_column, DeclarativeBase
 
 db = SQLAlchemy()
@@ -9,10 +9,10 @@ class Base(DeclarativeBase):
     pass
 
 class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(80), unique=False, nullable=False)
-    is_active = db.Column(db.Boolean(), unique=False, nullable=False)
+    id = db.Column(Integer, primary_key=True)
+    email = db.Column(String(120), unique=True, nullable=False)
+    password = db.Column(String(80), unique=False, nullable=False)
+    is_active = db.Column(Boolean(), unique=False, nullable=False)
 
     def __repr__(self):
         return '<User %r>' % self.username
