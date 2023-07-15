@@ -75,9 +75,9 @@ class Person(Base):
         return password_hash.hex()
 
 class TextFile(Base):
-    __tablename__ = "textfile"
-    id = mapped_column('textfile_id', Integer, primary_key=True)
-    person_id = mapped_column('owner_id', Integer, ForeignKey('person_account.id'))
+    __tablename__ = "textfile_table"
+    id = mapped_column(Integer, primary_key=True)
+    person_id = mapped_column(Integer, ForeignKey('person_account.id'))
     ip = mapped_column(String(20),unique=False, nullable=False)
     update_feed = mapped_column(Boolean, nullable=False)
     url = mapped_column(Text, nullable=False)
