@@ -1,9 +1,12 @@
 import os
 from hashlib import pbkdf2_hmac
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, mapped_column, DeclarativeBase
 
 db = SQLAlchemy()
+
+class Base(DeclarativeBase):
+    pass
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -21,14 +24,14 @@ class User(db.Model):
             # do not serialize the password, its a security breach
         }
 
-class Person(db.Model):
+class Person(Base):
     __tablename__ = "person_account"
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    roles = db.Column(db.Integer, unique=False, nullable=False)
-    password = db.Column(db.String(255), nullable=False)
-    salt = db.Column(db.String(255), nullable=False)
-    text_files = db.relationship('TextFile', back_populates='person', lazy=True, cascade='all,delete')
+    id = mapped_column(db.Integer, primary_key=True)
+    email = mapped_column(db.String(120), unique=True, nullable=False)
+    roles = mapped_column(db.Integer, unique=False, nullable=False)
+    password = mapped_column(db.String(255), nullable=False)
+    salt = mapped_column(db.String(255), nullable=False)
+    text_files = relationship('TextFile', back_populates='person', lazy=True, cascade='all,delete')
 
     # tell python how to print the class object on the console
     def __repr__(self):
@@ -69,14 +72,14 @@ class Person(db.Model):
         )
         return password_hash.hex()
 
-class TextFile(db.Model):
+class TextFile(Base):
     __tablename__ = "textfile"
-    id = db.Column('textfile_id', db.Integer, primary_key=True)
-    person_id = db.Column('owner_id', db.Integer, db.ForeignKey('person.id'))
-    ip = db.Column(db.String(20),unique=False, nullable=False)
-    update_feed = db.Column(db.Boolean, nullable=False)
-    url = db.Column(db.Text, nullable=False)
-    text = db.Column(db.Text, nullable=False)
+    id = mapped_column('textfile_id', db.Integer, primary_key=True)
+    person_id = mapped_column('owner_id', db.Integer, db.ForeignKey('person_account.id'))
+    ip = mapped_column(db.String(20),unique=False, nullable=False)
+    update_feed = mapped_column(db.Boolean, nullable=False)
+    url = mapped_column(db.Text, nullable=False)
+    text = mapped_column(db.Text, nullable=False)
 
     person = relationship("Person", back_populates="textfile")
 
