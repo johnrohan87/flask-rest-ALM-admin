@@ -4,12 +4,11 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Integer, String, Boolean, Text, ForeignKey, Column
 from sqlalchemy.orm import relationship, mapped_column, DeclarativeBase
  
-db = SQLAlchemy()
+#db = SQLAlchemy()
 
-class Base(DeclarativeBase):
-    pass
+db = DeclarativeBase()
 
-class User(Base):
+class User(db):
     __tablename__ = "user"
     id = Column(Integer, primary_key=True)
     email = Column(String(120), unique=True, nullable=False)
@@ -26,7 +25,7 @@ class User(Base):
             # do not serialize the password, its a security breach
         }
 
-class Person(Base):
+class Person(db):
     __tablename__ = "person_account"
     id = mapped_column(Integer, primary_key=True)
     email = mapped_column(String(120), unique=True, nullable=False)
@@ -74,7 +73,7 @@ class Person(Base):
         )
         return password_hash.hex()
 
-class TextFile(Base):
+class TextFile(db):
     __tablename__ = "textfile_table"
     id = mapped_column(Integer, primary_key=True)
     person_id = mapped_column(Integer, ForeignKey('person_account.id'))
