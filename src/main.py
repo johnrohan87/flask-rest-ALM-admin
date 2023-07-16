@@ -83,7 +83,7 @@ def login():
 
 
 @RateLimiter(max_calls=10, period=1)
-@app.route("/textfile", methods=["GET", "PUT"])
+@app.route("/textfile", methods=["GET", "POST"])
 @jwt_required()
 def textfile():
     if request.method == 'GET':
@@ -93,7 +93,7 @@ def textfile():
             values.append({'list position': item, 'persons id': files[item].id, 'ip': files[item].ip, "update feed": files[item].update_feed, "url": files[item].url, "file text": files[item].text}) 
         return values
 
-    if request.method == 'PUT':
+    if request.method == 'POST':
         body = request.get_json()
         if body is None:
             raise APIException("You need to specify the request body as a json object", status_code=400)
