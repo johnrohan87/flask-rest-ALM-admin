@@ -98,7 +98,7 @@ def textfile():
         if body is None:
             raise APIException("You need to specify the request body as a json object", status_code=400)
         if 'update_feed' not in body:
-            raise APIException('You need to specify the update_feed',body.update_feed, status_code=400)
+            raise APIException('You need to specify the update_feed',body['update_feed'], status_code=400)
         if 'url' not in body:
             raise APIException('You need to specify the url', status_code=400)
         if 'textfile' not in body:
