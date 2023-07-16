@@ -25,11 +25,11 @@ class User(db.Model):
 
 class Person(db.Model):
     __tablename__ = "person_account"
-    id = db.column(db.Integer, primary_key=True)
-    email = db.column(db.String(120), unique=True, nullable=False)
-    roles = db.column(db.Integer, unique=False, nullable=False)
-    password = db.column(db.String(255), nullable=False)
-    salt = db.column(db.String(255), nullable=False)
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    roles = db.Column(db.Integer, unique=False, nullable=False)
+    password = db.Column(db.String(255), nullable=False)
+    salt = db.Column(db.String(255), nullable=False)
     text_files = relationship('TextFile', back_populates='person', lazy=True, cascade='all,delete')
 
     # tell python how to print the class object on the console
@@ -74,9 +74,9 @@ class Person(db.Model):
 class TextFile(db.Model):
     __tablename__ = "textfile_table"
     id = db.column(db.Integer, primary_key=True)
-    person_id = db.column(db.Integer, ForeignKey('person_account.id'))
+    person_id = db.Column(db.Integer, ForeignKey('person_account.id'))
     ip = db.column(db.String(20),unique=False, nullable=False)
-    update_feed = db.column(db.Boolean, nullable=False)
+    update_feed = db.Column(db.Boolean, nullable=False)
     url = db.column(db.Text, nullable=False)
     text = db.column(db.Text, nullable=False)
 
