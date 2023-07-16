@@ -2,7 +2,7 @@ import os
 from hashlib import pbkdf2_hmac
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Integer, String, Boolean, Text, ForeignKey, Column
-from sqlalchemy.orm import relationship, mapped_column, DeclarativeBase
+from sqlalchemy.orm import relationship, mapped_Column, DeclarativeBase
 
 db = SQLAlchemy()
 
@@ -73,12 +73,12 @@ class Person(db.Model):
 
 class TextFile(db.Model):
     __tablename__ = "textfile_table"
-    id = db.column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
     person_id = db.Column(db.Integer, ForeignKey('person_account.id'))
-    ip = db.column(db.String(20),unique=False, nullable=False)
+    ip = db.Column(db.String(20),unique=False, nullable=False)
     update_feed = db.Column(db.Boolean, nullable=False)
-    url = db.column(db.Text, nullable=False)
-    text = db.column(db.Text, nullable=False)
+    url = db.Column(db.Text, nullable=False)
+    text = db.Column(db.Text, nullable=False)
 
     #person = relationship("Person", back_populates="textfile")
 
