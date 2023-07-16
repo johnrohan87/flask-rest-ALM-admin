@@ -80,7 +80,7 @@ class TextFile(db.Model):
     url = db.Column(db.Text, nullable=False)
     text = db.Column(db.Text, nullable=False)
 
-    #person = relationship("Person", back_populates="textfile")
+    person = relationship("Person", back_populates="textfile")
 
     # tell python how to print the class object on the console
     def __repr__(self):
