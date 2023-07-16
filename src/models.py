@@ -33,7 +33,7 @@ class Person(Base):
     roles = mapped_column(Integer, unique=False, nullable=False)
     password = mapped_column(String(255), nullable=False)
     salt = mapped_column(String(255), nullable=False)
-    #text_files = relationship('TextFile', back_populates='person', lazy=True, cascade='all,delete')
+    text_files = relationship('TextFile', back_populates='person', lazy=True, cascade='all,delete')
 
     # tell python how to print the class object on the console
     def __repr__(self):
@@ -83,7 +83,7 @@ class TextFile(Base):
     url = mapped_column(Text, nullable=False)
     text = mapped_column(Text, nullable=False)
 
-    person = relationship("Person", back_populates="textfile")
+    #person = relationship("Person", back_populates="textfile")
 
     # tell python how to print the class object on the console
     def __repr__(self):
