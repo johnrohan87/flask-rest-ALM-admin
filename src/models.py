@@ -6,7 +6,8 @@ from sqlalchemy.orm import relationship, mapped_column, DeclarativeBase
  
 #db = SQLAlchemy()
 
-db = DeclarativeBase()
+class db(DeclarativeBase):
+    pass
 
 class User(db):
     __tablename__ = "user"
