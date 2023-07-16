@@ -8,10 +8,10 @@ db = SQLAlchemy()
 
 class User(db.Model):
     __tablename__ = "user"
-    id = db.Column(Integer, primary_key=True)
-    email = db.Column(String(120), unique=True, nullable=False)
-    password = db.Column(String(80), unique=False, nullable=False)
-    is_active = db.Column(Boolean(), unique=False, nullable=False)
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(80), unique=False, nullable=False)
+    is_active = db.Column(db.Boolean(), unique=False, nullable=False)
 
     def __repr__(self):
         return '<User %r>' % self.username
@@ -25,11 +25,11 @@ class User(db.Model):
 
 class Person(db.Model):
     __tablename__ = "person_account"
-    id = db.column(Integer, primary_key=True)
-    email = db.column(String(120), unique=True, nullable=False)
-    roles = db.column(Integer, unique=False, nullable=False)
-    password = db.column(String(255), nullable=False)
-    salt = db.column(String(255), nullable=False)
+    id = db.column(db.Integer, primary_key=True)
+    email = db.column(db.String(120), unique=True, nullable=False)
+    roles = db.column(db.Integer, unique=False, nullable=False)
+    password = db.column(db.String(255), nullable=False)
+    salt = db.column(db.String(255), nullable=False)
     text_files = relationship('TextFile', back_populates='person', lazy=True, cascade='all,delete')
 
     # tell python how to print the class object on the console
@@ -73,12 +73,12 @@ class Person(db.Model):
 
 class TextFile(db.Model):
     __tablename__ = "textfile_table"
-    id = db.column(Integer, primary_key=True)
-    person_id = db.column(Integer, ForeignKey('person_account.id'))
-    ip = db.column(String(20),unique=False, nullable=False)
-    update_feed = db.column(Boolean, nullable=False)
-    url = db.column(Text, nullable=False)
-    text = db.column(Text, nullable=False)
+    id = db.column(db.Integer, primary_key=True)
+    person_id = db.column(db.Integer, ForeignKey('person_account.id'))
+    ip = db.column(db.String(20),unique=False, nullable=False)
+    update_feed = db.column(db.Boolean, nullable=False)
+    url = db.column(db.Text, nullable=False)
+    text = db.column(db.Text, nullable=False)
 
     #person = relationship("Person", back_populates="textfile")
 
