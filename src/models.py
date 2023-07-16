@@ -3,18 +3,15 @@ from hashlib import pbkdf2_hmac
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Integer, String, Boolean, Text, ForeignKey, Column
 from sqlalchemy.orm import relationship, mapped_column, DeclarativeBase
- 
-#db = SQLAlchemy()
 
-class db(DeclarativeBase):
-    pass
+db = SQLAlchemy()
 
-class User(db):
+class User(db.Model):
     __tablename__ = "user"
-    id = Column(Integer, primary_key=True)
-    email = Column(String(120), unique=True, nullable=False)
-    password = Column(String(80), unique=False, nullable=False)
-    is_active = Column(Boolean(), unique=False, nullable=False)
+    id = db.Column(Integer, primary_key=True)
+    email = db.Column(String(120), unique=True, nullable=False)
+    password = db.Column(String(80), unique=False, nullable=False)
+    is_active = db.Column(Boolean(), unique=False, nullable=False)
 
     def __repr__(self):
         return '<User %r>' % self.username
@@ -26,13 +23,13 @@ class User(db):
             # do not serialize the password, its a security breach
         }
 
-class Person(db):
+class Person(db.Model):
     __tablename__ = "person_account"
-    id = mapped_column(Integer, primary_key=True)
-    email = mapped_column(String(120), unique=True, nullable=False)
-    roles = mapped_column(Integer, unique=False, nullable=False)
-    password = mapped_column(String(255), nullable=False)
-    salt = mapped_column(String(255), nullable=False)
+    id = db.column(Integer, primary_key=True)
+    email = db.column(String(120), unique=True, nullable=False)
+    roles = db.column(Integer, unique=False, nullable=False)
+    password = db.column(String(255), nullable=False)
+    salt = db.column(String(255), nullable=False)
     text_files = relationship('TextFile', back_populates='person', lazy=True, cascade='all,delete')
 
     # tell python how to print the class object on the console
@@ -74,14 +71,14 @@ class Person(db):
         )
         return password_hash.hex()
 
-class TextFile(db):
+class TextFile(db.Model):
     __tablename__ = "textfile_table"
-    id = mapped_column(Integer, primary_key=True)
-    person_id = mapped_column(Integer, ForeignKey('person_account.id'))
-    ip = mapped_column(String(20),unique=False, nullable=False)
-    update_feed = mapped_column(Boolean, nullable=False)
-    url = mapped_column(Text, nullable=False)
-    text = mapped_column(Text, nullable=False)
+    id = db.column(Integer, primary_key=True)
+    person_id = db.column(Integer, ForeignKey('person_account.id'))
+    ip = db.column(String(20),unique=False, nullable=False)
+    update_feed = db.column(Boolean, nullable=False)
+    url = db.column(Text, nullable=False)
+    text = db.column(Text, nullable=False)
 
     #person = relationship("Person", back_populates="textfile")
 
