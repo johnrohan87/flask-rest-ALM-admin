@@ -123,15 +123,16 @@ def textfile():
             return "!!!!" + {'args':error.args,'error':error}
 
     if request.method == 'POST':
-        body = request.get_json()
+        feedData = request.get_json()
+        body = feedData['feedData']
         if body is None:
             raise APIException("You need to specify the request body as a json object", status_code=400)
-        # if 'update_feed' not in body:
-        #     raise APIException('You need to specify the update_feed', {"data": Flask.jsonify(str(body))}, status_code=400)
-        # if 'url' not in body:
-        #     raise APIException('You need to specify the url', status_code=400)
-        # if 'textfile' not in body:
-        #     raise APIException('You need to specify the textfile', status_code=400)
+        if 'update_feed' not in body:
+            raise APIException('You need to specify the update_feed', {"data": Flask.jsonify(str(body))}, status_code=400)
+        if 'url' not in body:
+            raise APIException('You need to specify the url', status_code=400)
+        if 'textfile' not in body:
+            raise APIException('You need to specify the textfile', status_code=400)
         #if 'ip' not in body:
             #raise APIException('You need to specify the ip', status_code=400)
         #current_identity = get_jwt_identity()
@@ -141,9 +142,9 @@ def textfile():
         try:
             #ip_addr = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
             print(body)
-            # put_payload = TextFile(Person(person=body['person_id']), ip="0.0.0.0", url=body['url'], update_feed=body['update_feed'], text=body['textfile'])
-            # db.session.add(put_payload)
-            # db.session.commit()
+            put_payload = TextFile(Person(person=body['person_id']), ip="0.0.0.0", url=body['url'], update_feed=body['update_feed'], text=body['textfile'])
+            db.session.add(put_payload)
+            db.session.commit()
 
             return jsonify({
             "request":body}), 200
