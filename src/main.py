@@ -150,7 +150,7 @@ def textfile():
             "request":body}), 200
         except Exception as error:
             print(repr(error))
-            return "!!!!" + {'args':json.dumps(error.args),'error':error}
+            return "!!!!" + {'args':jsonify(error.args),'error':error}
 
 # Protect a route with jwt_required, which will kick out requests
 # without a valid JWT present.
