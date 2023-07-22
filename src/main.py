@@ -133,16 +133,11 @@ def textfile():
             raise APIException('You need to specify the url', status_code=400)
         if 'textfile' not in body:
             raise APIException('You need to specify the textfile', status_code=400)
-        #if 'ip' not in body:
-            #raise APIException('You need to specify the ip', status_code=400)
-        #current_identity = get_jwt_identity()
-        #current_email = Person.serialize(current_user)
-        #payload = current_email
-        #payload.update({'current_identity' : current_identity})
+
         try:
             #ip_addr = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
             print(body)
-            put_payload = TextFile(Person(id=body['person_id']), ip="0.0.0.0", url=body['url'], update_feed=body['update_feed'], text=body['textfile'])
+            put_payload = TextFile(person_id=body['person_id'], ip="0.0.0.0", url=body['url'], update_feed=body['update_feed'], text=body['textfile'])
             db.session.add(put_payload)
             db.session.commit()
 
@@ -150,7 +145,7 @@ def textfile():
             "request":body}), 200
         except Exception as error:
             print(repr(error))
-            return "!!!!" + {'error':error}
+            return "!!!!" + {'error':str(error)}
 
 # Protect a route with jwt_required, which will kick out requests
 # without a valid JWT present.
