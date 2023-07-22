@@ -124,7 +124,7 @@ def textfile():
 
     if request.method == 'POST':
         feedData = request.get_json()
-        body = feedData['feedData']
+        body = feedData['request']['feedData']
         if body is None:
             raise APIException("You need to specify the request body as a json object", status_code=400)
         if 'update_feed' not in body:
@@ -142,9 +142,9 @@ def textfile():
         try:
             #ip_addr = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
             print(body)
-            put_payload = TextFile(Person(person=body['person_id']), ip="0.0.0.0", url=body['url'], update_feed=body['update_feed'], text=body['textfile'])
-            db.session.add(put_payload)
-            db.session.commit()
+            # put_payload = TextFile(Person(person=body['person_id']), ip="0.0.0.0", url=body['url'], update_feed=body['update_feed'], text=body['textfile'])
+            # db.session.add(put_payload)
+            # db.session.commit()
 
             return jsonify({
             "request":body}), 200
