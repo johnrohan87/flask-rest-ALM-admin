@@ -96,9 +96,9 @@ def textfile():
     if request.method == 'PUT':
         body = request.get_json()
         if body is None:
-            raise APIException("You need to specify the request body as a json object", {"data": body}, status_code=400)
+            raise APIException("You need to specify the request body as a json object", status_code=400)
         if 'update_feed' not in body:
-            raise APIException('You need to specify the update_feed', {"data": body}, status_code=400)
+            raise APIException('You need to specify the update_feed', status_code=400)
         if 'url' not in body:
             raise APIException('You need to specify the url', status_code=400)
         if 'textfile' not in body:
@@ -127,7 +127,7 @@ def textfile():
         if body is None:
             raise APIException("You need to specify the request body as a json object", status_code=400)
         if 'update_feed' not in body:
-            raise APIException('You need to specify the update_feed', {"data": jsonify(str(body))}, status_code=400)
+            raise APIException('You need to specify the update_feed', {"data": Flask.jsonify(str(body))}, status_code=400)
         if 'url' not in body:
             raise APIException('You need to specify the url', status_code=400)
         if 'textfile' not in body:
