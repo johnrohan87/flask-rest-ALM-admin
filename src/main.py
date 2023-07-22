@@ -124,7 +124,7 @@ def textfile():
 
     if request.method == 'POST':
         feedData = request.get_json()
-        body = feedData['request']['feedData']
+        body = feedData['feedData']
         if body is None:
             raise APIException("You need to specify the request body as a json object", status_code=400)
         if 'update_feed' not in body:
@@ -150,7 +150,7 @@ def textfile():
             "request":body}), 200
         except Exception as error:
             print(repr(error))
-            return "!!!!" + {'args':error.args,'error':error}
+            return "!!!!" + {'args':str(error.args),'error':str(error)}
 
 # Protect a route with jwt_required, which will kick out requests
 # without a valid JWT present.
