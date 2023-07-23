@@ -124,7 +124,7 @@ def textfile():
 
     if request.method == 'POST':
         feedData = request.get_json()
-        body = feedData['feedData']
+        body = feedData['data']
         if body is None:
             raise APIException("You need to specify the request body as a json object", status_code=400)
         if 'update_feed' not in body:
