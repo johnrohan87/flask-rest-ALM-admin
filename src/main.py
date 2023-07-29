@@ -112,6 +112,7 @@ def textfile():
             values.append({'list position': item, 'persons id': files[item].id, 'ip': files[item].ip, "update feed": files[item].update_feed, "url": files[item].url, "file text": files[item].text}) 
         return values
     
+    
     if request.method == 'PUT':
         body = request.get_json()
         if body is None:
