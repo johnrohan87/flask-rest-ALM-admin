@@ -79,6 +79,7 @@ def login():
         return jsonify("Wrong email or password"), 401
 
     # Notice that we are passing in the actual sqlalchemy user object here
+    print(person)
     access_token = create_access_token(identity=person, fresh=person['is_fresh'])
     refresh_token = create_refresh_token(identity=person)
     return jsonify({"access_token":access_token, "refresh_token":refresh_token}),200
