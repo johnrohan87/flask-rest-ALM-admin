@@ -80,8 +80,8 @@ def login():
 
     # Notice that we are passing in the actual sqlalchemy user object here
     print(person)
-    access_token = create_access_token(identity=person, fresh=person['is_fresh'])
-    refresh_token = create_refresh_token(identity=person)
+    access_token = create_access_token(identity=person.id, fresh=person.is_fresh)
+    refresh_token = create_refresh_token(identity=person.id)
     return jsonify({"access_token":access_token, "refresh_token":refresh_token}),200
 
 
