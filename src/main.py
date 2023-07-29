@@ -15,13 +15,13 @@ from admin import setup_admin
 from models import db, User, Person, TextFile
 #from models import Person
 
-from flask_jwt_extended import create_access_token
-from flask_jwt_extended import get_jwt_identity
-from flask_jwt_extended import current_user
-from flask_jwt_extended import jwt_required
-from flask_jwt_extended import JWTManager
-
+from flask_jwt_extended import (create_access_token, 
+                                create_refresh_token, 
+                                get_jwt_identity, current_user,
+                                jwt_required, JWTManager,
+                                jwt_refresh_token_required)
 from ratelimiter import RateLimiter
+from datetime import timedelta
 
 app = Flask(__name__)
 file_handler = FileHandler('errorlog.txt')
@@ -29,6 +29,8 @@ file_handler.setLevel(WARNING)
 app.url_map.strict_slashes = False
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DB_CONNECTION_STRING')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=15)
+app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=30)
 
 # Setup the Flask-JWT-Extended extension
 app.config["JWT_SECRET_KEY"] = os.environ.get('JWT_SECRET_KEY')
@@ -78,13 +80,30 @@ def login():
         return jsonify("Wrong email or password"), 401
 
     # Notice that we are passing in the actual sqlalchemy user object here
-    access_token = create_access_token(identity=person)
-    return jsonify(access_token=access_token)
+    access_token = create_access_token(identity=person, fresh=person['is_fresh'])
+    refresh_token = create_refresh_token(identity=person)
+    return jsonify({"access_token":access_token, "refresh_token":refresh_token}),200
 
 
 @RateLimiter(max_calls=10, period=1)
+@app.route("/refresh", methods=["POST"])
+@jwt_refresh_token_required
+def refresh():
+    current_user = get_jwt_identity()
+    user = Person.get(current_user, None)
+
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    # Mark the new token as fresh if the previous one was fresh
+    fresh = user['is_fresh']
+    new_access_token = create_access_token(identity=current_user, fresh=fresh)
+
+    return jsonify({"access_token": new_access_token}), 200
+
+@RateLimiter(max_calls=10, period=1)
 @app.route("/textfile", methods=["GET","PUT","POST"])
-@jwt_required()
+@jwt_required(fresh=True)
 def textfile():
     if request.method == 'GET':
         files = TextFile.query.all()
@@ -151,7 +170,7 @@ def textfile():
 # without a valid JWT present.
 @RateLimiter(max_calls=10, period=1)
 @app.route("/protected", methods=["GET", "POST", "PUT"])
-@jwt_required()
+@jwt_required(fresh=True)
 def protected():
     
 
