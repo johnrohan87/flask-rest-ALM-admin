@@ -18,8 +18,7 @@ from models import db, User, Person, TextFile
 from flask_jwt_extended import (create_access_token, 
                                 create_refresh_token, 
                                 get_jwt_identity, current_user,
-                                jwt_required, JWTManager,
-                                jwt_refresh_token_required)
+                                jwt_required, JWTManager)
 from ratelimiter import RateLimiter
 from datetime import timedelta
 
@@ -87,7 +86,7 @@ def login():
 
 @RateLimiter(max_calls=10, period=1)
 @app.route("/refresh", methods=["POST"])
-@jwt_refresh_token_required
+@jwt_required(fresh=True)
 def refresh():
     current_user = get_jwt_identity()
     user = Person.get(current_user, None)
