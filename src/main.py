@@ -110,7 +110,7 @@ def textfile():
         values = []
         for item in range(len(files)):
             values.append({'list position': item, 'persons id': files[item].id, 'ip': files[item].ip, "update feed": files[item].update_feed, "url": files[item].url, "file text": files[item].text}) 
-        return values
+        return jsonify({"data": values}),200
     
     
     if request.method == 'PUT':
