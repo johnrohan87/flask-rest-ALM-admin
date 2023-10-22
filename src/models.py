@@ -109,3 +109,12 @@ association_table = Table(
 class FeedPost(db.Model):
     __tablename__ = "feedpost_table"
     id = db.Column(db.Integer, primary_key=True)
+    feed_id = db.Column(db.Integer, ForeignKey('textfile_table.id'))
+    title = db.Column(db.Text, nullable=False)
+    link = db.Column(db.Text, nullable=False)
+    published = db.Column(db.Text, nullable=False) # Unicode string
+    published_parsed = db.Column(db.Text, nullable=False) # Time object
+    author = db.Column(db.Text, nullable=False)
+    summary = db.Column(db.Text, nullable=False)
+    tags = db.Column(db.Text, nullable=False)
+
