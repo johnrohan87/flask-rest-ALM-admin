@@ -120,3 +120,6 @@ class FeedPost(db.Model):
     tags = db.Column(db.Text, nullable=False)
 
     feed = relationship("TextFile", back_populates="feeds")
+
+    def __repr__(self):
+        return f"FeedPost(id={self.id!r}, feed_id={self.feed_id!r}, title={self.title!r})"
