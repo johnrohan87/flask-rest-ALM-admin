@@ -1,7 +1,7 @@
 import os
 from hashlib import pbkdf2_hmac
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Integer, String, Boolean, Text, ForeignKey, Column
+from sqlalchemy import Integer, String, Boolean, Text, ForeignKey, Column, Table
 from sqlalchemy.orm import relationship, DeclarativeBase
 
 db = SQLAlchemy()
@@ -98,3 +98,14 @@ class TextFile(db.Model):
             "url": self.url,
             "file text": self.text
         }
+    
+association_table = Table(
+    "association_table",
+    db.Model.metadata,
+    Column("textfile_table_id", ForeignKey("textfile_table.id"), primary_key=True),
+    Column("feedpost_table_id", ForeignKey("feedpost_table.id"), primary_key=True),
+)
+    
+class FeedPost(db.Model):
+    __tablename__ = "feedpost_table"
+    id = db.Column(db.Integer, primary_key=True)
