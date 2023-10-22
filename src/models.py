@@ -100,12 +100,12 @@ class TextFile(db.Model):
             "file text": self.text
         }
     
-association_table = Table(
-    "association_table",
-    db.Model.metadata,
-    Column("textfile_table_id", ForeignKey("textfile_table.id"), primary_key=True),
-    Column("feedpost_table_id", ForeignKey("feedpost_table.id"), primary_key=True),
-)
+#association_table = Table(
+#    "association_table",
+#    db.Model.metadata,
+#    Column("textfile_table_id", ForeignKey("textfile_table.id"), primary_key=True),
+#    Column("feedpost_table_id", ForeignKey("feedpost_table.id"), primary_key=True),
+#)
     
 class FeedPost(db.Model):
     __tablename__ = "feedpost_table"
