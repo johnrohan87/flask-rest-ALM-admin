@@ -100,13 +100,6 @@ class TextFile(db.Model):
             "file text": self.text
         }
     
-#association_table = Table(
-#    "association_table",
-#    db.Model.metadata,
-#    Column("textfile_table_id", ForeignKey("textfile_table.id"), primary_key=True),
-#    Column("feedpost_table_id", ForeignKey("feedpost_table.id"), primary_key=True),
-#)
-    
 class FeedPost(db.Model):
     __tablename__ = "feedpost_table"
     id = db.Column(db.Integer, primary_key=True)
@@ -123,4 +116,10 @@ class FeedPost(db.Model):
 
     def __repr__(self):
         return f"FeedPost(id={self.id!r}, feed_id={self.feed_id!r}, title={self.title!r})"
-#saving
+
+association_table = Table(
+    "association_table",
+    db.Model.metadata,
+    Column("textfile_table_id", ForeignKey("textfile_table.id"), primary_key=True),
+    Column("feedpost_table_id", ForeignKey("feedpost_table.id"), primary_key=True),
+)

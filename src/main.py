@@ -12,7 +12,7 @@ from flask_cors import CORS
 from logging import FileHandler,WARNING
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User, Person, TextFile
+from models import db, User, Person, TextFile, FeedPost
 #from models import Person
 
 from flask_jwt_extended import (create_access_token, 
@@ -100,72 +100,6 @@ def refresh():
     new_access_token = create_access_token(identity=current_user, fresh=fresh)
 
     return jsonify({"access_token": new_access_token}), 200
-
-@RateLimiter(max_calls=10, period=1)
-@app.route("/textfile", methods=["GET","PUT","POST"])
-@jwt_required(fresh=True)
-def textfile():
-    if request.method == 'GET':
-        files = TextFile.query.all()
-        values = []
-        for item in range(len(files)):
-            values.append({'list position': item, 'persons id': files[item].id, 'ip': files[item].ip, "update feed": files[item].update_feed, "url": files[item].url, "file text": files[item].text}) 
-        return jsonify(values),200
-    
-    
-    if request.method == 'PUT':
-        body = request.get_json()
-        if body is None:
-            raise APIException("You need to specify the request body as a json object", status_code=400)
-        if 'update_feed' not in body:
-            raise APIException('You need to specify the update_feed', status_code=400)
-        if 'url' not in body:
-            raise APIException('You need to specify the url', status_code=400)
-        if 'textfile' not in body:
-            raise APIException('You need to specify the textfile', status_code=400)
-        #if 'ip' not in body:
-            #raise APIException('You need to specify the ip', status_code=400)
-        #current_identity = get_jwt_identity()
-        #current_email = Person.serialize(current_user)
-        #payload = current_email
-        #payload.update({'current_identity' : current_identity})
-        try:
-            #ip_addr = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
-            print(body)
-            put_payload = TextFile(Person(person=body['person_id']), ip="0.0.0.0", url=body['url'], update_feed=body['update_feed'], text=body['textfile'])
-            db.session.add(put_payload)
-            db.session.commit()
-
-            return jsonify({
-            "request":body}), 200
-        except Exception as error:
-            print(repr(error))
-            return "!!!!" + {'args':error.args,'error':error}
-
-    if request.method == 'POST':
-        feedData = request.get_json()
-        body = feedData['data']
-        if body is None:
-            raise APIException("You need to specify the request body as a json object", status_code=400)
-        if 'update_feed' not in body:
-            raise APIException('You need to specify the update_feed', {"data": Flask.jsonify(str(body))}, status_code=400)
-        if 'url' not in body:
-            raise APIException('You need to specify the url', status_code=400)
-        if 'textfile' not in body:
-            raise APIException('You need to specify the textfile', status_code=400)
-
-        try:
-            ip_addr = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
-            print(body)
-            put_payload = TextFile(person_id=body['person_id'], ip=ip_addr, url=body['url'], update_feed=body['update_feed'], text=body['textfile'])
-            db.session.add(put_payload)
-            db.session.commit()
-
-            return jsonify({
-            "request":body}), 200
-        except Exception as error:
-            print(repr(error))
-            return "!!!!" + {'error':str(error)}
 
 # Protect a route with jwt_required, which will kick out requests
 # without a valid JWT present.
@@ -274,7 +208,81 @@ def protected():
                 'db results - roles':db_query_results[0].roles},
                 status_code=400)
 
+@RateLimiter(max_calls=10, period=1)
+@app.route("/textfile", methods=["GET","PUT","POST"])
+@jwt_required(fresh=True)
+def textfile():
+    if request.method == 'GET':
+        files = TextFile.query.all()
+        values = []
+        for item in range(len(files)):
+            values.append({'list position': item, 'persons id': files[item].id, 'ip': files[item].ip, "update feed": files[item].update_feed, "url": files[item].url, "file text": files[item].text}) 
+        return jsonify(values),200
+    
+    if request.method == 'PUT':
+        body = request.get_json()
+        if body is None:
+            raise APIException("You need to specify the request body as a json object", status_code=400)
+        if 'update_feed' not in body:
+            raise APIException('You need to specify the update_feed', status_code=400)
+        if 'url' not in body:
+            raise APIException('You need to specify the url', status_code=400)
+        if 'textfile' not in body:
+            raise APIException('You need to specify the textfile', status_code=400)
+        #if 'ip' not in body:
+            #raise APIException('You need to specify the ip', status_code=400)
+        #current_identity = get_jwt_identity()
+        #current_email = Person.serialize(current_user)
+        #payload = current_email
+        #payload.update({'current_identity' : current_identity})
+        try:
+            #ip_addr = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
+            print(body)
+            put_payload = TextFile(Person(person=body['person_id']), ip="0.0.0.0", url=body['url'], update_feed=body['update_feed'], text=body['textfile'])
+            db.session.add(put_payload)
+            db.session.commit()
 
+            return jsonify({
+            "request":body}), 200
+        except Exception as error:
+            print(repr(error))
+            return "!!!!" + {'args':error.args,'error':error}
+
+    if request.method == 'POST':
+        feedData = request.get_json()
+        body = feedData['data']
+        if body is None:
+            raise APIException("You need to specify the request body as a json object", status_code=400)
+        if 'update_feed' not in body:
+            raise APIException('You need to specify the update_feed', {"data": Flask.jsonify(str(body))}, status_code=400)
+        if 'url' not in body:
+            raise APIException('You need to specify the url', status_code=400)
+        if 'textfile' not in body:
+            raise APIException('You need to specify the textfile', status_code=400)
+
+        try:
+            ip_addr = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
+            print(body)
+            put_payload = TextFile(person_id=body['person_id'], ip=ip_addr, url=body['url'], update_feed=body['update_feed'], text=body['textfile'])
+            db.session.add(put_payload)
+            db.session.commit()
+
+            return jsonify({
+            "request":body}), 200
+        except Exception as error:
+            print(repr(error))
+            return "!!!!" + {'error':str(error)}
+        
+@RateLimiter(max_calls=10, period=1)
+@app.route("/feedpost", methods=["GET","PUT","POST"])
+@jwt_required(fresh=True)
+def textfile():
+    if request.method == 'GET':
+        post = FeedPost.query.all()
+        values = []
+        for item in range(len(post)):
+            values.append({'list position': item, 'id': post[item].id, 'feed_id': post[item].feed_id, "title": post[item].title, "link": post[item].link, "published": post[item].published}) 
+        return jsonify(values),200
 
 # Register a callback function that takes whatever object is passed in as the
 # identity when creating JWTs and converts it to a JSON serializable format.
