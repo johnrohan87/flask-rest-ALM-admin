@@ -280,10 +280,44 @@ def feedpost():
     if request.method == 'GET':
         post = FeedPost.query.all()
         values = []
-        for item in range(len(post)):
-            values.append({'list position': item, 'id': post[item].id, 'feed_id': post[item].feed_id, "title": post[item].title, "link": post[item].link, "published": post[item].published}) 
+        #for item in range(len(post)):
+            #values.append({'list position': item, 'id': post[item].id, 'feed_id': post[item].feed_id, "title": post[item].title, "link": post[item].link, "published": post[item].published}) 
+        for name,dict_ in post.items():
+            values.append({dict_:name})
         return jsonify(values),200
-    #testing
+    if request.method == 'PUT':
+        body = request.get_json()
+        if body is None:
+            raise APIException("You need to specify the request body as a json object", status_code=400)
+        if 'feed_id' not in body:
+            raise APIException('You need to specify the feed_id', status_code=400)
+        if 'title' not in body:
+            raise APIException('You need to specify the textfile', status_code=400)
+        if 'link' not in body:
+            raise APIException('You need to specify the link', status_code=400)
+        if 'published' not in body:
+            raise APIException('You need to specify the published', status_code=400)
+        if 'published_parsed' not in body:
+            raise APIException('You need to specify the published_parsed', status_code=400)
+        if 'author' not in body:
+            raise APIException('You need to specify the author', status_code=400)
+        if 'summary' not in body:
+            raise APIException('You need to specify the summary', status_code=400)
+        if 'tags' not in body:
+            raise APIException('You need to specify the tags', status_code=400)
+
+        try:
+            #ip_addr = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
+            print(body)
+            put_payload = FeedPost(Person(person=body['feed_id']), title=['title'], link=body['link'], published=body['published'], published_parsed=body['published_parsed'], author=body['author'],  summary=body['summary'],  tags=body['tags'])
+            db.session.add(put_payload)
+            db.session.commit()
+
+            return jsonify({
+            "request":body}), 200
+        except Exception as error:
+            print(repr(error))
+            return "!!!!" + {'args':error.args,'error':error}
 
 # Register a callback function that takes whatever object is passed in as the
 # identity when creating JWTs and converts it to a JSON serializable format.
