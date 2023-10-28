@@ -284,8 +284,7 @@ def feedpost():
             #values.append({'list position': item, 'id': post[item].id, 'feed_id': post[item].feed_id, "title": post[item].title, "link": post[item].link, "published": post[item].published}) 
         for item in range(len(post)):
             print(item)
-            print(item.dir())
-            for name,dict_ in post[item].dir():
+            for name,dict_ in post[item]:
                 values.append({item:{dict_:name}})
         return jsonify(values),200
     if request.method == 'PUT':
