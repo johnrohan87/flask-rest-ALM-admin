@@ -274,9 +274,9 @@ def textfile():
             return "!!!!" + {'error':str(error)}
         
 @RateLimiter(max_calls=10, period=1)
-@app.route("/feedpost", methods=["GET","PUT","POST"])
+@app.route("/feedpost", methods=["GET"])
 @jwt_required(fresh=True)
-def textfile():
+def feedpost():
     if request.method == 'GET':
         post = FeedPost.query.all()
         values = []
