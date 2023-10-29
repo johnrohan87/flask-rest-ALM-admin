@@ -283,13 +283,13 @@ def feedpost():
         #for item in range(len(post)):
             #values.append({'list position': item, 'id': post[item].id, 'feed_id': post[item].feed_id, "title": post[item].title, "link": post[item].link, "published": post[item].published}) 
         for post in range(len(posts)):
-            print(posts[post].serialize())
-            print(post)
+            #print(posts[post].serialize())
+            #print(post)
             tmpItem = posts[post].serialize()
-            print(tmpItem)
+            #print(tmpItem)
             #for item in tmpItem.items():
                 #print(item)
-            values.update(tmpItem)
+            values.update({post:tmpItem})
         return jsonify(values),200
     if request.method == 'PUT':
         body = request.get_json()
