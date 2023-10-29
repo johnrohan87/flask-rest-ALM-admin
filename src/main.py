@@ -287,6 +287,7 @@ def feedpost():
             print(post)
             for item in posts[post].serialize():
                 print(item)
+                print(post[item])
                 values.append(item)
         return jsonify(values),200
     if request.method == 'PUT':
