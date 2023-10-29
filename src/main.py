@@ -310,7 +310,7 @@ def feedpost():
         try:
             #ip_addr = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
             print(body)
-            put_payload = FeedPost(TextFile(person=body['feed_id']), title=['title'], link=body['link'], published=body['published'], published_parsed=body['published_parsed'], author=body['author'],  summary=body['summary'],  tags=body['tags'])
+            put_payload = FeedPost(feed_id=body['feed_id'], title=body['title'], link=body['link'], published=body['published'], published_parsed=body['published_parsed'], author=body['author'],  summary=body['summary'],  tags=body['tags'])
             db.session.add(put_payload)
             db.session.commit()
 
