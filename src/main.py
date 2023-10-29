@@ -287,7 +287,7 @@ def feedpost():
             print(post)
             tmpItem = posts[post].serialize()
             print(tmpItem)
-            for item in posts[post].serialize():
+            for item in tmpItem.items():
                 print(item)
                 values.append(item)
         return jsonify(values),200
