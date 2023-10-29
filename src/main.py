@@ -279,7 +279,7 @@ def textfile():
 def feedpost():
     if request.method == 'GET':
         posts = FeedPost.query.all()
-        values = []
+        values = {}
         #for item in range(len(post)):
             #values.append({'list position': item, 'id': post[item].id, 'feed_id': post[item].feed_id, "title": post[item].title, "link": post[item].link, "published": post[item].published}) 
         for post in range(len(posts)):
@@ -289,7 +289,7 @@ def feedpost():
             print(tmpItem)
             for item in tmpItem.items():
                 print(item)
-                values.append(item)
+                values.update(item)
         return jsonify(values),200
     if request.method == 'PUT':
         body = request.get_json()
