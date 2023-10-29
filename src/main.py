@@ -319,7 +319,36 @@ def feedpost():
         except Exception as error:
             print(repr(error))
             return ("!!!!" + repr(error))
-            
+        
+@RateLimiter(max_calls=10, period=1)
+@app.route("/addrss", methods=["PUT"])
+@jwt_required(fresh=True)
+def addrss():
+    if request.method == 'PUT':
+        body = request.get_json()
+        if body is None:
+            raise APIException("You need to specify the request body as a json object", status_code=400)
+        if 'update_feed' not in body:
+            raise APIException('You need to specify the update_feed', status_code=400)
+        if 'url' not in body:
+            raise APIException('You need to specify the url', status_code=400)
+        try:
+            print(" -=request below=- ")
+            print(body)
+
+            import feedparser
+            feed = feedparser.parse(body['url'])
+
+            #ip_addr = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
+            put_payload = TextFile(Person(person=body['person_id']), ip="0.0.0.0", url=body['url'], update_feed=body['update_feed'], text=feed)
+            db.session.add(put_payload)
+            db.session.commit()
+
+            return jsonify({
+            "request":body}), 200
+        except Exception as error:
+            print(repr(error))
+            return ("!!!!" + repr(error))
 
 # Register a callback function that takes whatever object is passed in as the
 # identity when creating JWTs and converts it to a JSON serializable format.
