@@ -119,15 +119,15 @@ class FeedPost(db.Model):
     
     def serialize(self):
         return {
-            "id":id,
-            "feed_id": feed_id,
-            "title": title,
-            "link": link,
-            "published": published,
-            "published_parsed": published_parsed,
-            "author": author,
-            "summary": summary,
-            "tags": tags,
+            "id": self.id,
+            "feed_id": self.feed_id,
+            "title": self.title,
+            "link": self.link,
+            "published": self.published,
+            "published_parsed": self.published_parsed,
+            "author": self.author,
+            "summary": self.summary,
+            "tags": self.tags,
         }
 
 association_table = Table(
