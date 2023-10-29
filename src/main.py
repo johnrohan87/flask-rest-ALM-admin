@@ -318,7 +318,7 @@ def feedpost():
             "request":body}), 200
         except Exception as error:
             print(repr(error))
-            return "!!!!" + {'args':jsonify(error.args),'error':error}
+            return ("!!!!" + jsonify({'args':error.args,'error':error}))
             
 
 # Register a callback function that takes whatever object is passed in as the
