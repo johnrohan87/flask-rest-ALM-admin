@@ -338,7 +338,7 @@ def addrss():
 
             import feedparser
             feed = feedparser.parse(body['url'])
-            print("feed -= "+feed+" =-")
+            print("feed -= "+repr(feed)+" =-")
 
             #ip_addr = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
             put_payload = TextFile(person=body['person_id'], ip="0.0.0.0", url=body['url'], update_feed=body['update_feed'], text=feed)
