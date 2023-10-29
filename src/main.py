@@ -338,9 +338,12 @@ def addrss():
 
             import feedparser
             feed = feedparser.parse(body['url'])
-            #print("feed -= "+repr(feed)+" =-")
 
-            #ip_addr = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
+            for item in feed.entries:
+                print("entrie -= "+repr(item)+" =-")
+
+            ip_addr = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
+            print(ip_addr)
             #put_payload = TextFile(person=body['person_id'], ip="0.0.0.0", url=body['url'], update_feed=body['update_feed'], text=jsonify(feed))
             #db.session.add(put_payload)
             #db.session.commit()
