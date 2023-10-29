@@ -285,7 +285,7 @@ def feedpost():
         for item in range(len(post)):
             print(post[item])
             print(item)
-            for name,dict_ in post[item].all():
+            for name,dict_ in post[item]:
                 values.append({item:{dict_:name}})
         return jsonify(values),200
     if request.method == 'PUT':
