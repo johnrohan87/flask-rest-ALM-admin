@@ -278,15 +278,15 @@ def textfile():
 @jwt_required(fresh=True)
 def feedpost():
     if request.method == 'GET':
-        post = FeedPost.query.all()
+        posts = FeedPost.query.all()
         values = []
         #for item in range(len(post)):
             #values.append({'list position': item, 'id': post[item].id, 'feed_id': post[item].feed_id, "title": post[item].title, "link": post[item].link, "published": post[item].published}) 
-        for item in range(len(post)):
-            print(post[item].serialize())
+        for post in range(len(posts)):
+            print(posts[post].serialize())
             print(post)
-            for name,dict_ in post[item].serialize():
-                values.append({item:{dict_:name}})
+            for item in posts[post].serialize():
+                values.append(item)
         return jsonify(values),200
     if request.method == 'PUT':
         body = request.get_json()
