@@ -116,6 +116,19 @@ class FeedPost(db.Model):
 
     def __repr__(self):
         return f"FeedPost(id={self.id!r}, feed_id={self.feed_id!r}, title={self.title!r})"
+    
+    def serialize(self):
+        return {
+            "id":id,
+            "feed_id": feed_id,
+            "title": title,
+            "link": link,
+            "published": published,
+            "published_parsed": published_parsed,
+            "author": author,
+            "summary": summary,
+            "tags": tags,
+        }
 
 association_table = Table(
     "association_table",
