@@ -346,11 +346,12 @@ def addrss():
             db.session.add(put_payload)
             db.session.commit()
             db.session.refresh(put_payload)
-            print(repr(put_payload))
+            print(repr(put_payload.serialize()))
+            tmpTargetTextFile = put_payload.serialize().id
 
             for item in feed.entries:
                 print("entrie -= "+repr(item)+" =-")
-                put_payload = FeedPost(feed_id=body['feed_id'], title=item.title, link=item.link, published=item.published, published_parsed=item.published_parsed, author=item.author,  summary=item.summary,  tags=item.tags)
+                put_payload = FeedPost(feed_id=tmpTargetTextFile, title=item.title, link=item.link, published=item.published, published_parsed=item.published_parsed, author=item.author,  summary=item.summary,  tags=item.tags)
                 db.session.add(put_payload)
                 db.session.commit()
 
