@@ -347,7 +347,7 @@ def addrss():
             db.session.commit()
             db.session.refresh(put_payload)
             print(repr(put_payload.serialize()))
-            tmpTargetTextFile = put_payload.serialize().id
+            tmpTargetTextFile = put_payload.serialize()['file id']
 
             for item in feed.entries:
                 print("entrie -= "+repr(item)+" =-")
