@@ -351,19 +351,19 @@ def addrss():
 
             for item in feed.entries:
                 print("entrie -= "+repr(item)+" =-")
-                if item.title: tmpTitle = item.title 
+                if item.has_key('title'): tmpTitle = item.title 
                 else: tmpTitle = "No Title"
-                if item.link: tmpLink = item.link 
+                if item.has_key('link'): tmpLink = item.link 
                 else: tmpLink = "No Link"
-                if item.published: tmpPublished = item.published 
+                if item.has_key('published'): tmpPublished = item.published 
                 else: tmpPublished = "No Published"
-                if item.published_parsed: tmpPublishedParsed = item.published_parsed 
+                if item.has_key('published_parsed'): tmpPublishedParsed = item.published_parsed 
                 else: tmpPublishedParsed = "No Published_Parsed"
-                if item.author: tmpAuthor = item.author 
+                if item.has_key('author'): tmpAuthor = item.author 
                 else: tmpAuthor = "No Author"
-                if item.summary: tmpSummary = item.summary 
+                if item.has_key('summary'): tmpSummary = item.summary 
                 else: tmpSummary = "No Summary"
-                if item.tags: tmpTags = item.tags 
+                if item.has_key('tags'): tmpTags = item.tags 
                 else: tmpTags = "No Tags"
 
                 put_payload = FeedPost(feed_id=tmpTargetTextFile, title=tmpTitle, link=tmpLink, published=tmpPublished, published_parsed=tmpPublishedParsed, author=tmpAuthor,  summary=tmpSummary,  tags=tmpTags)
