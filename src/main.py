@@ -354,22 +354,22 @@ def addrss():
                 print("entrie -= "+repr(item)+" =-")
                 if item.has_key('title'): tmpTitle = item.title 
                 else: tmpTitle = "No Title"
-                print(tmpTitle)
+                print(tmpTitle+" - "+str(type(tmpTitle)))
                 if item.has_key('link'): tmpLink = json.dumps(item.link)
                 else: tmpLink = "No Link"
                 print(tmpLink+" - "+str(type(tmpLink)))
                 if item.has_key('published'): tmpPublished = item.published 
                 else: tmpPublished = "No Published"
-                print(tmpPublished)
+                print(tmpPublished+" - "+str(type(tmpPublished)))
                 if item.has_key('published_parsed'): tmpPublishedParsed = item.published_parsed 
                 else: tmpPublishedParsed = "No Published_Parsed"
-                print(tmpPublishedParsed)
+                print(tmpPublishedParsed+" - "+str(type(tmpPublishedParsed)))
                 if item.has_key('author'): tmpAuthor = item.author 
                 else: tmpAuthor = "No Author"
-                print(tmpAuthor)
+                print(tmpAuthor+" - "+str(type(tmpAuthor)))
                 if item.has_key('summary'): tmpSummary = item.summary 
                 else: tmpSummary = "No Summary"
-                print(tmpSummary)
+                print(tmpSummary+" - "+str(type(tmpSummary)))
                 if item.has_key('tags'): tmpTags = json.dumps(item.tags)
                 else: tmpTags = "No Tags"
                 print(tmpTags+" - "+str(type(tmpTags)))
