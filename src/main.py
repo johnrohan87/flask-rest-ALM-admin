@@ -371,7 +371,7 @@ def addrss():
                 print(tmpSummary)
                 if item.has_key('tags'): tmpTags = repr(item.tags) 
                 else: tmpTags = "No Tags"
-                tmpTags
+                print(tmpTags)
 
                 put_payload = FeedPost(feed_id=tmpTargetTextFile, title=tmpTitle, link=tmpLink, published=tmpPublished, published_parsed=tmpPublishedParsed, author=tmpAuthor, summary=tmpSummary, tags=tmpTags)
                 db.session.add(put_payload)
