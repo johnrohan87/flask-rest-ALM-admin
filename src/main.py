@@ -361,7 +361,7 @@ def addrss():
                 if item.has_key('published'): tmpPublished = item.published 
                 else: tmpPublished = "No Published"
                 print(tmpPublished+" - "+str(type(tmpPublished)))
-                if item.has_key('published_parsed'): tmpPublishedParsed = item.published_parsed 
+                if item.has_key('published_parsed'): tmpPublishedParsed = str(item.published_parsed) 
                 else: tmpPublishedParsed = "No Published_Parsed"
                 print(tmpPublishedParsed+" - "+str(type(tmpPublishedParsed)))
                 if item.has_key('author'): tmpAuthor = item.author 
