@@ -345,6 +345,8 @@ def addrss():
             put_payload = TextFile(person_id=body['person_id'], ip=ip_addr, url=body['url'], update_feed=body['update_feed'], text=({"status":feed.status,"bozo":feed.bozo,"encoding":feed.encoding}))
             db.session.add(put_payload)
             db.session.commit()
+            db.session.refresh(put_payload)
+            print(repr(put_payload))
 
             for item in feed.entries:
                 print("entrie -= "+repr(item)+" =-")
