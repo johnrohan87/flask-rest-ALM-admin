@@ -353,20 +353,27 @@ def addrss():
                 print("entrie -= "+repr(item)+" =-")
                 if item.has_key('title'): tmpTitle = item.title 
                 else: tmpTitle = "No Title"
+                print(tmpTitle)
                 if item.has_key('link'): tmpLink = repr(item.link) 
                 else: tmpLink = "No Link"
+                print(tmpLink)
                 if item.has_key('published'): tmpPublished = item.published 
                 else: tmpPublished = "No Published"
+                print(tmpPublished)
                 if item.has_key('published_parsed'): tmpPublishedParsed = item.published_parsed 
                 else: tmpPublishedParsed = "No Published_Parsed"
+                print(tmpPublishedParsed)
                 if item.has_key('author'): tmpAuthor = item.author 
                 else: tmpAuthor = "No Author"
+                print(tmpAuthor)
                 if item.has_key('summary'): tmpSummary = item.summary 
                 else: tmpSummary = "No Summary"
+                print(tmpSummary)
                 if item.has_key('tags'): tmpTags = repr(item.tags) 
                 else: tmpTags = "No Tags"
+                tmpTags
 
-                put_payload = FeedPost(feed_id=tmpTargetTextFile, title=tmpTitle, link=tmpLink, published=tmpPublished, published_parsed=tmpPublishedParsed, author=tmpAuthor,  summary=tmpSummary,  tags=tmpTags)
+                put_payload = FeedPost(feed_id=tmpTargetTextFile, title=tmpTitle, link=tmpLink, published=tmpPublished, published_parsed=tmpPublishedParsed, author=tmpAuthor, summary=tmpSummary, tags=tmpTags)
                 db.session.add(put_payload)
                 db.session.commit()
 
