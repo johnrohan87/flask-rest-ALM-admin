@@ -341,6 +341,7 @@ def addrss():
             feed = feedparser.parse(body['url'])
 
             ip_addr = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
+            print("adding to TextFile now")
             put_payload = TextFile(person=body['person_id'], ip=ip_addr, url=body['url'], update_feed=body['update_feed'], text=({"status":feed.status,"bozo":feed.bozo,"encoding":feed.encoding}))
             db.session.add(put_payload)
             db.session.commit()
