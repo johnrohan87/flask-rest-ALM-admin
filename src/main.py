@@ -351,7 +351,22 @@ def addrss():
 
             for item in feed.entries:
                 print("entrie -= "+repr(item)+" =-")
-                put_payload = FeedPost(feed_id=tmpTargetTextFile, title=item.title, link=item.link, published=item.published, published_parsed=item.published_parsed, author=item.author,  summary=item.summary,  tags=item.tags)
+                if item.title: tmpTitle = item.title 
+                else: tmpTitle = "No Title"
+                if item.link: tmpLink = item.link 
+                else: tmpLink = "No Link"
+                if item.published: tmpPublished = item.published 
+                else: tmpPublished = "No Published"
+                if item.published_parsed: tmpPublishedParsed = item.published_parsed 
+                else: tmpPublishedParsed = "No Published_Parsed"
+                if item.author: tmpAuthor = item.author 
+                else: tmpAuthor = "No Author"
+                if item.summary: tmpSummary = item.summary 
+                else: tmpSummary = "No Summary"
+                if item.tags: tmpTags = item.tags 
+                else: tmpTags = "No Tags"
+
+                put_payload = FeedPost(feed_id=tmpTargetTextFile, title=tmpTitle, link=tmpLink, published=tmpPublished, published_parsed=tmpPublishedParsed, author=tmpAuthor,  summary=tmpSummary,  tags=tmpTags)
                 db.session.add(put_payload)
                 db.session.commit()
 
