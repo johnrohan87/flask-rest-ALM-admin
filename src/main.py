@@ -370,9 +370,9 @@ def addrss():
                 if item.has_key('summary'): tmpSummary = item.summary 
                 else: tmpSummary = "No Summary"
                 print(tmpSummary)
-                if item.has_key('tags'): tmpTags = jsonify(item.tags)
+                if item.has_key('tags'): tmpTags = str(item.tags)
                 else: tmpTags = "No Tags"
-                print(tmpTags)
+                print(type(item.tags))
 
                 put_payload = FeedPost(feed_id=tmpTargetTextFile, title=tmpTitle, link=tmpLink, published=tmpPublished, published_parsed=tmpPublishedParsed, author=tmpAuthor, summary=tmpSummary, tags=tmpTags)
                 db.session.add(put_payload)
