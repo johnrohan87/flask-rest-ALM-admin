@@ -355,9 +355,9 @@ def addrss():
                 if item.has_key('title'): tmpTitle = item.title 
                 else: tmpTitle = "No Title"
                 print(tmpTitle)
-                if item.has_key('link'): tmpLink = item.link
+                if item.has_key('link'): tmpLink = json.dumps(item.link)
                 else: tmpLink = "No Link"
-                print(tmpLink)
+                print(tmpLink+" - "+type(tmpLink))
                 if item.has_key('published'): tmpPublished = item.published 
                 else: tmpPublished = "No Published"
                 print(tmpPublished)
@@ -372,8 +372,7 @@ def addrss():
                 print(tmpSummary)
                 if item.has_key('tags'): tmpTags = json.dumps(item.tags)
                 else: tmpTags = "No Tags"
-                print(type(item.tags))
-                print(type(tmpTags))
+                print(tmpTags+" - "+type(tmpTags))
 
                 put_payload = FeedPost(feed_id=tmpTargetTextFile, title=tmpTitle, link=tmpLink, published=tmpPublished, published_parsed=tmpPublishedParsed, author=tmpAuthor, summary=tmpSummary, tags=tmpTags)
                 db.session.add(put_payload)
