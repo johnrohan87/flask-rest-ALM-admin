@@ -355,7 +355,7 @@ def addrss():
                 if item.has_key('title'): tmpTitle = item.title 
                 else: tmpTitle = "No Title"
                 print(tmpTitle)
-                if item.has_key('link'): tmpLink = json.dumps(item.link) 
+                if item.has_key('link'): tmpLink = ','.join(item.link) 
                 else: tmpLink = "No Link"
                 print(tmpLink)
                 if item.has_key('published'): tmpPublished = item.published 
@@ -370,7 +370,7 @@ def addrss():
                 if item.has_key('summary'): tmpSummary = item.summary 
                 else: tmpSummary = "No Summary"
                 print(tmpSummary)
-                if item.has_key('tags'): tmpTags = json.dumps(item.tags) 
+                if item.has_key('tags'): tmpTags = ','.join(item.tags)
                 else: tmpTags = "No Tags"
                 print(tmpTags)
 
