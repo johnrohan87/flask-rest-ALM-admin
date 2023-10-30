@@ -353,7 +353,7 @@ def addrss():
                 print("entrie -= "+repr(item)+" =-")
                 if item.has_key('title'): tmpTitle = item.title 
                 else: tmpTitle = "No Title"
-                if item.has_key('link'): tmpLink = jsonify(item.link) 
+                if item.has_key('link'): tmpLink = repr(item.link) 
                 else: tmpLink = "No Link"
                 if item.has_key('published'): tmpPublished = item.published 
                 else: tmpPublished = "No Published"
@@ -363,7 +363,7 @@ def addrss():
                 else: tmpAuthor = "No Author"
                 if item.has_key('summary'): tmpSummary = item.summary 
                 else: tmpSummary = "No Summary"
-                if item.has_key('tags'): tmpTags = jsonify(item.tags) 
+                if item.has_key('tags'): tmpTags = repr(item.tags) 
                 else: tmpTags = "No Tags"
 
                 put_payload = FeedPost(feed_id=tmpTargetTextFile, title=tmpTitle, link=tmpLink, published=tmpPublished, published_parsed=tmpPublishedParsed, author=tmpAuthor,  summary=tmpSummary,  tags=tmpTags)
