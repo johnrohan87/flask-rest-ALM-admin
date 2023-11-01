@@ -41,7 +41,7 @@ class Person(db.Model):
             "password": self.password,
             "salt": self.salt
         }'''
-        return f"<User(id={self.id!r}, email={self.email!r}, roles={self.roles!r}, is_fresh={self.is_fresh!r})>"
+        return f"<User id={self.id!r}, email={self.email!r}, roles={self.roles!r}, is_fresh={self.is_fresh!r} >"
 
     # tell python how convert the class object into a dictionary ready to jsonify
     def serialize(self):
@@ -87,7 +87,7 @@ class TextFile(db.Model):
 
     # tell python how to print the class object on the console
     def __repr__(self):
-        return f"<TextFile(id={self.id!r}, person_id={self.person_id!r}, ip={self.ip!r})>"
+        return f"<TextFile id={self.id!r}, person_id={self.person_id!r}, ip={self.ip!r} >"
 
     # tell python how convert the class object into a dictionary ready to jsonify
     def serialize(self):
