@@ -6,6 +6,13 @@ from sqlalchemy.orm import relationship, DeclarativeBase
 
 db = SQLAlchemy()
 
+association_table = Table(
+    "association",
+    db.Model.metadata,
+    Column("textfile_table_id", Integer, ForeignKey("textfile_table.id"), primary_key=True),
+    Column("feedpost_table_id", Integer, ForeignKey("feedpost_table.id"), primary_key=True),
+)
+
 class User(db.Model):
     __tablename__ = "user"
     id = db.Column(db.Integer, primary_key=True)
@@ -82,7 +89,7 @@ class TextFile(db.Model):
     update_feed = db.Column(db.Boolean, nullable=False)
     url = db.Column(db.Text, nullable=False)
     text = db.Column(db.Text, nullable=False)
-    feeds = relationship('FeedPost', back_populates='feed', collection_class=set, lazy=True, cascade='all,delete')
+    feeds = relationship('FeedPost', secondary=association_table, back_populates='feed', collection_class=set, lazy=True, cascade='all,delete')
 
     person = relationship("Person", back_populates="text_files")
 
@@ -114,7 +121,7 @@ class FeedPost(db.Model):
     summary = db.Column(db.Text, nullable=False)
     tags = db.Column(db.Text, nullable=False)
 
-    feed = relationship("TextFile", back_populates="feeds")
+    feed = relationship("TextFile", secondary=association_table, back_populates="feeds")
 
     def __repr__(self):
         #return f"<FeedPost(id={self.id!r}, feed_id={self.feed_id!r}, title={self.title!r})>"
@@ -132,10 +139,3 @@ class FeedPost(db.Model):
             "summary": self.summary,
             "tags": self.tags,
         }
-
-association_table = Table(
-    "association_table",
-    db.Model.metadata,
-    Column("textfile_table_id", ForeignKey("textfile_table.id"), primary_key=True),
-    Column("feedpost_table_id", ForeignKey("feedpost_table.id"), primary_key=True),
-)
