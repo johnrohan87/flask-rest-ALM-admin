@@ -85,7 +85,7 @@ class Person(db.Model):
 class TextFile(db.Model):
     __tablename__ = "textfile_table"
     id = db.Column(db.Integer, primary_key=True)
-    person_id = db.Column(db.Integer, ForeignKey('person_account.id'))
+    person_id = db.Column(db.Integer, ForeignKey('person_account.id'), nullable=False)
     ip = db.Column(db.String(20),unique=False, nullable=False)
     update_feed = db.Column(db.Boolean, nullable=False)
     url = db.Column(db.Text, nullable=False)
@@ -114,7 +114,7 @@ class TextFile(db.Model):
 class FeedPost(db.Model):
     __tablename__ = "feedpost_table"
     id = db.Column(db.Integer, primary_key=True)
-    feed_id = db.Column(db.Integer, ForeignKey('textfile_table.id'))
+    feed_id = db.Column(db.Integer, ForeignKey('textfile_table.id'), nullable=False)
     title = db.Column(db.Text, nullable=False)
     link = db.Column(db.Text, nullable=False)
     published = db.Column(db.Text, nullable=False) # Unicode string
