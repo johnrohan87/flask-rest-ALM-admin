@@ -129,7 +129,7 @@ class FeedPost(db.Model):
         #return f"<FeedPost(id={self.id!r}, feed_id={self.feed_id!r}, title={self.title!r})>"
         return '<FeedPost FeedID %r>' % self.feed_id
     def __str__(self):
-        f'{self.feed_id} {self.feed}'
+        f'feed_id {self.feed_id} feed {self.feed}'
 
     def serialize(self):
         return {
