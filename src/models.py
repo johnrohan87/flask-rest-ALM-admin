@@ -31,6 +31,9 @@ class User(db.Model):
         }
 
 class Person(db.Model):
+    column_display_pk = True # optional, but I like to see the IDs in the list
+    column_hide_backrefs = False
+    #column_list = ('id', 'name', 'parent')
     __tablename__ = "person_account"
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
@@ -83,6 +86,9 @@ class Person(db.Model):
         return password_hash.hex()
 
 class TextFile(db.Model):
+    column_display_pk = True # optional, but I like to see the IDs in the list
+    column_hide_backrefs = False
+    #column_list = ('id', 'name', 'parent')
     __tablename__ = "textfile_table"
     id = db.Column(db.Integer, primary_key=True)
     person_id = db.Column(db.Integer, ForeignKey('person_account.id'), nullable=False)
@@ -112,6 +118,9 @@ class TextFile(db.Model):
         }
     
 class FeedPost(db.Model):
+    column_display_pk = True # optional, but I like to see the IDs in the list
+    column_hide_backrefs = False
+    #column_list = ('id', 'name', 'parent')
     __tablename__ = "feedpost_table"
     id = db.Column(db.Integer, primary_key=True)
     feed_id = db.Column(db.Integer, ForeignKey('textfile_table.id'), nullable=False)
