@@ -106,7 +106,7 @@ class TextFile(db.Model):
         return '<TextFile Person_id %r>' % self.person_id
     def __str__(self):
         f'{self.person_id} {self.feeds}'
-    # tell python how convert the class object into a dictionary ready to jsonify  
+    # tell python how convert the class object into a dictionary ready to jsonify    
     def serialize(self):
         return {
             "file id": self.id,
