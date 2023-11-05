@@ -34,7 +34,7 @@ class Person(db.Model):
     __tablename__ = "person_account"
     column_display_pk = True # optional, but I like to see the IDs in the list
     column_hide_backrefs = False
-    #column_list = ('id', 'name', 'parent')
+    column_list = ('id', 'email', 'roles', 'password', 'salt', 'is_fresh', 'text_files')
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     roles = db.Column(db.Integer, unique=False, nullable=False)
@@ -89,7 +89,7 @@ class TextFile(db.Model):
     __tablename__ = "textfile_table"
     column_display_pk = True # optional, but I like to see the IDs in the list
     column_hide_backrefs = False
-    #column_list = ('id', 'name', 'parent')
+    column_list = ('id', 'person_id', 'ip', 'update_feed', 'url', 'text', 'person', 'feeds')
     id = db.Column(db.Integer, primary_key=True)
     person_id = db.Column(db.Integer, ForeignKey('person_account.id'), nullable=False)
     ip = db.Column(db.String(20),unique=False, nullable=False)
@@ -122,7 +122,7 @@ class FeedPost(db.Model):
     __tablename__ = "feedpost_table"
     column_display_pk = True # optional, but I like to see the IDs in the list
     column_hide_backrefs = False
-    #column_list = ('id', 'name', 'parent')
+    column_list = ('id', 'feed_id', 'title', 'link', 'published', 'author', 'summary', 'tags', 'feed')
     id = db.Column(db.Integer, primary_key=True)
     feed_id = db.Column(db.Integer, ForeignKey('textfile_table.id'), nullable=False)
     title = db.Column(db.Text, nullable=False)
