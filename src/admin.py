@@ -14,8 +14,11 @@ def setup_admin(app):
         #create_modal = True
         #edit_modal = True
         #form_columns = ('id', 'person_id', 'ip', 'update_feed', 'url', 'text')
-        #column_list = ('id', 'person_id', 'person', 'ip', 'update_feed', 'url', 'text')
+        column_list = ('id', 'person_id', 'person', 'ip', 'update_feed', 'url', 'text')
         #inline_modle = [(Person,dict(form_columns=['id','email','roles','text_files'])),]
+        form_extra_fields = {
+            'person': Person.query.all()
+        }
 
     
     # Add your models here, for example this is how we add a the User model to the admin
