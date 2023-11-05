@@ -41,7 +41,7 @@ class Person(db.Model):
     password = db.Column(db.String(255), nullable=False)
     salt = db.Column(db.String(255), nullable=False)
     is_fresh = db.Column(db.Boolean, nullable=False)
-    text_files = relationship('textfile_table', back_populates='person_account', collection_class=set, lazy=True, cascade='all,delete')
+    text_files = relationship('TextFile', back_populates='person_account', collection_class=set, lazy=True, cascade='all,delete')
 
     # tell python how to print the class object on the console
     def __repr__(self):
@@ -96,9 +96,9 @@ class TextFile(db.Model):
     update_feed = db.Column(db.Boolean, nullable=False)
     url = db.Column(db.Text, nullable=False)
     text = db.Column(db.Text, nullable=False)
-    feeds = relationship('feedpost_table', back_populates='feedpost_table', collection_class=set, lazy=True, cascade='all,delete')
+    feeds = relationship('FeedPost', back_populates='feedpost_table', collection_class=set, lazy=True, cascade='all,delete')
 
-    person = relationship("person_account", back_populates="textfile_table")
+    person = relationship("Person", back_populates="textfile_table")
 
     # tell python how to print the class object on the console
     def __repr__(self):
@@ -132,7 +132,7 @@ class FeedPost(db.Model):
     summary = db.Column(db.Text, nullable=False)
     tags = db.Column(db.Text, nullable=False)
 
-    feed = relationship("textfile_table", back_populates="feedpost_table")
+    feed = relationship("TextFile", back_populates="feedpost_table")
 
     def __repr__(self):
         #return f"<FeedPost(id={self.id!r}, feed_id={self.feed_id!r}, title={self.title!r})>"
