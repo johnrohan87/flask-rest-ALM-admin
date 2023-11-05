@@ -13,7 +13,7 @@ def setup_admin(app):
         column_hide_backrefs = False
         #create_modal = True
         #edit_modal = True
-        form_columns = ('id', 'ip', 'update_feed', 'url', 'text')
+        form_columns = ('id', 'person_id', 'ip', 'update_feed', 'url', 'text')
         inline_modle = ((Person,
                          {
                              'form_columns':{'id', 'text_files'}
