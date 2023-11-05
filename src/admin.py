@@ -14,6 +14,7 @@ def setup_admin(app):
         #create_modal = True
         #edit_modal = True
         #column_searchable_list = ['person_id']
+        form_columns = ('id', 'person_id', 'ip', 'update_feed', 'url', 'text')
         column_editable_list = ('id', 'person_id', 'ip', 'update_feed', 'url', 'text')
         #, 'person', 'feeds'
 
