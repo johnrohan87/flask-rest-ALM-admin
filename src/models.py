@@ -32,7 +32,6 @@ class User(db.Model):
 
 class Person(db.Model):
     __tablename__ = "person_account"
-    #form_columns = ('id', 'email', 'roles', 'password', 'salt', 'is_fresh', 'text_files')
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     roles = db.Column(db.Integer, unique=False, nullable=False)
