@@ -12,8 +12,8 @@ def setup_admin(app):
         column_display_pk = True 
         column_hide_backrefs = False
         ignore_hidden = False
-        #create_modal = True
-        #edit_modal = True
+        create_modal = True
+        edit_modal = True
         #form_columns = ('id', 'person_id', 'ip', 'update_feed', 'url', 'text')
         column_list = ('id', 'person_id', 'ip', 'update_feed', 'url', 'text')
         #inline_modle = [(Person,dict(form_columns=['id','email','roles','text_files'])),]
