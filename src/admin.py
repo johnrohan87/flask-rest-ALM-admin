@@ -11,8 +11,8 @@ def setup_admin(app):
     class TextFileMV(ModelView):
         column_display_pk = True 
         column_hide_backrefs = False
-        create_modal = True
-        edit_modal = True
+        #create_modal = True
+        #edit_modal = True
         #column_searchable_list = ['person_id']
         form_columns = ('id', 'person_id', 'ip', 'update_feed', 'url', 'text', 'person', 'feeds')
 
