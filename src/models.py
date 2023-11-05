@@ -98,7 +98,7 @@ class TextFile(db.Model):
     text = db.Column(db.Text, nullable=False)
     feeds = relationship('FeedPost', back_populates='feed', collection_class=set, lazy=True, cascade='all,delete')
 
-    person = relationship("Person", back_populates="text_files")
+    person = relationship("Person", back_populates=db.backref('owner', lazy='dynamic'))
 
 
     # tell python how to print the class object on the console
@@ -133,7 +133,7 @@ class FeedPost(db.Model):
     summary = db.Column(db.Text, nullable=False)
     tags = db.Column(db.Text, nullable=False)
 
-    feed = relationship("TextFile", back_populates="feeds")
+    feed = relationship("TextFile", back_populates=db.backref('files', lazy='dynamic'))
 
     def __repr__(self):
         #return f"<FeedPost(id={self.id!r}, feed_id={self.feed_id!r}, title={self.title!r})>"
