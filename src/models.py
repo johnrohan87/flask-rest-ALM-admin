@@ -96,9 +96,9 @@ class TextFile(db.Model):
     update_feed = db.Column(db.Boolean, nullable=False)
     url = db.Column(db.Text, nullable=False)
     text = db.Column(db.Text, nullable=False)
-    feeds = relationship('FeedPost', back_populates='feedpost_table', collection_class=set, lazy=True, cascade='all,delete')
+    feeds = relationship('FeedPost', back_populates='feed', collection_class=set, lazy=True, cascade='all,delete')
 
-    person = relationship("Person", back_populates="TextFile")
+    person = relationship("Person", back_populates="text_files")
 
 
     # tell python how to print the class object on the console
@@ -133,7 +133,7 @@ class FeedPost(db.Model):
     summary = db.Column(db.Text, nullable=False)
     tags = db.Column(db.Text, nullable=False)
 
-    feed = relationship("TextFile", back_populates="TextFile")
+    feed = relationship("TextFile", back_populates="person")
 
     def __repr__(self):
         #return f"<FeedPost(id={self.id!r}, feed_id={self.feed_id!r}, title={self.title!r})>"
