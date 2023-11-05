@@ -93,7 +93,7 @@ class TextFile(db.Model):
     url = db.Column(db.Text, nullable=False)
     text = db.Column(db.Text, nullable=False)
 
-    person = relationship("Person", back_populates='text_files')
+    person = relationship(Person, back_populates='text_files')
     feeds = relationship('FeedPost', back_populates='feed', collection_class=set, lazy=True, cascade='all,delete')
 
 
@@ -127,7 +127,7 @@ class FeedPost(db.Model):
     summary = db.Column(db.Text, nullable=False)
     tags = db.Column(db.Text, nullable=False)
 
-    feed = relationship("TextFile", back_populates='feeds')
+    feed = relationship(TextFile, back_populates='feeds')
 
     def __repr__(self):
         #return f"<FeedPost(id={self.id!r}, feed_id={self.feed_id!r}, title={self.title!r})>"
