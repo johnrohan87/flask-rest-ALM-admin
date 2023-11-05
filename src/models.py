@@ -41,7 +41,7 @@ class Person(db.Model):
     password = db.Column(db.String(255), nullable=False)
     salt = db.Column(db.String(255), nullable=False)
     is_fresh = db.Column(db.Boolean, nullable=False)
-    text_files = relationship('TextFile', back_populates='TextFile', collection_class=set, lazy=True, cascade='all,delete')
+    text_files = relationship('TextFile', back_populates='person', collection_class=set, lazy=True, cascade='all,delete')
 
     # tell python how to print the class object on the console
     def __repr__(self):
@@ -98,7 +98,8 @@ class TextFile(db.Model):
     text = db.Column(db.Text, nullable=False)
     feeds = relationship('FeedPost', back_populates='feedpost_table', collection_class=set, lazy=True, cascade='all,delete')
 
-    person = relationship("Person", back_populates="Person")
+    person = relationship("Person", back_populates="TextFile")
+
 
     # tell python how to print the class object on the console
     def __repr__(self):
