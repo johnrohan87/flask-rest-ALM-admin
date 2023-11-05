@@ -31,17 +31,17 @@ class User(db.Model):
         }
 
 class Person(db.Model):
+    __tablename__ = "person_account"
     column_display_pk = True # optional, but I like to see the IDs in the list
     column_hide_backrefs = False
     #column_list = ('id', 'name', 'parent')
-    __tablename__ = "person_account"
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     roles = db.Column(db.Integer, unique=False, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     salt = db.Column(db.String(255), nullable=False)
     is_fresh = db.Column(db.Boolean, nullable=False)
-    text_files = relationship('TextFile', back_populates='person', collection_class=set, lazy=True, cascade='all,delete')
+    text_files = relationship('textfile_table', back_populates='person_account', collection_class=set, lazy=True, cascade='all,delete')
 
     # tell python how to print the class object on the console
     def __repr__(self):
@@ -86,19 +86,19 @@ class Person(db.Model):
         return password_hash.hex()
 
 class TextFile(db.Model):
+    __tablename__ = "textfile_table"
     column_display_pk = True # optional, but I like to see the IDs in the list
     column_hide_backrefs = False
     #column_list = ('id', 'name', 'parent')
-    __tablename__ = "textfile_table"
     id = db.Column(db.Integer, primary_key=True)
     person_id = db.Column(db.Integer, ForeignKey('person_account.id'), nullable=False)
     ip = db.Column(db.String(20),unique=False, nullable=False)
     update_feed = db.Column(db.Boolean, nullable=False)
     url = db.Column(db.Text, nullable=False)
     text = db.Column(db.Text, nullable=False)
-    feeds = relationship('FeedPost', back_populates='feed', collection_class=set, lazy=True, cascade='all,delete')
+    feeds = relationship('feedpost_table', back_populates='feedpost_table', collection_class=set, lazy=True, cascade='all,delete')
 
-    person = relationship("Person", back_populates="text_files")
+    person = relationship("person_account", back_populates="textfile_table")
 
     # tell python how to print the class object on the console
     def __repr__(self):
@@ -118,10 +118,10 @@ class TextFile(db.Model):
         }
     
 class FeedPost(db.Model):
+    __tablename__ = "feedpost_table"
     column_display_pk = True # optional, but I like to see the IDs in the list
     column_hide_backrefs = False
     #column_list = ('id', 'name', 'parent')
-    __tablename__ = "feedpost_table"
     id = db.Column(db.Integer, primary_key=True)
     feed_id = db.Column(db.Integer, ForeignKey('textfile_table.id'), nullable=False)
     title = db.Column(db.Text, nullable=False)
@@ -132,7 +132,7 @@ class FeedPost(db.Model):
     summary = db.Column(db.Text, nullable=False)
     tags = db.Column(db.Text, nullable=False)
 
-    feed = relationship("TextFile", back_populates="feeds")
+    feed = relationship("textfile_table", back_populates="feedpost_table")
 
     def __repr__(self):
         #return f"<FeedPost(id={self.id!r}, feed_id={self.feed_id!r}, title={self.title!r})>"
