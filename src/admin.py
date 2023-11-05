@@ -13,8 +13,8 @@ def setup_admin(app):
         column_hide_backrefs = False
         #create_modal = True
         #edit_modal = True
-        form_columns = ('id', 'person_id', 'ip', 'update_feed', 'url', 'text')
-        inline_modle = [(Person,dict(form_columns=['id','email','roles','text_files'])),]
+        form_columns = ('id', 'person_id', 'person', 'feeds', 'ip', 'update_feed', 'url', 'text')
+        #inline_modle = [(Person,dict(form_columns=['id','email','roles','text_files'])),]
 
     
     # Add your models here, for example this is how we add a the User model to the admin
