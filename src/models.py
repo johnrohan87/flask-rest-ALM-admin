@@ -92,7 +92,6 @@ class TextFile(db.Model):
     update_feed = db.Column(db.Boolean, nullable=False)
     url = db.Column(db.Text, nullable=False)
     text = db.Column(db.Text, nullable=False)
-
     person = relationship(Person, back_populates='text_files')
     feeds = relationship('FeedPost', back_populates='feed', collection_class=set, lazy=True, cascade='all,delete')
 
