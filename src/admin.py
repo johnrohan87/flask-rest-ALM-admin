@@ -11,6 +11,8 @@ def setup_admin(app):
     class PersonMV(ModelView):
         column_display_pk = True # optional, but I like to see the IDs in the list
         column_hide_backrefs = False
+        create_modal = True
+        edit_modal = True
 
     
     # Add your models here, for example this is how we add a the User model to the admin
