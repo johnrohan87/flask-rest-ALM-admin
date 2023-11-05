@@ -13,10 +13,7 @@ def setup_admin(app):
         column_hide_backrefs = False
         #create_modal = True
         #edit_modal = True
-        #column_searchable_list = ['person_id']
-        #form_columns = ('id', 'ip', 'update_feed', 'url', 'text')
-        #column_editable_list = ('id', 'ip', 'update_feed', 'url', 'text')
-        inline_models = (Person, )
+        form_columns = ('id', Person.id, 'ip', 'update_feed', 'url', 'text')
 
     
     # Add your models here, for example this is how we add a the User model to the admin
