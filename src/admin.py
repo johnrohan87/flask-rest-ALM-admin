@@ -16,7 +16,7 @@ def setup_admin(app):
         #column_searchable_list = ['person_id']
         #form_columns = ('id', 'ip', 'update_feed', 'url', 'text')
         #column_editable_list = ('id', 'ip', 'update_feed', 'url', 'text')
-        inline_models = (TextFile, )
+        inline_models = (Person, )
 
     
     # Add your models here, for example this is how we add a the User model to the admin
