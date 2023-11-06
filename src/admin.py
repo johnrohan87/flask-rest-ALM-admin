@@ -19,11 +19,21 @@ def setup_admin(app):
         column_list = ('id', 'person_id', 'person', 'feeds', 'ip', 'update_feed', 'url', 'text')
         #inline_modle = [(Person,dict(form_columns=['id','email','roles','text_files'])),]
 
+    class ManySideObjView(ModelView):
+        def edit_form(self, obj):
+            form = super(ManySideObjView, self).edit_form(obj)
+
+            query = self.session.query(OneSideObj).filter(
+                        (OneSideObj.active == False) | (OneSideObj.many_side_obj_id == obj.id))
+
+            form.one_side_objs.query = query
+            return form
+
     
     # Add your models here, for example this is how we add a the User model to the admin
     admin.add_view(ModelView(User, db.session))
     admin.add_view(ModelView(Person, db.session))
-    admin.add_view(TextFileMV(TextFile, db.session))
+    admin.add_view(ManySideObjView(TextFile, db.session))
     admin.add_view(ModelView(FeedPost, db.session))
 
     # You can duplicate that line to add mew models
