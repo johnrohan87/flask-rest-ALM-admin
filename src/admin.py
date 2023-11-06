@@ -20,6 +20,9 @@ def setup_admin(app):
         #inline_modle = [(Person,dict(form_columns=['id','email','roles','text_files'])),]
 
     class ManySideObjView(ModelView):
+        column_display_pk = True 
+        column_hide_backrefs = False
+        column_display_all_relations = True
         def edit_form(self, obj):
             form = super(ManySideObjView, self).edit_form(obj)
 
