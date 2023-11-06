@@ -15,22 +15,9 @@ def setup_admin(app):
         #ignore_hidden = False
         #create_modal = True
         #edit_modal = True
-        form_columns = ['id', 'person_id', 'ip', 'update_feed', 'url', 'text']
+        form_columns = ['id', 'person_id', 'person', 'ip', 'update_feed', 'url', 'text']
         column_list = ('id', 'person_id', 'person', 'feeds', 'ip', 'update_feed', 'url', 'text')
         #inline_modle = [(Person,dict(form_columns=['id','email','roles','text_files'])),]
-
-    class ManySideObjView(ModelView):
-        column_display_pk = True 
-        column_hide_backrefs = False
-        column_display_all_relations = True
-        def edit_form(self, obj):
-            form = super(ManySideObjView, self).edit_form(obj)
-
-            query = self.session.query(OneSideObj).filter(
-                        (OneSideObj.active == False) | (OneSideObj.many_side_obj_id == obj.id))
-
-            form.one_side_objs.query = query
-            return form
 
     
     # Add your models here, for example this is how we add a the User model to the admin
