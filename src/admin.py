@@ -16,7 +16,7 @@ def setup_admin(app):
         #create_modal = True
         #edit_modal = True
         #form_columns = ('id', 'person_id', 'ip', 'update_feed', 'url', 'text')
-        form_columns = ('id', 'person_account.email')
+        form_columns = ['id', 'person_account.email']
         column_list = ('id', 'person_id', 'person_account', 'ip', 'update_feed', 'url', 'text')
         #inline_modle = [(Person,dict(form_columns=['id','email','roles','text_files'])),]
 
