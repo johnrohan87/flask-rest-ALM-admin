@@ -129,7 +129,7 @@ class FeedPost(db.Model):
 
     def __repr__(self):
         #return f"<FeedPost(id={self.id!r}, feed_id={self.feed_id!r}, title={self.title!r})>"
-        return '<FeedPost FeedID %r>' % self.feed_id
+        return f'<FeedPost FeedID:{self.id}, Title:{self.title}>'  
     def __str__(self):
         f'feed_id {self.feed_id} feed {self.feed} '
 
