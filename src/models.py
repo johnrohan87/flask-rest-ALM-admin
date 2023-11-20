@@ -92,7 +92,7 @@ class TextFile(db.Model):
     url = db.Column(db.Text, nullable=False)
     text = db.Column(db.Text, nullable=False)
     person = relationship('Person', back_populates='text_files')
-    feeds = relationship('FeedPost', back_populates='feed', collection_class=set, lazy='select', cascade='all,delete')
+    feeds = relationship('FeedPost', back_populates='feed', collection_class=set, lazy='subquery', cascade='all,delete')
 
 
     # tell python how to print the class object on the console
