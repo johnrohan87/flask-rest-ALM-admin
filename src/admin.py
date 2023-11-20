@@ -20,18 +20,18 @@ def setup_admin(app):
         column_list = ['id', 'person_id', 'person', 'feeds', 'ip', 'update_feed', 'url', 'text']
 
     class FeedMV(ModelView):
-        column_display_pk = True 
+        #column_display_pk = True 
         #column_hide_backrefs = False
         #column_display_all_relations = True
         #form_columns = ['feed_id', 'title', 'link', 'published', 'published_parsed', 'author', 'summary', 'tags']
-        column_list = ['id', 'feed', 'title', 'link', 'published', 'published_parsed', 'author', 'summary', 'tags']
+        column_list = ['id', 'title', 'link', 'published', 'published_parsed', 'author', 'summary', 'tags']
 
     
     # Add your models here, for example this is how we add a the User model to the admin
     admin.add_view(ModelView(User, db.session))
     admin.add_view(ModelView(Person, db.session))
     admin.add_view(TextFileMV(TextFile, db.session))
-    admin.add_view(ModelView(FeedPost, db.session))
+    admin.add_view(FeedMV(FeedPost, db.session))
 
     # You can duplicate that line to add mew models
     # admin.add_view(ModelView(YourModelName, db.session))
