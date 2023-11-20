@@ -24,7 +24,7 @@ def setup_admin(app):
         #column_hide_backrefs = False
         #column_display_all_relations = True
         #form_columns = ['feed_id', 'title', 'link', 'published', 'published_parsed', 'author', 'summary', 'tags']
-        column_list = ['id', 'feed_id', 'feed', 'title', 'link', 'published', 'published_parsed', 'author', 'summary', 'tags']
+        column_list = ['id', 'feed', 'title', 'link', 'published', 'published_parsed', 'author', 'summary', 'tags']
 
     
     # Add your models here, for example this is how we add a the User model to the admin
