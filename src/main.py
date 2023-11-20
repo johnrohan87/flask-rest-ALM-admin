@@ -399,7 +399,7 @@ def addrss():
             #Running FeedParser to check status of feed
             import feedparser
             feed = feedparser.parse(body['url'])
-            feedKeys = feed.keys()
+            feedKeys = list(feed)
             feedLen = len(feed.entries)
             print(feedKeys)
 
