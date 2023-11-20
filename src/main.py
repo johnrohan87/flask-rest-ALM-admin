@@ -321,7 +321,7 @@ def feedpost():
             return ("!!!!" + repr(error))
         
 @RateLimiter(max_calls=10, period=1)
-@app.route("/addrss", methods=["PUT"])
+@app.route("/addrss", methods=["PUT","POST"])
 @jwt_required(fresh=True)
 def addrss():
     if request.method == 'PUT':
@@ -381,6 +381,33 @@ def addrss():
             return jsonify({
             "request":body,
             "response":feed}), 200
+        except Exception as error:
+            print(repr(error))
+            return ("!!!!" + repr(error))
+    if request.method == 'POST':
+        body = request.get_json()
+        if body is None:
+            raise APIException("You need to specify the request body as a json object", status_code=400)
+        if 'update_feed' not in body:
+            raise APIException('You need to specify the update_feed', status_code=400)
+        if 'url' not in body:
+            raise APIException('You need to specify the url', status_code=400)
+        try:
+            print(" -=request below=- ")
+            print(body)
+
+            #Running FeedParser to check status of feed
+            import feedparser
+            feed = feedparser.parse(body['url'])
+            feedKeys = feed.keys()
+            feedLen = len(feed.entries)
+
+            return jsonify({
+            "request":body,
+            "response":feed,
+            "feedKeys":[feedKeys],
+            "feedLen":feedLen
+            }), 200
         except Exception as error:
             print(repr(error))
             return ("!!!!" + repr(error))
