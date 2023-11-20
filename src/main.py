@@ -406,7 +406,7 @@ def addrss():
             return jsonify({
             "request":body,
             "response":feed,
-            "feedKeys":{[feedKeys,]},
+            "feedKeys":feedKeys,
             "feedLen":feedLen
             }), 200
         except Exception as error:
