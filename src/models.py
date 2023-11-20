@@ -38,7 +38,7 @@ class Person(db.Model):
     password = db.Column(db.String(255), nullable=False)
     salt = db.Column(db.String(255), nullable=False)
     is_fresh = db.Column(db.Boolean, nullable=False)
-    text_files = relationship('TextFile', backref=backref('person', lazy='joined'), uselist=True, collection_class=set, lazy=True, cascade='all,delete')
+    text_files = relationship('TextFile', backref=backref('Person', lazy='joined'), uselist=True, collection_class=set, lazy=True, cascade='all,delete')
 
     # tell python how to print the class object on the console
     def __repr__(self):
