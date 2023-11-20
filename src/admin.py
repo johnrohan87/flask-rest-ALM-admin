@@ -18,7 +18,13 @@ def setup_admin(app):
         #edit_modal = True
         form_columns = ['person_id', 'ip', 'update_feed', 'url', 'text']
         column_list = ('id', 'person_id', 'person', 'feeds', 'ip', 'update_feed', 'url', 'text')
-        #inline_modle = [(Person,dict(form_columns=['id','email','roles','text_files'])),]
+
+    class TextFileMV(ModelView):
+        column_display_pk = True 
+        column_hide_backrefs = False
+        column_display_all_relations = True
+        #form_columns = ['person_id', 'ip', 'update_feed', 'url', 'text']
+        column_list = ('id', 'feed_id', 'title', 'link', 'published', 'published_parsed', 'author', 'summary', 'tags')
 
     
     # Add your models here, for example this is how we add a the User model to the admin
