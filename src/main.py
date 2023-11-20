@@ -401,11 +401,12 @@ def addrss():
             feed = feedparser.parse(body['url'])
             feedKeys = feed.keys()
             feedLen = len(feed.entries)
+            print(feedKeys)
 
             return jsonify({
             "request":body,
             "response":feed,
-            "feedKeys":[feedKeys],
+            "feedKeys":{[feedKeys,]},
             "feedLen":feedLen
             }), 200
         except Exception as error:
