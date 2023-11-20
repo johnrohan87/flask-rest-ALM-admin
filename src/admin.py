@@ -23,7 +23,7 @@ def setup_admin(app):
         column_display_pk = True 
         column_hide_backrefs = False
         column_display_all_relations = True
-        form_column = ( 'title', 'link', 'published', 'published_parsed', 'author', 'summary', 'tags')
+        form_column = ['feed_id', 'title', 'link', 'published', 'published_parsed', 'author', 'summary', 'tags']
         column_list = ('id', 'feed_id', 'feed', 'title', 'link', 'published', 'published_parsed', 'author', 'summary', 'tags')
 
     
