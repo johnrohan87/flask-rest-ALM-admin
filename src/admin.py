@@ -19,7 +19,7 @@ def setup_admin(app):
         form_columns = ['person_id', 'ip', 'update_feed', 'url', 'text']
         column_list = ('id', 'person_id', 'person', 'feeds', 'ip', 'update_feed', 'url', 'text')
 
-    class TextFileMV(ModelView):
+    class FeedMV(ModelView):
         column_display_pk = True 
         column_hide_backrefs = False
         column_display_all_relations = True
@@ -31,7 +31,7 @@ def setup_admin(app):
     admin.add_view(ModelView(User, db.session))
     admin.add_view(ModelView(Person, db.session))
     admin.add_view(TextFileMV(TextFile, db.session))
-    admin.add_view(ModelView(FeedPost, db.session))
+    admin.add_view(ModelView(FeedMV, db.session))
 
     # You can duplicate that line to add mew models
     # admin.add_view(ModelView(YourModelName, db.session))
