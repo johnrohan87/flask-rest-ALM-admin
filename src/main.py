@@ -428,7 +428,14 @@ def user_lookup_callback(_jwt_header, jwt_data):
     identity = jwt_data["sub"]
     return Person.query.filter_by(id=identity).one_or_none()
 
-
+#preflight options request
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        res = Response()
+        res.headers['X-Content-Type-Options'] = '*'
+        return res
+    
 # adding todo app
 @RateLimiter(max_calls=10, period=1)
 @app.route("/api/todos<int:todo_id>", methods=["GET","POST","PUT","DELETE"])
