@@ -438,7 +438,7 @@ def user_lookup_callback(_jwt_header, jwt_data):
     
 # adding todo app
 @RateLimiter(max_calls=10, period=1)
-@app.route("/api/todos", methods=["GET"])
+@app.route("/api/todos", methods=["GET", "POST"])
 @jwt_required(fresh=True)
 #@cross_origin(origin='*',headers=['Content-Type','Authorization'])
 def todoAppGet():
@@ -447,18 +447,7 @@ def todoAppGet():
         todos = Todo.query.filter_by(userID=user_id).all()
         todos_list = [{'id': todo.id, 'text': todo.text} for todo in todos]
         return jsonify(todos_list), 200
-
-@RateLimiter(max_calls=10, period=1)
-@app.route("/api/todos/<int:todo_id>", methods=["POST","PUT","DELETE"])
-@jwt_required(fresh=True)
-#@cross_origin(origin='*',headers=['Content-Type','Authorization'])
-def todoApp():
-    if request.method == 'GET':
-        user_id = get_jwt_identity()
-        todos = Todo.query.filter_by(userID=user_id).all()
-        todos_list = [{'id': todo.id, 'text': todo.text} for todo in todos]
-        return jsonify(todos_list), 200
-
+    
     if request.method == 'POST':
         user_id = get_jwt_identity()
         data = request.json
@@ -469,6 +458,11 @@ def todoApp():
         db.session.commit()
         return jsonify({'id': new_todo.id, 'text': new_todo.text}), 201
 
+@RateLimiter(max_calls=10, period=1)
+@app.route("/api/todos/<int:todo_id>", methods=["POST","PUT","DELETE"])
+@jwt_required(fresh=True)
+#@cross_origin(origin='*',headers=['Content-Type','Authorization'])
+def todoApp():
     if request.method == 'PUT':
         user_id = get_jwt_identity()
         data = request.json
