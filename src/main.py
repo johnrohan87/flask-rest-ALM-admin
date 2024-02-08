@@ -462,7 +462,7 @@ def todoAppGet():
 @app.route("/api/todos/<int:todo_id>", methods=["PUT","DELETE"])
 @jwt_required(fresh=True)
 #@cross_origin(origin='*',headers=['Content-Type','Authorization'])
-def todoApp():
+def todoApp(todo_id):
     if request.method == 'PUT':
         user_id = get_jwt_identity()
         data = request.json
