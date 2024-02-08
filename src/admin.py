@@ -26,11 +26,18 @@ def setup_admin(app):
         form_columns = ['feed_id', 'title', 'link', 'published', 'published_parsed', 'author', 'summary', 'tags']
         column_list = ['id', 'feed_id', 'title', 'link', 'published', 'published_parsed', 'author', 'summary', 'tags']
 
+    class ToDoMV(ModelView):
+            #column_display_pk = True 
+            #column_hide_backrefs = False
+            #column_display_all_relations = True
+            form_columns = ['id', 'text', 'userID', 'permissions']
+            column_list = ['id', 'text', 'userID', 'permissions']
+
     
     # Add your models here, for example this is how we add a the User model to the admin
     admin.add_view(ModelView(User, db.session))
     admin.add_view(ModelView(Person, db.session))
-    admin.add_view(ModelView(Todo, db.session))
+    admin.add_view(ToDoMV(Todo, db.session))
     admin.add_view(TextFileMV(TextFile, db.session))
     admin.add_view(FeedMV(FeedPost, db.session))
 
