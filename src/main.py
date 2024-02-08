@@ -438,10 +438,10 @@ def user_lookup_callback(_jwt_header, jwt_data):
     
 # adding todo app
 @RateLimiter(max_calls=10, period=1)
-@app.route("/api/todos", methods=["GET", "POST"])
+@app.route("/api/todos/<int:todo_id>", methods=["GET", "POST", "PUT", "DELETE"])
 @jwt_required(fresh=True)
 #@cross_origin(origin='*',headers=['Content-Type','Authorization'])
-def todoAppGet():
+def todoApp(todo_id):
     if request.method == 'GET':
         user_id = get_jwt_identity()
         todos = Todo.query.filter_by(userID=user_id).all()
@@ -457,12 +457,7 @@ def todoAppGet():
         db.session.add(new_todo)
         db.session.commit()
         return jsonify({'id': new_todo.id, 'text': new_todo.text}), 201
-
-@RateLimiter(max_calls=10, period=1)
-@app.route("/api/todos/<int:todo_id>", methods=["PUT","DELETE"])
-@jwt_required(fresh=True)
-#@cross_origin(origin='*',headers=['Content-Type','Authorization'])
-def todoApp(todo_id):
+    
     if request.method == 'PUT':
         user_id = get_jwt_identity()
         data = request.json
