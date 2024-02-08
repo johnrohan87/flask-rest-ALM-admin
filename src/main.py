@@ -447,6 +447,8 @@ def todoApp(todo_id):
         user_id = get_jwt_identity()
         todos = Todo.query.filter_by(userID=user_id).all()
         todos_list = [{'id': todo.id, 'text': todo.text} for todo in todos]
+        todos_list.headers.add('Access-Control-Allow-Origin', '*')
+        todos_list.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
         return jsonify(todos_list), 200
     
     if request.method == 'POST':
