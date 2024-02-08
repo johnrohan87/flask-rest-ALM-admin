@@ -429,7 +429,7 @@ def user_lookup_callback(_jwt_header, jwt_data):
     return Person.query.filter_by(id=identity).one_or_none()
 
 #preflight options request
-@app.before_request
+#@app.before_request
 #def handle_preflight():
 #    if request.method == "OPTIONS":
 #        response = jsonify(message="cors is go")
