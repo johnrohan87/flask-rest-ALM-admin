@@ -459,7 +459,7 @@ def todoAppGet():
         return jsonify({'id': new_todo.id, 'text': new_todo.text}), 201
 
 @RateLimiter(max_calls=10, period=1)
-@app.route("/api/todos/<int:todo_id>", methods=["POST","PUT","DELETE"])
+@app.route("/api/todos/<int:todo_id>", methods=["PUT","DELETE"])
 @jwt_required(fresh=True)
 #@cross_origin(origin='*',headers=['Content-Type','Authorization'])
 def todoApp():
