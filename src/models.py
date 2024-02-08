@@ -158,3 +158,4 @@ class Todo(db.Model):
             "text": self.text,
             "userID": self.userID,
             "permissions": self.permissions,
+        }
