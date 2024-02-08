@@ -438,7 +438,7 @@ def handle_preflight():
     
 # adding todo app
 @RateLimiter(max_calls=10, period=1)
-@app.route("/api/todos<int:todo_id>", methods=["GET","POST","PUT","DELETE"])
+@app.route("/api/todos/<int:todo_id>", methods=["GET","POST","PUT","DELETE"])
 @jwt_required(fresh=True)
 @cross_origin(origin='*',headers=['Content-Type','Authorization'])
 def todoApp():
