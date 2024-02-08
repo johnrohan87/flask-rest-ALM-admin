@@ -474,7 +474,8 @@ def todoApp(todo_id):
     if request.method == 'Delete':
         user_id = get_jwt_identity()
         todo = Todo.query.filter_by(id=todo_id, userID=user_id).first_or_404()
-        print(user_id,todo)
+        print(user_id)
+        print(todo)
         db.session.delete(todo)
         db.session.commit()
         return '', 204
