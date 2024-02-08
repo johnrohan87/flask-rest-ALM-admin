@@ -434,6 +434,7 @@ def handle_preflight():
     if request.method == "OPTIONS":
         response = jsonify(message="cors is go")
         response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add('Content-Type','Authorization')
         return response, 200
     
 # adding todo app
