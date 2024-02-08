@@ -145,3 +145,9 @@ class FeedPost(db.Model):
             "summary": self.summary,
             "tags": self.tags,
         }
+    
+    class Todo(db.Model):
+        id = db.Column(db.Integer, primary_key=True)
+        text = db.Column(db.String(100), nullable=False)
+        userID = db.Column(db.Integer, nullable=False)
+        permissions = db.Column(db.String(50), nullable=False, default='guest')

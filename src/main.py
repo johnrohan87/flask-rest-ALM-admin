@@ -12,7 +12,7 @@ from flask_cors import CORS
 from logging import FileHandler,WARNING
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User, Person, TextFile, FeedPost
+from models import db, User, Person, TextFile, FeedPost, Todo
 #from models import Person
 
 from flask_jwt_extended import (create_access_token, 
@@ -427,6 +427,42 @@ def user_identity_lookup(Person):
 def user_lookup_callback(_jwt_header, jwt_data):
     identity = jwt_data["sub"]
     return Person.query.filter_by(id=identity).one_or_none()
+
+
+# adding todo app
+@RateLimiter(max_calls=10, period=1)
+@app.route("/api/todos/<int:todo_id>", methods=["GET","POST","PUT","DELETE"])
+@jwt_required(fresh=True)
+def todoApp():
+    if request.method == 'GET':
+        user_id = get_jwt_identity()
+        todos = Todo.query.filter_by(userID=user_id).all()
+        todos_list = [{'id': todo.id, 'text': todo.text} for todo in todos]
+        return jsonify(todos_list)
+
+    if request.method == 'POST':
+        user_id = get_jwt_identity()
+        data = request.json
+        new_todo = Todo(text=data['text'], userID=user_id)
+        db.session.add(new_todo)
+        db.session.commit()
+        return jsonify({'id': new_todo.id, 'text': new_todo.text}), 201
+
+    if request.method == 'PUT':
+        user_id = get_jwt_identity()
+        data = request.json
+        todo = Todo.query.filter_by(id=todo_id, userID=user_id).first_or_404()
+        todo.text = data['text']
+        db.session.commit()
+        return jsonify({'id': todo.id, 'text': todo.text})
+
+    if request.method == 'Delete':
+        user_id = get_jwt_identity()
+        todo = Todo.query.filter_by(id=todo_id, userID=user_id).first_or_404()
+        db.session.delete(todo)
+        db.session.commit()
+        return '', 204
+
 
 if __name__ == "__main__":
     app.run()
