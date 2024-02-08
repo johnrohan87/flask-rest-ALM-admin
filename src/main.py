@@ -429,18 +429,18 @@ def user_lookup_callback(_jwt_header, jwt_data):
     return Person.query.filter_by(id=identity).one_or_none()
 
 #preflight options request
-#@app.before_request
-#def handle_preflight():
-#    if request.method == "OPTIONS":
-#        response = jsonify(message="cors is go")
-#        response.headers.add("Access-Control-Allow-Origin", "*","Content-Type","Authorization")
-#        return jsonify(response), 200
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        response = jsonify(message="cors is go")
+        response.headers.add("Access-Control-Allow-Origin", "*","Content-Type","Authorization")
+        return jsonify(response), 200
     
 # adding todo app
 @RateLimiter(max_calls=10, period=1)
 @app.route("/api/todos/<int:todo_id>", methods=["GET", "POST", "PUT", "DELETE"])
 @jwt_required(fresh=True)
-@cross_origin(origin='*',headers=['Content-Type','Authorization'])
+#@cross_origin(origin='*',headers=['Content-Type','Authorization'])
 def todoApp(todo_id):
     if request.method == 'GET':
         user_id = get_jwt_identity()
