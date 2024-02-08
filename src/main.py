@@ -443,7 +443,9 @@ def todoApp():
     if request.method == 'POST':
         user_id = get_jwt_identity()
         data = request.json
+        print(data)
         new_todo = Todo(text=data['text'], userID=user_id)
+        print(new_todo)
         db.session.add(new_todo)
         db.session.commit()
         return jsonify({'id': new_todo.id, 'text': new_todo.text}), 201
