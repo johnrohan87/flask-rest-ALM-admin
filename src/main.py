@@ -432,9 +432,9 @@ def user_lookup_callback(_jwt_header, jwt_data):
 @app.before_request
 def handle_preflight():
     if request.method == "OPTIONS":
-        res = Response()
-        res.headers['X-Content-Type-Options'] = '*'
-        return res, 200
+        response = jsonify(message="cors is go")
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        return response, 200
     
 # adding todo app
 @RateLimiter(max_calls=10, period=1)
