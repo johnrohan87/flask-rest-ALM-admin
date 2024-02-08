@@ -146,8 +146,15 @@ class FeedPost(db.Model):
             "tags": self.tags,
         }
     
-    class Todo(db.Model):
-        id = db.Column(db.Integer, primary_key=True)
-        text = db.Column(db.String(100), nullable=False)
-        userID = db.Column(db.Integer, nullable=False)
-        permissions = db.Column(db.String(50), nullable=False, default='guest')
+class Todo(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    text = db.Column(db.String(100), nullable=False)
+    userID = db.Column(db.Integer, nullable=False)
+    permissions = db.Column(db.String(50), nullable=False, default='guest')
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "text": self.text,
+            "userID": self.userID,
+            "permissions": self.permissions,
