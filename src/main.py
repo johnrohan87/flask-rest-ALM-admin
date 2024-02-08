@@ -434,7 +434,7 @@ def handle_preflight():
     if request.method == "OPTIONS":
         response = jsonify(message="cors is go")
         response.headers.add("Access-Control-Allow-Origin", "*","Content-Type","Authorization")
-        return response, 200
+        return jsonify(response), 200
     
 # adding todo app
 @RateLimiter(max_calls=10, period=1)
@@ -446,7 +446,7 @@ def todoApp():
         user_id = get_jwt_identity()
         todos = Todo.query.filter_by(userID=user_id).all()
         todos_list = [{'id': todo.id, 'text': todo.text} for todo in todos]
-        return jsonify(todos_list)
+        return jsonify(todos_list), 200
 
     if request.method == 'POST':
         user_id = get_jwt_identity()
