@@ -433,8 +433,7 @@ def user_lookup_callback(_jwt_header, jwt_data):
 def handle_preflight():
     if request.method == "OPTIONS":
         response = jsonify(message="cors is go")
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        response.headers.add('content-type','authorization')
+        response.headers.add("Access-Control-Allow-Origin", "*","Content-Type","Authorization")
         return response, 200
     
 # adding todo app
