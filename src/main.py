@@ -466,7 +466,7 @@ def todoApp(todo_id):
         db.session.commit()
         return jsonify({'id': todo.id, 'text': todo.text})
 
-    if request.method == 'Delete':
+    if request.method == 'DELETE':
         user_id = get_jwt_identity()
         todo = Todo.query.filter_by(id=todo_id, userID=user_id).first_or_404()
         print(user_id)
