@@ -434,7 +434,7 @@ def handle_preflight():
     if request.method == "OPTIONS":
         res = Response()
         res.headers['X-Content-Type-Options'] = '*'
-        return res
+        return res, 200
     
 # adding todo app
 @RateLimiter(max_calls=10, period=1)
