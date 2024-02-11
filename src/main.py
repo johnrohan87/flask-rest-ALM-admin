@@ -73,6 +73,7 @@ if __name__ == '__main__':
 @RateLimiter(max_calls=10, period=1)
 @app.route("/login", methods=["POST"])
 def login():
+    handle_preflight_request()
     email = request.json.get("email", None)
     password = request.json.get("password", None)
     person = Person.query.filter_by(email=email).one_or_none()
@@ -84,6 +85,7 @@ def login():
     access_token = create_access_token(identity=person, fresh=True)
     refresh_token = create_refresh_token(identity=person)
     return jsonify({"access_token":access_token, "refresh_token":refresh_token}),200
+
 
 
 @RateLimiter(max_calls=10, period=1)
