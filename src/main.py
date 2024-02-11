@@ -482,11 +482,11 @@ def todoAppModify(todo_id, todo_updatedText):
         return handle_preflight_request()
     
 def handle_preflight_request():
-    response = jsonify()
+    response = jsonify({"message": "Login successful"})
     response.headers.add('Access-Control-Allow-Origin', '*')
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
     response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-    return response
+    return response, 200
 
 if __name__ == "__main__":
     app.run()
