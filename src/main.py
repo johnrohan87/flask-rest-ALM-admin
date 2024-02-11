@@ -71,9 +71,10 @@ if __name__ == '__main__':
 # Create a route to authenticate your users and return JWTs. The
 # create_access_token() function is used to actually generate the JWT.
 @RateLimiter(max_calls=10, period=1)
-@app.route("/login", methods=["POST"])
+@app.route("/login", methods=["POST", "OPTIONS"])
 def login():
-    handle_preflight_request()
+    if request.method == 'OPTIONS':
+        return handle_preflight_request()
     email = request.json.get("email", None)
     password = request.json.get("password", None)
     person = Person.query.filter_by(email=email).one_or_none()
