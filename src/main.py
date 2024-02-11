@@ -429,18 +429,18 @@ def user_lookup_callback(_jwt_header, jwt_data):
     identity = jwt_data["sub"]
     return Person.query.filter_by(id=identity).one_or_none()
 
-#preflight options request
-#@app.before_request
-#def handle_preflight():
-#    if request.method == "OPTIONS":
-#        response = jsonify(message="cors is go")
-#        response.headers.add("Access-Control-Allow-Origin", "*","Content-Type","Authorization")
-#        return jsonify(response), 200
+@app.before_request
+def before_request():
+    if request.method == 'OPTIONS':
+        response = app.make_default_options_response()
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE'
+        return response
 @app.after_request
 def after_request(response):
     if request.method == 'OPTIONS':
         response.headers['Access-Control-Allow-Origin'] = '*'
-        response.headers['Access-Control-Allow-Methods'] = 'PUT, DELETE'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE'
     return response
     
 # adding todo app
