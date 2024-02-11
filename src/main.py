@@ -460,21 +460,21 @@ def todoApp():
         return jsonify({'id': new_todo.id, 'text': new_todo.text}), 201
     
 @RateLimiter(max_calls=10, period=1)
-@app.route("/api/todos/<int:todo_id>/", methods=["PUT", "DELETE"])
+@app.route("/api/todos/<int:todo_id>/<str:todo_updatedText>", methods=["PUT", "DELETE"])
 @jwt_required(fresh=True)
 @cross_origin(origin='*')
 #@cross_origin(origin='*',headers=['Content-Type','Authorization'])
-def todoAppModify(todo_id):
+def todoAppModify(todo_id, todo_updatedText):
+    user_id = get_jwt_identity()
+
     if request.method == 'PUT':
-        user_id = get_jwt_identity()
-        data = request.json
         todo = Todo.query.filter_by(id=todo_id, userID=user_id).first_or_404()
-        todo.text = data['text']
+        todo.text = todo_updatedText  # Update the todo text with the new value from the URL path
         db.session.commit()
         return jsonify({'id': todo.id, 'text': todo.text})
 
+
     if request.method == 'DELETE':
-        user_id = get_jwt_identity()
         todo = Todo.query.filter_by(id=todo_id, userID=user_id).first_or_404()
         print(user_id)
         print(todo)
