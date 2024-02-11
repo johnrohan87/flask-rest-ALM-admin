@@ -478,6 +478,7 @@ def todoAppModify(todo_id):
         todo = Todo.query.filter_by(id=todo_id, userID=user_id).first_or_404()
         print(user_id)
         print(todo)
+        print(todo_id)
         db.session.delete(todo)
         db.session.commit()
         return jsonify(todo_id), 204
