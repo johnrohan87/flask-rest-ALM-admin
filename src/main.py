@@ -38,7 +38,7 @@ jwt = JWTManager(app)
 
 MIGRATE = Migrate(app, db)
 db.init_app(app)
-cors = CORS(app, resources={r"/api/*": {"origins": "*"}}, allow_headers=["Content-Type", "Authorization"], methods=["GET", "POST", "PUT", "DELETE"])
+cors = CORS(app, resources={r"/api/*": {"origins": "*"}}, allow_headers=["Content-Type", "Authorization"], methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 setup_admin(app)
 
 # Handle/serialize errors like a JSON object
@@ -452,7 +452,7 @@ def todoApp():
         return jsonify({'id': new_todo.id, 'text': new_todo.text}), 201
     
 @RateLimiter(max_calls=10, period=1)
-@app.route("/api/todos/<int:todo_id>/<string:todo_updatedText>", methods=["PUT", "DELETE"])
+@app.route("/api/todos/<int:todo_id>/<string:todo_updatedText>", methods=["PUT", "DELETE", "OPTIONS"])
 @jwt_required(fresh=True)
 @cross_origin(origin='*')
 #@cross_origin(origin='*',headers=['Content-Type','Authorization'])
@@ -474,7 +474,12 @@ def todoAppModify(todo_id, todo_updatedText):
         db.session.delete(todo)
         db.session.commit()
         return jsonify({'id':todo.id, 'text': todo.text}), 200
-
+    
+    if request.method == 'OPTIONS':
+        response = jsonify({"message": "allowed"})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+        return response, 200
 
 if __name__ == "__main__":
     app.run()
