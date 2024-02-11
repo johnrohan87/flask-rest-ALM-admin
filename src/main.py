@@ -71,10 +71,8 @@ if __name__ == '__main__':
 # Create a route to authenticate your users and return JWTs. The
 # create_access_token() function is used to actually generate the JWT.
 @RateLimiter(max_calls=10, period=1)
-@app.route("/login", methods=["POST", "OPTIONS"])
+@app.route("/login", methods=["POST"])
 def login():
-    if request.method == 'OPTIONS':
-        return handle_preflight_request()
     email = request.json.get("email", None)
     password = request.json.get("password", None)
     person = Person.query.filter_by(email=email).one_or_none()
@@ -85,7 +83,11 @@ def login():
     print(person)
     access_token = create_access_token(identity=person, fresh=True)
     refresh_token = create_refresh_token(identity=person)
-    return jsonify({"access_token":access_token, "refresh_token":refresh_token}),200
+    response = jsonify({"access_token":access_token, "refresh_token":refresh_token})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+    return response,200
 
 
 
@@ -479,14 +481,14 @@ def todoAppModify(todo_id, todo_updatedText):
         return jsonify({'id':todo.id, 'text': todo.text}), 200
     
     if request.method == 'OPTIONS':
-        return handle_preflight_request()
+        return handle_preflight_request(), 200
     
 def handle_preflight_request():
     response = jsonify({"message": "Login successful"})
     response.headers.add('Access-Control-Allow-Origin', '*')
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
     response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-    return response, 200
+    return response
 
 if __name__ == "__main__":
     app.run()
