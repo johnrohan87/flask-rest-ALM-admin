@@ -467,7 +467,7 @@ def todoAppModify(todo_id, todo_updatedText):
         todo = Todo.query.filter_by(id=todo_id, userID=user_id).first_or_404()
         todo.text = todo_updatedText  # Update the todo text with the new value from the URL path
         db.session.commit()
-        return jsonify({'id': todo.id, 'text': todo.text})
+        return _corsify_actual_response(jsonify({'id': todo.id, 'text': todo.text})), 200
 
 
     if request.method == 'DELETE':
