@@ -38,7 +38,7 @@ jwt = JWTManager(app)
 
 MIGRATE = Migrate(app, db)
 db.init_app(app)
-CORS(app)
+CORS(app, resources={r"/api/*": {"origins": "*"}}, allow_headers=["Content-Type"])
 setup_admin(app)
 
 # Handle/serialize errors like a JSON object
@@ -428,20 +428,6 @@ def user_identity_lookup(Person):
 def user_lookup_callback(_jwt_header, jwt_data):
     identity = jwt_data["sub"]
     return Person.query.filter_by(id=identity).one_or_none()
-
-@app.before_request
-def before_request():
-    if request.method == 'OPTIONS':
-        response = app.make_default_options_response()
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE'
-        return response
-@app.after_request
-def after_request(response):
-    if request.method == 'OPTIONS':
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE'
-    return response
     
 # adding todo app
 @RateLimiter(max_calls=10, period=1)
