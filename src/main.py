@@ -30,7 +30,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DB_CONNECTION_STRING')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=15)
 app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=30)
-app.config['CORS_HEADERS'] = 'Content-Type'
+app.config['CORS_HEADERS'] = 'Content-Type, Authorization'
 
 # Setup the Flask-JWT-Extended extension
 app.config["JWT_SECRET_KEY"] = os.environ.get('JWT_SECRET_KEY')
@@ -38,7 +38,7 @@ jwt = JWTManager(app)
 
 MIGRATE = Migrate(app, db)
 db.init_app(app)
-cors = CORS()
+cors = CORS(app)
 setup_admin(app)
 
 # Handle/serialize errors like a JSON object
@@ -73,6 +73,8 @@ if __name__ == '__main__':
 @RateLimiter(max_calls=10, period=1)
 @app.route("/login", methods=["POST"])
 def login():
+    if request.method == "OPTIONS": # CORS preflight
+        return _build_cors_preflight_response()
     email = request.json.get("email", None)
     password = request.json.get("password", None)
     person = Person.query.filter_by(email=email).one_or_none()
@@ -84,10 +86,7 @@ def login():
     access_token = create_access_token(identity=person, fresh=True)
     refresh_token = create_refresh_token(identity=person)
     response = jsonify({"access_token":access_token, "refresh_token":refresh_token})
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-    return response,200
+    return _corsify_actual_response(response),200
 
 
 
@@ -480,14 +479,18 @@ def todoAppModify(todo_id, todo_updatedText):
         db.session.commit()
         return jsonify({'id':todo.id, 'text': todo.text}), 200
     
-    if request.method == 'OPTIONS':
-        return handle_preflight_request(), 200
+    if request.method == "OPTIONS": # CORS preflight
+        return _build_cors_preflight_response()
     
-def handle_preflight_request():
-    response = jsonify({"message": "Login successful"})
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+def _build_cors_preflight_response():
+    response = make_response()
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers.add('Access-Control-Allow-Headers', "*")
+    response.headers.add('Access-Control-Allow-Methods', "*")
+    return response
+
+def _corsify_actual_response(response):
+    response.headers.add("Access-Control-Allow-Origin", "*")
     return response
 
 if __name__ == "__main__":
