@@ -478,11 +478,10 @@ def todoAppModify(todo_id):
         todo = Todo.query.filter_by(id=todo_id, userID=user_id).first_or_404()
         print(user_id)
         print(todo)
-        print(todo_id)
-        idHolder = todo_id
+        print(todo.id)
         db.session.delete(todo)
         db.session.commit()
-        return jsonify({'id':idHolder}), 204
+        return jsonify({'id':todo.id, 'text': todo.text}), 204
 
 
 if __name__ == "__main__":
