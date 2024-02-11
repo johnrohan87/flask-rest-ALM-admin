@@ -436,6 +436,12 @@ def user_lookup_callback(_jwt_header, jwt_data):
 #        response = jsonify(message="cors is go")
 #        response.headers.add("Access-Control-Allow-Origin", "*","Content-Type","Authorization")
 #        return jsonify(response), 200
+@app.after_request
+def after_request(response):
+    if request.method == 'OPTIONS':
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'PUT, DELETE'
+    return response
     
 # adding todo app
 @RateLimiter(max_calls=10, period=1)
