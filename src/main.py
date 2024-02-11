@@ -453,7 +453,7 @@ def todoApp():
         print(new_todo)
         db.session.add(new_todo)
         db.session.commit()
-        return jsonify({'id': new_todo.id, 'text': new_todo.text}), 201
+        return _corsify_actual_response(jsonify({'id': new_todo.id, 'text': new_todo.text})), 201
     
 @RateLimiter(max_calls=10, period=1)
 @app.route("/api/todos/<int:todo_id>/<string:todo_updatedText>", methods=["PUT", "DELETE", "OPTIONS"])
