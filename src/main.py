@@ -38,7 +38,7 @@ jwt = JWTManager(app)
 
 MIGRATE = Migrate(app, db)
 db.init_app(app)
-cors = CORS(app, resources={r"/api/*": {"origins": "*"}}, allow_headers=["Content-Type", "Authorization"], methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+cors = CORS()
 setup_admin(app)
 
 # Handle/serialize errors like a JSON object
