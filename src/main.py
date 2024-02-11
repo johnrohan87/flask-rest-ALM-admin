@@ -477,7 +477,7 @@ def todoAppModify(todo_id, todo_updatedText):
         print(todo.id)
         db.session.delete(todo)
         db.session.commit()
-        return jsonify({'id':todo.id, 'text': todo.text}), 200
+        return _corsify_actual_response(jsonify({'id':todo.id, 'text': todo.text})), 200
     
     if request.method == "OPTIONS": # CORS preflight
         return _build_cors_preflight_response()
