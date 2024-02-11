@@ -479,7 +479,7 @@ def todoAppModify(todo_id):
         print(user_id)
         print(todo)
         print(todo_id)
-        idHolder = {'id':todo_id}
+        idHolder = todo_id
         db.session.delete(todo)
         db.session.commit()
         return jsonify(idHolder), 204
