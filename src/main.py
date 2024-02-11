@@ -481,7 +481,7 @@ def todoAppModify(todo_id):
         print(todo_id)
         db.session.delete(todo)
         db.session.commit()
-        return str(todo_id), 204
+        return jsonify({'id': todo_id}), 204
 
 
 if __name__ == "__main__":
