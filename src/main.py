@@ -476,10 +476,14 @@ def todoAppModify(todo_id, todo_updatedText):
         return jsonify({'id':todo.id, 'text': todo.text}), 200
     
     if request.method == 'OPTIONS':
-        response = jsonify({"message": "allowed"})
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-        return response, 200
+        return handle_preflight_request()
+    
+def handle_preflight_request():
+    response = jsonify()
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+    response.headers.add('Access-Control-Allow-Methods', 'POST')
+    return response
 
 if __name__ == "__main__":
     app.run()
