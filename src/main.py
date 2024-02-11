@@ -480,7 +480,9 @@ def todoAppModify(todo_id):
         print(todo)
         db.session.delete(todo)
         db.session.commit()
-        return '', 204
+        todos = Todo.query.filter_by(userID=user_id).all()
+        todos_list = [{'id': todo.id, 'text': todo.text} for todo in todos]
+        return jsonify(todos_list), 204
 
 
 if __name__ == "__main__":
