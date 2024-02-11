@@ -482,7 +482,7 @@ def todoAppModify(todo_id):
         idHolder = todo_id
         db.session.delete(todo)
         db.session.commit()
-        return jsonify(idHolder), 204
+        return jsonify({'id':idHolder}), 204
 
 
 if __name__ == "__main__":
