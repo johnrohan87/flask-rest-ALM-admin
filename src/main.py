@@ -480,7 +480,7 @@ def todoAppModify(todo_id):
         print(todo)
         db.session.delete(todo)
         db.session.commit()
-        return '', 204
+        return todo_id, 204
 
 
 if __name__ == "__main__":
