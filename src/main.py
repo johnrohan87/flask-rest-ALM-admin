@@ -461,7 +461,7 @@ def todoApp():
     #    return _build_cors_preflight_response(), 200
     
 @RateLimiter(max_calls=10, period=1)
-@app.route("/api/todos/<int:todo_id>/<string:todo_updatedText>", methods=["PUT", "DELETE"])
+@app.route("/api/todos/<int:todo_id>/<string:todo_updatedText>", methods=["PUT"])
 @jwt_required(fresh=True)
 #@cross_origin(origin='*',headers=['Content-Type','Authorization','application/json'])
 def todoAppModify(todo_id, todo_updatedText):
@@ -473,7 +473,13 @@ def todoAppModify(todo_id, todo_updatedText):
         db.session.commit()
         return jsonify({'id': todo.id, 'text': todo.text}), 200
 
-
+    
+@RateLimiter(max_calls=10, period=1)
+@app.route("/api/todos/<int:todo_id>", methods=["DELETE"])
+@jwt_required(fresh=True)
+#@cross_origin(origin='*',headers=['Content-Type','Authorization','application/json'])
+def todoAppDel(todo_id, todo_updatedText):
+    user_id = get_jwt_identity()
     if request.method == 'DELETE':
         print(todo_id)
         todo = Todo.query.filter_by(id=todo_id, userID=user_id).first_or_404()
@@ -483,9 +489,6 @@ def todoAppModify(todo_id, todo_updatedText):
         db.session.delete(todo)
         db.session.commit()
         return jsonify({'id':todo.id, 'text': todo.text}), 200
-    
-    #if request.method == "OPTIONS": # CORS preflight
-    #    return _build_cors_preflight_response(), 200
     
 def _build_cors_preflight_response():
     response = make_response()
