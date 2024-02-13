@@ -30,7 +30,9 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DB_CONNECTION_STRING')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=15)
 app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=30)
+app.config['CORS_ORIGINS'] = ['*']
 app.config['CORS_HEADERS'] = 'Content-Type, Authorization, application/json'
+app.config['CORS_AUTOMATIC_OPTIONS'] = True
 
 # Setup the Flask-JWT-Extended extension
 app.config["JWT_SECRET_KEY"] = os.environ.get('JWT_SECRET_KEY')
@@ -435,7 +437,7 @@ def user_lookup_callback(_jwt_header, jwt_data):
     
 # adding todo app
 @RateLimiter(max_calls=10, period=1)
-@app.route("/api/todos", methods=["GET", "POST", "OPTIONS"])
+@app.route("/api/todos", methods=["GET", "POST"])
 @jwt_required(fresh=True)
 #@cross_origin(origin='*',headers=['Content-Type','Authorization'])
 def todoApp():
@@ -455,13 +457,13 @@ def todoApp():
         db.session.commit()
         return _corsify_actual_response(jsonify({'id': new_todo.id, 'text': new_todo.text})), 201
     
-    if request.method == "OPTIONS": # CORS preflight
-        return _build_cors_preflight_response(), 200
+    #if request.method == "OPTIONS": # CORS preflight
+    #    return _build_cors_preflight_response(), 200
     
 @RateLimiter(max_calls=10, period=1)
-@app.route("/api/todos/<int:todo_id>/<string:todo_updatedText>", methods=["PUT", "DELETE", "OPTIONS"])
+@app.route("/api/todos/<int:todo_id>/<string:todo_updatedText>", methods=["PUT", "DELETE"])
 @jwt_required(fresh=True)
-@cross_origin(origin='*',headers=['Content-Type','Authorization','application/json'])
+#@cross_origin(origin='*',headers=['Content-Type','Authorization','application/json'])
 def todoAppModify(todo_id, todo_updatedText):
     user_id = get_jwt_identity()
 
@@ -481,8 +483,8 @@ def todoAppModify(todo_id, todo_updatedText):
         db.session.commit()
         return jsonify({'id':todo.id, 'text': todo.text}), 200
     
-    if request.method == "OPTIONS": # CORS preflight
-        return _build_cors_preflight_response(), 200
+    #if request.method == "OPTIONS": # CORS preflight
+    #    return _build_cors_preflight_response(), 200
     
 def _build_cors_preflight_response():
     response = make_response()
