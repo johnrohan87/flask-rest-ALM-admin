@@ -456,7 +456,7 @@ def todoApp():
         return _corsify_actual_response(jsonify({'id': new_todo.id, 'text': new_todo.text})), 201
     
     if request.method == "OPTIONS": # CORS preflight
-        return _build_cors_preflight_response()
+        return _build_cors_preflight_response(), 200
     
 @RateLimiter(max_calls=10, period=1)
 @app.route("/api/todos/<int:todo_id>/<string:todo_updatedText>", methods=["PUT", "DELETE", "OPTIONS"])
@@ -482,7 +482,7 @@ def todoAppModify(todo_id, todo_updatedText):
         return jsonify({'id':todo.id, 'text': todo.text}), 200
     
     if request.method == "OPTIONS": # CORS preflight
-        return _build_cors_preflight_response()
+        return _build_cors_preflight_response(), 200
     
 def _build_cors_preflight_response():
     response = make_response()
