@@ -30,7 +30,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DB_CONNECTION_STRING')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=15)
 app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=30)
-app.config['CORS_HEADERS'] = 'Content-Type, Authorization'
+app.config['CORS_HEADERS'] = 'Content-Type, Authorization, application/json'
 
 # Setup the Flask-JWT-Extended extension
 app.config["JWT_SECRET_KEY"] = os.environ.get('JWT_SECRET_KEY')
@@ -458,7 +458,6 @@ def todoApp():
 @RateLimiter(max_calls=10, period=1)
 @app.route("/api/todos/<int:todo_id>/<string:todo_updatedText>", methods=["PUT", "DELETE", "OPTIONS"])
 @jwt_required(fresh=True)
-@cross_origin(origin='*')
 #@cross_origin(origin='*',headers=['Content-Type','Authorization'])
 def todoAppModify(todo_id, todo_updatedText):
     user_id = get_jwt_identity()
