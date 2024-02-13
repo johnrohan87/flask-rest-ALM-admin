@@ -475,6 +475,7 @@ def todoAppModify(todo_id, todo_updatedText):
 
 
     if request.method == 'DELETE':
+        print(todo_id)
         todo = Todo.query.filter_by(id=todo_id, userID=user_id).first_or_404()
         print(user_id)
         print(todo)
