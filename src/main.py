@@ -458,7 +458,7 @@ def todoApp():
 @RateLimiter(max_calls=10, period=1)
 @app.route("/api/todos/<int:todo_id>/<string:todo_updatedText>", methods=["PUT", "DELETE", "OPTIONS"])
 @jwt_required(fresh=True)
-#@cross_origin(origin='*',headers=['Content-Type','Authorization'])
+@cross_origin(origin='*',headers=['Content-Type','Authorization','application/json'])
 def todoAppModify(todo_id, todo_updatedText):
     user_id = get_jwt_identity()
 
