@@ -478,7 +478,7 @@ def todoAppModify(todo_id, todo_updatedText):
 @app.route("/api/todos/<int:todo_id>", methods=["DELETE"])
 @jwt_required(fresh=True)
 #@cross_origin(origin='*',headers=['Content-Type','Authorization','application/json'])
-def todoAppDel(todo_id, todo_updatedText):
+def todoAppDel(todo_id):
     user_id = get_jwt_identity()
     if request.method == 'DELETE':
         print(todo_id)
