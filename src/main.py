@@ -435,7 +435,7 @@ def user_lookup_callback(_jwt_header, jwt_data):
     
 # adding todo app
 @RateLimiter(max_calls=10, period=1)
-@app.route("/api/todos", methods=["GET", "POST"])
+@app.route("/api/todos", methods=["GET", "POST", "OPTIONS"])
 @jwt_required(fresh=True)
 #@cross_origin(origin='*',headers=['Content-Type','Authorization'])
 def todoApp():
@@ -454,6 +454,9 @@ def todoApp():
         db.session.add(new_todo)
         db.session.commit()
         return _corsify_actual_response(jsonify({'id': new_todo.id, 'text': new_todo.text})), 201
+    
+    if request.method == "OPTIONS": # CORS preflight
+        return _build_cors_preflight_response()
     
 @RateLimiter(max_calls=10, period=1)
 @app.route("/api/todos/<int:todo_id>/<string:todo_updatedText>", methods=["PUT", "DELETE", "OPTIONS"])
