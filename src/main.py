@@ -467,7 +467,7 @@ def todoAppModify(todo_id, todo_updatedText):
         todo = Todo.query.filter_by(id=todo_id, userID=user_id).first_or_404()
         todo.text = todo_updatedText  # Update the todo text with the new value from the URL path
         db.session.commit()
-        return _corsify_actual_response(jsonify({'id': todo.id, 'text': todo.text})), 200
+        return _build_cors_preflight_response(jsonify({'id': todo.id, 'text': todo.text})), 200
 
 
     if request.method == 'DELETE':
@@ -477,7 +477,7 @@ def todoAppModify(todo_id, todo_updatedText):
         print(todo.id)
         db.session.delete(todo)
         db.session.commit()
-        return _corsify_actual_response(jsonify({'id':todo.id, 'text': todo.text})), 200
+        return _build_cors_preflight_response(jsonify({'id':todo.id, 'text': todo.text})), 200
     
     if request.method == "OPTIONS": # CORS preflight
         return _build_cors_preflight_response()
