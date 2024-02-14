@@ -88,7 +88,7 @@ def login():
     access_token = create_access_token(identity=person, fresh=True)
     refresh_token = create_refresh_token(identity=person)
     response = jsonify({"access_token":access_token, "refresh_token":refresh_token})
-    return _corsify_actual_response(response),200
+    return response,200
 
 
 
