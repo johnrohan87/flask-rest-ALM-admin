@@ -455,7 +455,7 @@ def todoApp():
         print(new_todo)
         db.session.add(new_todo)
         db.session.commit()
-        return _corsify_actual_response(jsonify({'id': new_todo.id, 'text': new_todo.text})), 201
+        return jsonify({'id': new_todo.id, 'text': new_todo.text}), 201
     
     #if request.method == "OPTIONS": # CORS preflight
     #    return _build_cors_preflight_response(), 200
@@ -489,17 +489,6 @@ def todoAppDel(todo_id):
         db.session.delete(todo)
         db.session.commit()
         return jsonify({'id':todo.id, 'text': todo.text}), 200
-    
-def _build_cors_preflight_response():
-    response = make_response()
-    response.headers.add("Access-Control-Allow-Origin", "*")
-    response.headers.add('Access-Control-Allow-Headers', "*")
-    response.headers.add('Access-Control-Allow-Methods', "*")
-    return response
-
-def _corsify_actual_response(response):
-    response.headers.add("Access-Control-Allow-Origin", "*")
-    return response
 
 if __name__ == "__main__":
     app.run()
