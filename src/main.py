@@ -475,11 +475,21 @@ def todoAppModify(todo_id, todo_updatedText):
 
     
 @RateLimiter(max_calls=10, period=1)
-@app.route("/api/todos/<int:todo_id>", methods=["DELETE"])
+@app.route("/api/todos/<int:todo_id>", methods=["PUT", "DELETE"])
 @jwt_required(fresh=True)
 #@cross_origin(origin='*',headers=['Content-Type','Authorization','application/json'])
 def todoAppDel(todo_id):
     user_id = get_jwt_identity()
+    if request.method == 'PUT':
+        todo = Todo.query.filter_by(id=todo_id, userID=user_id).first_or_404()
+        data = request.get_json()
+        if 'text' in data:
+            todo.text = data['text']
+            db.session.commit()
+            return jsonify({'id':todo.id, 'text': todo.text}), 200
+        else:
+            return jsonify({'error': 'Missing text field'}), 400
+        
     if request.method == 'DELETE':
         print(todo_id)
         todo = Todo.query.filter_by(id=todo_id, userID=user_id).first_or_404()
