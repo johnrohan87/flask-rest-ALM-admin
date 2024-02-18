@@ -75,8 +75,6 @@ if __name__ == '__main__':
 @RateLimiter(max_calls=10, period=1)
 @app.route("/login", methods=["POST"])
 def login():
-    if request.method == "OPTIONS": # CORS preflight
-        return _build_cors_preflight_response()
     email = request.json.get("email", None)
     password = request.json.get("password", None)
     person = Person.query.filter_by(email=email).one_or_none()
