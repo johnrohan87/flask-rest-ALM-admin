@@ -92,17 +92,23 @@ def login():
 @app.route("/refresh", methods=["POST"])
 @jwt_required(refresh=True)
 def refresh():
-    current_user = get_jwt_identity()
-    user = Person.get(current_user, None)
+    try:
+        current_user = get_jwt_identity()
+        user = Person.get(current_user, None)
+        print(user)
 
-    if not user:
-        return jsonify({"message": "User not found"}), 404
+        if not user:
+            return jsonify({"message": "User not found"}), 404
 
-    # Mark the new token as fresh if the previous one was fresh
-    fresh = user['is_fresh']
-    new_access_token = create_access_token(identity=current_user, fresh=fresh)
+        # Mark the new token as fresh if the previous one was fresh
+        fresh = user['is_fresh']
+        new_access_token = create_access_token(identity=current_user, fresh=fresh)
 
-    return jsonify({"access_token": new_access_token}), 200
+        return jsonify({"access_token": new_access_token}), 200
+    
+    except Exception as error:
+            print(repr(error))
+            return "!!!!" + {'args':error.args,'error':error}
 
 # Protect a route with jwt_required, which will kick out requests
 # without a valid JWT present.
