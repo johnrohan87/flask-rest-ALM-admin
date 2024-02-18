@@ -94,7 +94,7 @@ def login():
 def refresh():
     try:
         current_user = get_jwt_identity()
-        user = db.session.query(Person).filter_by(id=current_user).first()
+        user = db.session.query(Person).filter_by(current_user).first()
 
         if not user:
             return jsonify({"message": "User not found"}), 404
