@@ -81,11 +81,12 @@ def login():
     if not person or not person.check_password(password):
         return jsonify("Wrong email or password"), 401
 
-    # Notice that we are passing in the actual sqlalchemy user object here
+    expires = timedelta(seconds=app.config["JWT_ACCESS_TOKEN_EXPIRES"])
+
     print(person)
-    access_token = create_access_token(identity=person, fresh=True)
+    access_token = create_access_token(identity=person, fresh=True, expires_delta=expires)
     refresh_token = create_refresh_token(identity=person)
-    response = jsonify({"access_token":access_token, "refresh_token":refresh_token})
+    response = jsonify({"access_token": access_token, "refresh_token": refresh_token, "expires_in": app.config["JWT_ACCESS_TOKEN_EXPIRES"]})
     return response,200
 
 
