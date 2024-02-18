@@ -81,18 +81,9 @@ def login():
     if not person or not person.check_password(password):
         return jsonify("Wrong email or password"), 401
 
-    expires = timedelta(seconds=app.config["JWT_ACCESS_TOKEN_EXPIRES"])
-
-    print(person)
-    access_token = create_access_token(identity=person, fresh=True, expires_delta=expires)
+    access_token = create_access_token(identity=person, fresh=True, expires_delta=app.config["JWT_ACCESS_TOKEN_EXPIRES"])
     refresh_token = create_refresh_token(identity=person)
-    expires_in = app.config["JWT_ACCESS_TOKEN_EXPIRES"].total_seconds()
-
-    response = jsonify({
-        "access_token": access_token, 
-        "refresh_token": refresh_token, 
-        "expires_in": expires_in
-    })
+    response = jsonify({"access_token": access_token, "refresh_token": refresh_token, "expires_in": app.config["JWT_ACCESS_TOKEN_EXPIRES"].total_seconds()})
     return response, 200
 
 
