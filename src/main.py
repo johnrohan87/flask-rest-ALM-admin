@@ -18,7 +18,7 @@ from models import db, User, Person, TextFile, FeedPost, Todo
 from flask_jwt_extended import (create_access_token, 
                                 create_refresh_token, 
                                 get_jwt_identity, current_user,
-                                jwt_required, JWTManager)
+                                jwt_required, JWTManager, get_raw_jwt)
 from ratelimiter import RateLimiter
 from datetime import timedelta
 
@@ -95,7 +95,6 @@ def refresh():
     try:
         current_user = get_jwt_identity()
         user = Person.get(current_user, None)
-        print(user)
 
         if not user:
             return jsonify({"message": "User not found"}), 404
@@ -107,8 +106,8 @@ def refresh():
         return jsonify({"access_token": new_access_token}), 200
     
     except Exception as error:
-            print(repr(error))
-            return "!!!!" + {'args':error.args,'error':error}
+        print(repr(error))
+        return jsonify({"error": "An unexpected error occurred", "details": repr(error)}), 500
 
 # Protect a route with jwt_required, which will kick out requests
 # without a valid JWT present.
