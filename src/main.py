@@ -100,7 +100,7 @@ def refresh():
             return jsonify({"message": "User not found"}), 404
 
         # Mark the new token as fresh if the previous one was fresh
-        fresh = user.is_fresh  # Access the is_fresh attribute directly
+        fresh = user.is_fresh
         new_access_token = create_access_token(identity=current_user, fresh=fresh)
 
         return jsonify({"access_token": new_access_token}), 200
