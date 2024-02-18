@@ -86,8 +86,14 @@ def login():
     print(person)
     access_token = create_access_token(identity=person, fresh=True, expires_delta=expires)
     refresh_token = create_refresh_token(identity=person)
-    response = jsonify({"access_token": access_token, "refresh_token": refresh_token, "expires_in": app.config["JWT_ACCESS_TOKEN_EXPIRES"]})
-    return response,200
+    expires_in = app.config["JWT_ACCESS_TOKEN_EXPIRES"].total_seconds()
+
+    response = jsonify({
+        "access_token": access_token, 
+        "refresh_token": refresh_token, 
+        "expires_in": expires_in
+    })
+    return response, 200
 
 
 
