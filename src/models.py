@@ -51,7 +51,7 @@ class Person(db.Model):
         #return f"<User id={self.id!r}, email={self.email!r}, roles={self.roles!r}, is_fresh={self.is_fresh!r} >"
         return '<Person Email %r>' % self.email
     def __str__(self):
-        return self.id
+        return str(self.id)
     # tell python how convert the class object into a dictionary ready to jsonify
     def serialize(self):
         return {
