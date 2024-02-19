@@ -97,19 +97,18 @@ def login():
 @jwt_required(refresh=True)
 def refresh():
     try:
-        current_user = get_jwt_identity()
-        print(current_user)
-        user = Person.query.get_or_404(current_user)
-        print(user)
+        current_user_id = get_jwt_identity()
+        print(current_user_id)
 
-        if not user:
-            return jsonify({"message": "User not found"}), 404
+        # Assuming current_user_id is the user's ID
+        user = Person.query.get_or_404(current_user_id)
+        print(user)
 
         # Mark the new token as fresh if the previous one was fresh
         fresh = user.is_fresh
         print(fresh)
-        print(user.serialize())
-        new_access_token = create_access_token(identity=user.id, fresh=fresh)
+
+        new_access_token = create_access_token(identity=current_user_id, fresh=fresh)
         print(new_access_token)
 
         return jsonify({"access_token": new_access_token}), 200
