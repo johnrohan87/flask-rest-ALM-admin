@@ -101,8 +101,8 @@ def refresh():
         print(current_user_id)
 
         # Assuming current_user_id is the user's ID
-        user = Person.query.get_or_404(current_user_id)
-        print(user.serialize())
+        user = Person.query.filter_by(id=current_user_id).first_or_404()
+        print(user)
 
         # Mark the new token as fresh if the previous one was fresh
         fresh = user.is_fresh
