@@ -99,7 +99,7 @@ def refresh():
     try:
         current_user = get_jwt_identity()
         print(current_user)
-        user = Person.query.get_or_404(current_user)
+        user = Person.query.get_or_404(id=current_user)
         print(user)
 
         if not user:
