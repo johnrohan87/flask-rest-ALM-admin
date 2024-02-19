@@ -95,11 +95,12 @@ def login():
 @RateLimiter(max_calls=10, period=1)
 @app.route("/refresh", methods=["POST"])
 @jwt_required(refresh=True)
-def refresh():
+def refresh(self):
     try:
         current_user = get_jwt_identity()
         print(current_user)
-        user = db.session.query(Person).filter_by(id=current_user).first()
+        user = Person.query.get_or_404(current_user)
+        print(user)
 
         if not user:
             return jsonify({"message": "User not found"}), 404
