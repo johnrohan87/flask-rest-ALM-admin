@@ -108,7 +108,7 @@ def refresh():
         # Mark the new token as fresh if the previous one was fresh
         fresh = user.is_fresh
         print(fresh)
-        print(user.id)
+        print(user.serialize())
         new_access_token = create_access_token(identity={'id':user.id}, fresh=fresh)
         print(new_access_token)
 
