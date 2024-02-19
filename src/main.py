@@ -95,7 +95,7 @@ def login():
 @RateLimiter(max_calls=10, period=1)
 @app.route("/refresh", methods=["POST"])
 @jwt_required(refresh=True)
-def refresh(self):
+def refresh():
     try:
         current_user = get_jwt_identity()
         print(current_user)
