@@ -42,16 +42,8 @@ class Person(db.Model):
 
     # tell python how to print the class object on the console
     def __repr__(self):
-        '''return {
-            "email": self.email,
-            "roles": self.roles,
-            "password": self.password,
-            "salt": self.salt
-        }'''
-        #return f"<User id={self.id!r}, email={self.email!r}, roles={self.roles!r}, is_fresh={self.is_fresh!r} >"
-        return '<Person Email %r>' % self.email
-    def __str__(self):
-        return str(self.id)
+        return f"<Person id={self.id}, email='{self.email}', roles={self.roles}, is_fresh={self.is_fresh}>"
+
     # tell python how convert the class object into a dictionary ready to jsonify
     def serialize(self):
         return {
