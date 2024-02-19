@@ -109,7 +109,7 @@ def refresh():
         fresh = user.is_fresh
         print(fresh)
         print(user.serialize())
-        new_access_token = create_access_token(identity=user.serialize(), fresh=fresh)
+        new_access_token = create_access_token(identity=user.id, fresh=fresh)
         print(new_access_token)
 
         return jsonify({"access_token": new_access_token}), 200
