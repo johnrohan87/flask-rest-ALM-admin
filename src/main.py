@@ -70,6 +70,10 @@ if __name__ == '__main__':
     PORT = int(os.environ.get('PORT', 3000))
     app.run(host='0.0.0.0', port=PORT, debug=True)
 
+@jwt.user_identity_loader
+def user_identity_lookup(user):
+    return user
+
 # Create a route to authenticate your users and return JWTs. The
 # create_access_token() function is used to actually generate the JWT.
 @RateLimiter(max_calls=10, period=1)
@@ -95,7 +99,7 @@ def refresh():
     try:
         current_user = get_jwt_identity()
         print(current_user)
-        user = db.session.query(Person).filter_by(int(current_user)).first()
+        user = db.session.query(Person).filter_by(id=current_user).first()
 
         if not user:
             return jsonify({"message": "User not found"}), 404
