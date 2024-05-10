@@ -87,7 +87,7 @@ def decode_jwt(token):
     raise Exception("no appropriate keys found")
 
 @app.route('/auth0protected')
-def protected():
+def auth0protected():
     token = request.headers.get('Authorization', None)
     if not token:
         return jsonify({'message': "Authorization header is expected"}), 401
