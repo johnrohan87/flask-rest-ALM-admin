@@ -2,12 +2,13 @@
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
 
-import email
+#import email
 import os
 import json
+import requests
 from flask import Flask, request, jsonify, url_for, make_response
 from flask_migrate import Migrate
-from flask_swagger import swagger
+#from flask_swagger import swagger
 from flask_cors import CORS, cross_origin
 from logging import FileHandler,WARNING
 from utils import APIException, generate_sitemap
@@ -15,10 +16,11 @@ from admin import setup_admin
 from models import db, User, Person, TextFile, FeedPost, Todo
 #from models import Person
 
-from flask_jwt_extended import (create_access_token, 
-                                create_refresh_token, 
-                                get_jwt_identity, current_user,
+from flask_jwt_extended import (create_access_token, create_refresh_token, 
+                                get_jwt_identity, get_jwt, current_user,
                                 jwt_required, JWTManager)
+from jose import jwt
+from functools import lru_cache
 from ratelimiter import RateLimiter
 from datetime import timedelta
 
@@ -34,14 +36,68 @@ app.config['CORS_ORIGINS'] = ['*']
 app.config['CORS_HEADERS'] = 'Content-Type, Authorization, application/json'
 app.config['CORS_AUTOMATIC_OPTIONS'] = True
 
+
 # Setup the Flask-JWT-Extended extension
 app.config["JWT_SECRET_KEY"] = os.environ.get('JWT_SECRET_KEY')
+app.config['AUTH0_DOMAIN'] = os.environ.get('AUTH0_DOMAIN')
+app.config['API_AUDIENCE'] = os.environ.get('API_AUDIENCE')
 jwt = JWTManager(app)
 
 MIGRATE = Migrate(app, db)
 db.init_app(app)
 cors = CORS(app)
 setup_admin(app)
+
+@lru_cache()
+def get_jwks():
+    jwks_url = f'https://{app.config["AUTH0_DOMAIN"]}/.well-known/jwks.json'
+    jwks = requests.get(jwks_url).json()
+    return jwks
+
+def decode_jwt(token):
+    jwks = get_jwks()
+    unverified_header = jwt.get_unverified_header(token)
+    rsa_key = {}
+    for key in jwks['keys']:
+        if key['kid'] == unverified_header['kid']:
+            rsa_key = {
+                'kty': key['kty'],
+                'kid': key['kid'],
+                'use': key['use'],
+                'n': key['n'],
+                'e': key['e']
+            }
+    if rsa_key:
+        try:
+            # Validate the token using the RSA key
+            payload = jwt.decode(
+                token,
+                rsa_key,
+                algorithms=['RS256'],
+                audience=app.config['API_AUDIENCE'],
+                issuer=f'https://{app.config["AUTH0_DOMAIN"]}/'
+            )
+            return payload
+        except jwt.ExpiredSignatureError:
+            raise Exception("token expired")
+        except jwt.JWTClaimsError:
+            raise Exception("invalid claims")
+        except Exception as e:
+            raise Exception(f"unable to parse token: {str(e)}")
+    raise Exception("no appropriate keys found")
+
+@app.route('/auth0protected')
+def protected():
+    token = request.headers.get('Authorization', None)
+    if not token:
+        return jsonify({'message': "Authorization header is expected"}), 401
+    token = token.split()[1]  # Assuming the token is prefixed with 'Bearer'
+    try:
+        payload = decode_jwt(token)
+        return jsonify({'message': "Protected content!", 'user': payload}), 200
+    except Exception as e:
+        return jsonify({'message': str(e)}), 401
+
 
 # Handle/serialize errors like a JSON object
 @RateLimiter(max_calls=10, period=1)
