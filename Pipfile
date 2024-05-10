@@ -24,6 +24,7 @@ ratelimiter = "*"
 sqlalchemy-orm = "*"
 "sqlalchemy.orm" = "*"
 feedparser = "*"
+requests = "*"
 
 [requires]
 python_version = "3.8"
