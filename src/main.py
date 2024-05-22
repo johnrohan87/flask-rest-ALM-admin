@@ -20,7 +20,7 @@ from flask_jwt_extended import (create_access_token, create_refresh_token,
                                 get_jwt_identity, get_jwt, current_user,
                                 jwt_required, JWTManager)
 
-from .services import fetch_rss_feed
+from services import fetch_rss_feed
 from jose import jwt
 from functools import lru_cache
 from ratelimiter import RateLimiter
