@@ -1,4 +1,11 @@
-from flask import jsonify, url_for
+from flask import jsonify, url_for, request, _request_ctx_stack
+from functools import wraps
+import json
+import urllib.request
+import requests
+from jose import jwt
+import os
+
 
 class APIException(Exception):
     status_code = 400
@@ -39,3 +46,105 @@ def generate_sitemap(app):
         <p>Start working on your proyect by following the <a href="https://github.com/4GeeksAcademy/flask-rest-hello/blob/master/docs/_QUICK_START.md" target="_blank">Quick Start</a></p>
         <p>Remember to specify a real endpoint path like: </p>
         <ul style="text-align: left;">"""+links_html+"</ul></div>"
+
+
+AUTH0_DOMAIN = os.environ.get('AUTH0_DOMAIN')
+AUTH0_AUDIENCE = os.environ.get('AUTH0_AUDIENCE')
+ALGORITHMS = ['RS256']
+
+class AuthError(Exception):
+    def __init__(self, error, status_code):
+        self.error = error
+        self.status_code = status_code
+
+def get_token_auth_header():
+    auth = request.headers.get('Authorization', None)
+    if not auth:
+        raise AuthError({
+            'code': 'authorization_header_missing',
+            'description': 'Authorization header is expected.'
+        }, 401)
+
+    parts = auth.split()
+
+    if parts[0].lower() != 'bearer':
+        raise AuthError({
+            'code': 'invalid_header',
+            'description': 'Authorization header must start with Bearer.'
+        }, 401)
+    elif len(parts) == 1:
+        raise AuthError({
+            'code': 'invalid_header',
+            'description': 'Token not found.'
+        }, 401)
+    elif len(parts) > 2:
+        raise AuthError({
+            'code': 'invalid_header',
+            'description': 'Authorization header must be Bearer token.'
+        }, 401)
+
+    token = parts[1]
+    return token
+
+def requires_auth(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = get_token_auth_header()
+        jsonurl = requests.get(f'https://{AUTH0_DOMAIN}/.well-known/jwks.json')
+        jwks = jsonurl.json()
+        unverified_header = jwt.get_unverified_header(token)
+        rsa_key = {}
+        for key in jwks['keys']:
+            if key['kid'] == unverified_header['kid']:
+                rsa_key = {
+                    'kty': key['kty'],
+                    'kid': key['kid'],
+                    'use': key['use'],
+                    'n': key['n'],
+                    'e': key['e']
+                }
+        if rsa_key:
+            try:
+                payload = jwt.decode(
+                    token,
+                    rsa_key,
+                    algorithms=ALGORITHMS,
+                    audience=AUTH0_AUDIENCE,
+                    issuer=f'https://{AUTH0_DOMAIN}/'
+                )
+            except jwt.ExpiredSignatureError:
+                raise AuthError({
+                    'code': 'token_expired',
+                    'description': 'Token is expired'
+                }, 401)
+            except jwt.JWTClaimsError:
+                raise AuthError({
+                    'code': 'invalid_claims',
+                    'description': 'Incorrect claims, please check the audience and issuer'
+                }, 401)
+            except Exception:
+                raise AuthError({
+                    'code': 'invalid_header',
+                    'description': 'Unable to parse authentication token.'
+                }, 401)
+
+            _request_ctx_stack.top.current_user = payload
+            return f(*args, **kwargs)
+        raise AuthError({
+            'code': 'invalid_header',
+            'description': 'Unable to find appropriate key'
+        }, 401)
+    return decorated
+
+def get_userinfo(request):
+    auth = request.headers.get('Authorization', None)
+    token = auth.split()[1]
+    userinfo_url = f"https://{AUTH0_DOMAIN}/userinfo"
+    headers = {'Authorization': f'Bearer {token}'}
+    response = requests.get(userinfo_url, headers=headers)
+    return response.json()
+
+def handle_auth_error(ex):
+    response = jsonify(ex.error)
+    response.status_code = ex.status_code
+    return response

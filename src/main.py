@@ -11,18 +11,21 @@ from flask_migrate import Migrate
 #from flask_swagger import swagger
 from flask_cors import CORS, cross_origin
 from logging import FileHandler,WARNING
-from utils import APIException, generate_sitemap
+from utils import APIException, generate_sitemap, requires_auth, get_userinfo, AuthError
 from admin import setup_admin
-from models import db, User, Person, TextFile, FeedPost, Todo
+from models import db, User, Person, TextFile, FeedPost, Todo, Feed, Story
 #from models import Person
 
 from flask_jwt_extended import (create_access_token, create_refresh_token, 
                                 get_jwt_identity, get_jwt, current_user,
                                 jwt_required, JWTManager)
+
+from .services import fetch_rss_feed
 from jose import jwt
 from functools import lru_cache
 from ratelimiter import RateLimiter
 from datetime import timedelta
+import validators
 
 app = Flask(__name__)
 file_handler = FileHandler('errorlog.txt')
@@ -47,6 +50,120 @@ MIGRATE = Migrate(app, db)
 db.init_app(app)
 cors = CORS(app)
 setup_admin(app)
+
+
+@app.route('/import_feed', methods=['POST'])
+@requires_auth
+def import_feed():
+    userinfo = get_userinfo(request)
+    user = User.query.filter_by(auth0_id=userinfo['sub']).first()
+    if not user:
+        user = User(auth0_id=userinfo['sub'], username=userinfo['name'])
+        db.session.add(user)
+        db.session.commit()
+
+    data = request.get_json()
+    url = data.get('url')
+    
+    if not validators.url(url):
+        return jsonify({'error': 'Invalid URL'}), 400
+
+    stories, raw_xml = fetch_rss_feed(url)
+    feed = Feed(url=url, user_id=user.id, raw_xml=raw_xml)
+    db.session.add(feed)
+    db.session.commit()
+
+    for story_data in stories:
+        story = Story(
+            feed_id=feed.id,
+            data=story_data
+        )
+        db.session.add(story)
+    db.session.commit()
+
+    return jsonify({'message': 'Feed imported successfully'})
+
+@app.route('/edit_story/<int:story_id>', methods=['PUT'])
+@requires_auth
+def edit_story(story_id):
+    userinfo = get_userinfo(request)
+    user = User.query.filter_by(auth0_id=userinfo['sub']).first()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    story = Story.query.get(story_id)
+    if not story or story.feed.user_id != user.id:
+        return jsonify({'error': 'Story not found or unauthorized'}), 404
+
+    data = request.get_json()
+    story.custom_title = data.get('custom_title', story.custom_title)
+    story.custom_content = data.get('custom_content', story.custom_content)
+    db.session.commit()
+
+    return jsonify({'message': 'Story updated successfully'})
+
+@app.route('/user_feed', methods=['GET'])
+@requires_auth
+def user_feed():
+    userinfo = get_userinfo(request)
+    user = User.query.filter_by(auth0_id=userinfo['sub']).first()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    feeds = Feed.query.filter_by(user_id=user.id).all()
+    user_feed = []
+    for feed in feeds:
+        stories = Story.query.filter_by(feed_id=feed.id).all()
+        for story in stories:
+            story_data = {
+                'title': story.custom_title or story.data.get('title', 'No Title'),
+                'content': story.custom_content or story.data.get('summary', 'No Content'),
+
+            }
+            user_feed.append(story_data)
+
+    return jsonify({'feed': user_feed})
+
+@app.route('/user_info', methods=['GET'])
+@requires_auth
+def user_info():
+    userinfo = get_userinfo(request)
+    user = User.query.filter_by(auth0_id=userinfo['sub']).first()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    user_data = {
+        'id': user.id,
+        'auth0_id': user.auth0_id,
+        'username': user.username,
+        'feeds': []
+    }
+
+    feeds = Feed.query.filter_by(user_id=user.id).all()
+    for feed in feeds:
+        feed_data = {
+            'id': feed.id,
+            'url': feed.url,
+            'raw_xml': feed.raw_xml,
+            'stories': []
+        }
+        stories = Story.query.filter_by(feed_id=feed.id).all()
+        for story in stories:
+            story_data = {
+                'id': story.id,
+                'data': story.data,
+                'custom_title': story.custom_title,
+                'custom_content': story.custom_content
+            }
+            feed_data['stories'].append(story_data)
+        user_data['feeds'].append(feed_data)
+
+    return jsonify(user_data)
+
+@app.errorhandler(AuthError)
+def handle_auth_error(ex):
+    return handle_auth_error(ex)
+
 
 @lru_cache()
 def get_jwks():

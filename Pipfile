@@ -25,6 +25,7 @@ sqlalchemy-orm = "*"
 "sqlalchemy.orm" = "*"
 feedparser = "*"
 requests = "*"
+validators = "*"
 
 [requires]
 python_version = "3.8"

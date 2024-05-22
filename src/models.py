@@ -3,21 +3,18 @@ from hashlib import pbkdf2_hmac
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Integer, String, Boolean, Text, ForeignKey, Column, Table
 from sqlalchemy.orm import relationship, DeclarativeBase, backref
+from sqlalchemy.dialects.mysql import JSON
 
 db = SQLAlchemy()
 
-#association_table = Table(
-#    "association",
-#    db.Model.metadata,
-#    Column("textfile_table_id", Integer, ForeignKey("textfile_table.id"), primary_key=True),
-#    Column("feedpost_table_id", Integer, ForeignKey("feedpost_table.id"), primary_key=True),
-#)
-
 class User(db.Model):
-    __tablename__ = "user"
+    #__tablename__ = "user"
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(80), unique=False, nullable=False)
+    auth0_id = db.Column(String(80), unique=True, nullable=False)
+    username = db.Column(String(80), nullable=False)
+    feeds = db.relationship('Feed', backref='user', lazy=True)
     is_active = db.Column(db.Boolean(), unique=False, nullable=False)
 
     def __repr__(self):
@@ -27,8 +24,21 @@ class User(db.Model):
         return {
             "id": self.id,
             "email": self.email,
-            # do not serialize the password, its a security breach
         }
+    
+class Feed(db.Model):
+    id = db.Column(Integer, primary_key=True)
+    url = db.Column(String(255), nullable=False)
+    user_id = db.Column(Integer, ForeignKey('user.id'), nullable=False)
+    raw_xml = db.Column(Text, nullable=True)
+    stories = db.relationship('Story', backref='feed', lazy=True)
+
+class Story(db.Model):
+    id = db.Column(Integer, primary_key=True)
+    feed_id = db.Column(Integer, ForeignKey('feed.id'), nullable=False)
+    data = db.Column(JSON, nullable=False)  # JSON column to store story data
+    custom_title = db.Column(String(255))
+    custom_content = db.Column(Text)
 
 class Person(db.Model):
     __tablename__ = "person_account"
