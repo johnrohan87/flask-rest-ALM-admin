@@ -1,4 +1,4 @@
-from flask import jsonify, url_for, request, _request_ctx_stack
+from flask import jsonify, url_for, request, g
 from functools import wraps
 import json
 import urllib.request
@@ -128,7 +128,7 @@ def requires_auth(f):
                     'description': 'Unable to parse authentication token.'
                 }, 401)
 
-            _request_ctx_stack.top.current_user = payload
+            g.current_user = payload  # Storing the user info in Flask's global context
             return f(*args, **kwargs)
         raise AuthError({
             'code': 'invalid_header',
