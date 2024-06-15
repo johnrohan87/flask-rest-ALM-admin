@@ -182,8 +182,14 @@ def user_info():
     return jsonify(user_data)
 
 @app.errorhandler(AuthError)
-def handle_auth_error(ex):
-    return handle_auth_error(ex)
+def handle_auth_error(error):
+    response = jsonify({
+        "success": False,
+        "error": error.status_code,
+        "message": error.error['description']
+    })
+    response.status_code = error.status_code
+    return response
 
 
 @lru_cache()
