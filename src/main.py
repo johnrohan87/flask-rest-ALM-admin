@@ -25,7 +25,8 @@ from jose import jwt
 from functools import lru_cache
 from ratelimiter import RateLimiter
 from datetime import timedelta
-import validators
+import validators 
+from sqlalchemy.exc import SQLAlchemyError
 
 app = Flask(__name__)
 file_handler = FileHandler('errorlog.txt')
@@ -105,24 +106,36 @@ def edit_story(story_id):
 @app.route('/user_feed', methods=['GET'])
 @requires_auth
 def user_feed():
-    userinfo = get_userinfo(request)
-    user = User.query.filter_by(auth0_id=userinfo['sub']).first()
-    if not user:
-        return jsonify({'error': 'User not found'}), 404
+    try:
+        userinfo = get_userinfo(request)
+        if not userinfo or 'sub' not in userinfo:
+            app.logger.error('User info is invalid or missing "sub" attribute')
+            return jsonify({'error': 'Authentication information is incomplete'}), 400
 
-    feeds = Feed.query.filter_by(user_id=user.id).all()
-    user_feed = []
-    for feed in feeds:
-        stories = Story.query.filter_by(feed_id=feed.id).all()
-        for story in stories:
-            story_data = {
-                'title': story.custom_title or story.data.get('title', 'No Title'),
-                'content': story.custom_content or story.data.get('summary', 'No Content'),
+        user = User.query.filter_by(auth0_id=userinfo['sub']).first()
+        if not user:
+            app.logger.warning(f"User not found with auth0_id: {userinfo['sub']}")
+            return jsonify({'error': 'User not found'}), 404
 
-            }
-            user_feed.append(story_data)
+        feeds = Feed.query.filter_by(user_id=user.id).all()
+        user_feed = []
+        for feed in feeds:
+            stories = Story.query.filter_by(feed_id=feed.id).all()
+            for story in stories:
+                story_data = {
+                    'title': story.custom_title or story.data.get('title', 'No Title'),
+                    'content': story.custom_content or story.data.get('summary', 'No Content'),
+                }
+                user_feed.append(story_data)
 
-    return jsonify({'feed': user_feed})
+        return jsonify({'feed': user_feed})
+
+    except SQLAlchemyError as e:
+        app.logger.error(f'Database error occurred: {str(e)}')
+        return jsonify({'error': 'Failed to fetch data from database'}), 500
+    except Exception as e:
+        app.logger.error(f'Unexpected error occurred: {str(e)}')
+        return jsonify({'error': 'Internal Server Error'}), 500
 
 @app.route('/user_info', methods=['GET'])
 @requires_auth
