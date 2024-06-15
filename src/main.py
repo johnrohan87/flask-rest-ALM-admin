@@ -106,6 +106,14 @@ def edit_story(story_id):
 @app.route('/user_feed', methods=['GET'])
 @requires_auth
 def user_feed():
+    if 'Authorization' not in request.headers:
+        raise AuthError({
+            'code': 'authorization_header_missing',
+            'description': 'Authorization header is expected.'
+        }, 401)
+    #Token if needed
+    token = request.headers['Authorization'].split(' ')[1]
+
     try:
         userinfo = get_userinfo(request)
         if not userinfo or 'sub' not in userinfo:
