@@ -33,9 +33,13 @@ def setup_admin(app):
             form_columns = ['id', 'text', 'userID', 'permissions']
             column_list = ['id', 'text', 'userID', 'permissions']
 
+    class UserMV(ModelView):
+            form_columns = ['id', 'email', 'password', 'auth0_id', 'username', 'feeds', 'is_active']
+            column_list = ['id', 'email', 'password', 'auth0_id', 'username', 'feeds', 'is_active']
+
     
     # Add your models here, for example this is how we add a the User model to the admin
-    admin.add_view(ModelView(User, db.session))
+    admin.add_view(UserMV(User, db.session))
     admin.add_view(ModelView(Person, db.session))
     admin.add_view(ToDoMV(Todo, db.session))
     admin.add_view(TextFileMV(TextFile, db.session))
