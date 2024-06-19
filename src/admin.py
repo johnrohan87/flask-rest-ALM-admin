@@ -34,6 +34,7 @@ def setup_admin(app):
             column_list = ['id', 'text', 'userID', 'permissions']
 
     class UserMV(ModelView):
+            #testing
             form_columns = ['id', 'email', 'password', 'auth0_id', 'username', 'feeds', 'is_active']
             column_list = ['id', 'email', 'password', 'auth0_id', 'username', 'feeds', 'is_active']
 
