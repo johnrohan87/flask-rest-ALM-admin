@@ -151,6 +151,7 @@ def user_info():
     userinfo = get_userinfo(request)
     user = User.query.filter_by(auth0_id=userinfo['sub']).first()
     if not user:
+        print('user not found')
         print('request', request)
         return jsonify({'error': 'User not found'}), 404
 
