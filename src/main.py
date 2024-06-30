@@ -14,7 +14,8 @@ from flask import Flask, request, jsonify, url_for, make_response
 from flask_migrate import Migrate
 #from flask_swagger import swagger
 from flask_cors import CORS
-from jose import jwt, JWTError, ExpiredSignatureError, JWTClaimsError
+from jose import jwt
+from jose.exceptions import JWTError, ExpiredSignatureError, JWTClaimsError
 from ratelimiter import RateLimiter
 import validators 
 from sqlalchemy.exc import SQLAlchemyError
@@ -62,20 +63,18 @@ def get_jwks():
     jwks = requests.get(jwks_url).json()
     return jwks
 
-def decode_jwt(token):
-    headers = token.split('.')[0]
-    decoded_headers = base64.urlsafe_b64decode(headers + '==').decode('utf-8')
-    headers = json.loads(decoded_headers)
-    kid = headers.get('kid', None)
-
-    jwks = requests.get(f'https://{app.config["AUTH0_DOMAIN"]}/.well-known/jwks.json').json()
+def decode_jwt(token, jwks):
+    headers = jwt.get_unverified_headers(token)
+    kid = headers['kid']
     rsa_key = next((key for key in jwks['keys'] if key['kid'] == kid), None)
+
     if rsa_key:
         try:
-            # Use the rsa_key to validate the token
+            public_key = jwt.construct_rsa_public_key(rsa_key)
+            # Use the public_key to validate the token
             payload = jwt.decode(
                 token,
-                rsa_key,
+                public_key,
                 algorithms=['RS256'],
                 audience=app.config['API_AUDIENCE'],
                 issuer=f'https://{app.config["AUTH0_DOMAIN"]}/'
@@ -85,8 +84,8 @@ def decode_jwt(token):
             raise Exception("Token has expired")
         except JWTClaimsError:
             raise Exception("Invalid claims")
-        except Exception as e:
-            raise Exception(f"Unable to parse token: {str(e)}")
+        except JWTError as e:
+            raise Exception(f"Error processing token: {e}")
     else:
         raise Exception("Appropriate key not found")
 
