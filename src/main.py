@@ -85,10 +85,19 @@ def decode_jwt(token):
         decoded_payload = base64.urlsafe_b64decode(padded_payload_segment)
         payload = json.loads(decoded_payload.decode('utf-8'))
 
+        print("Decoded JWT payload:", payload)
+
         # Validate the token's claims
-        if payload['aud'] != app.config['API_AUDIENCE']:
-            print(payload['aud'], app.config['API_AUDIENCE'])
-            raise Exception("Invalid claims: incorrect audience")
+        expected_audience = app.config['API_AUDIENCE']
+        if isinstance(payload['aud'], list):
+            if expected_audience not in payload['aud']:
+                print(payload['aud'], expected_audience)
+                raise Exception("Invalid claims: incorrect audience")
+        else:
+            if payload['aud'] != expected_audience:
+                print(payload['aud'], expected_audience)
+                raise Exception("Invalid claims: incorrect audience")
+        
         if payload['iss'] != f'https://{app.config["AUTH0_DOMAIN"]}/':
             raise Exception("Invalid claims: incorrect issuer")
 
