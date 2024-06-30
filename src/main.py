@@ -8,7 +8,7 @@ import requests
 from flask import Flask, request, jsonify, url_for, make_response
 from flask_migrate import Migrate
 from flask_cors import CORS
-from jose import jwt
+from jose import jwt, jwe
 from jose.exceptions import JWTError, ExpiredSignatureError, JWTClaimsError
 from ratelimiter import RateLimiter
 import validators 
