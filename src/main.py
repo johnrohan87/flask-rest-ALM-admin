@@ -14,24 +14,21 @@ from flask_migrate import Migrate
 from flask_cors import CORS
 from jose import jwt, jwk
 from jose.exceptions import JWTError, ExpiredSignatureError, JWTClaimsError
+from ratelimiter import RateLimiter
+import validators 
 from sqlalchemy.exc import SQLAlchemyError
+from auth0.authentication import GetToken
+from auth0.management import Auth0
 from utils import APIException, generate_sitemap, requires_auth, get_userinfo, AuthError
 from admin import setup_admin
 from models import db, User, Person, TextFile, FeedPost, Todo, Feed, Story
-
-
-from ratelimiter import RateLimiter
-import validators 
-from auth0.authentication import GetToken
-from auth0.management import Auth0
-
-
-from flask_jwt_extended import (create_access_token, create_refresh_token, get_jwt_identity, current_user, jwt_required, JWTManager)
+from flask_jwt_extended import (create_access_token, create_refresh_token,
+                                get_jwt_identity, get_jwt, current_user,
+                                jwt_required, JWTManager)
 from services import fetch_rss_feed
 
 
 app = Flask(__name__)
-
 file_handler = FileHandler('errorlog.txt')
 file_handler.setLevel(WARNING)
 app.url_map.strict_slashes = False
@@ -44,7 +41,6 @@ app.config['CORS_HEADERS'] = 'Content-Type, Authorization, application/json'
 app.config['CORS_AUTOMATIC_OPTIONS'] = True
 
 
-# Setup the Flask-JWT-Extended extension
 app.config["JWT_SECRET_KEY"] = os.environ.get('JWT_SECRET_KEY')
 app.config['AUTH0_DOMAIN'] = os.environ.get('AUTH0_DOMAIN')
 app.config['API_AUDIENCE'] = os.environ.get('API_AUDIENCE')
@@ -192,10 +188,16 @@ def get_jwks():
 
 def decode_jwt(token, auth0_domain, api_audience):
     jwks = get_jwks()
-    unverified_header = jwt.get_unverified_header(token)
+    header, payload, signature = token.split('.')
+    
+    # Decode the JWT payload without verification
+    payload_decoded = base64.urlsafe_b64decode(payload + '==').decode('utf-8')
+    payload_json = json.loads(payload_decoded)
+
+    # Find the appropriate key
     rsa_key = {}
     for key in jwks['keys']:
-        if key['kid'] == unverified_header['kid']:
+        if key['kid'] == payload_json.get('kid'):
             rsa_key = {
                 'kty': key['kty'],
                 'kid': key['kid'],
@@ -203,8 +205,10 @@ def decode_jwt(token, auth0_domain, api_audience):
                 'n': key['n'],
                 'e': key['e']
             }
+
     if rsa_key:
         try:
+            # Validate the token using the RSA key
             payload = jwt.decode(
                 token,
                 rsa_key,
@@ -226,7 +230,7 @@ def auth0protected():
     token = request.headers.get('Authorization', None)
     if not token:
         return jsonify({'message': "Authorization header is expected"}), 401
-    token = token.split()[1]  
+    token = token.split()[1]
     try:
         payload = decode_jwt(token, app.config['AUTH0_DOMAIN'], app.config['API_AUDIENCE'])
         return jsonify({'message': "Protected content!", 'user': payload}), 200
