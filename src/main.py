@@ -17,6 +17,8 @@ from jose import jwt
 from ratelimiter import RateLimiter
 import validators 
 from sqlalchemy.exc import SQLAlchemyError
+from auth0.authentication import GetToken
+from auth0.management import Auth0
 from utils import APIException, generate_sitemap, requires_auth, get_userinfo, AuthError
 from admin import setup_admin
 from models import db, User, Person, TextFile, FeedPost, Todo, Feed, Story
@@ -28,8 +30,6 @@ from flask_jwt_extended import (create_access_token, create_refresh_token,
 
 from services import fetch_rss_feed
 
-from auth0.authentication import GetToken
-from auth0.management import Auth0
 
 app = Flask(__name__)
 file_handler = FileHandler('errorlog.txt')
