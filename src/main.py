@@ -8,7 +8,7 @@ import requests
 from flask import Flask, request, jsonify, url_for, make_response
 from flask_migrate import Migrate
 from flask_cors import CORS
-from jose import jwt, jwe
+from jose import jwt as JOSE
 from jose.exceptions import JWTError, ExpiredSignatureError, JWTClaimsError
 from ratelimiter import RateLimiter
 import validators 
@@ -102,7 +102,7 @@ def user_feed():
     token = request.headers.get('Authorization', None).split(' ')[1]
     print('token',token)
     try:
-        userinfo = jwt.decode(token, key=os.environ.get('JWT_SECRET_KEY'), algorithms=['RS256'])
+        userinfo = JOSE.decode(token, os.environ.get('JWT_SECRET_KEY'), algorithms=['RS256'])
         print('userinfo',userinfo)
         email = userinfo.get('https://voluble-boba-2e3a2e.netlify.app/email')
         if not email:
