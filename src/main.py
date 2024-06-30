@@ -59,7 +59,7 @@ setup_admin(app)
 
 @lru_cache()
 def get_jwks():
-    auth0_domain = 'YOUR_AUTH0_DOMAIN'
+    auth0_domain = os.environ.get('AUTH0_DOMAIN')
     jwks_url = f'https://{auth0_domain}/.well-known/jwks.json'
     jwks = requests.get(jwks_url).json()
     return jwks
