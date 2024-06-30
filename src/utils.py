@@ -142,7 +142,7 @@ def decode_jwt(token, auth0_domain, api_audience):
         
         # Fetch the JWKS
         jwks = get_jwks(auth0_domain)
-        print(f"JWKS: {jwks}")
+        print(f"JWKS: {json.dumps(jwks, indent=2)}")
         
         # Find the key that matches the kid
         rsa_key = None
@@ -177,7 +177,7 @@ def decode_jwt(token, auth0_domain, api_audience):
             issuer=f'https://{auth0_domain}/'
         )
 
-        print(f"Decoded Payload: {payload}")
+        print(f"Decoded Payload: {json.dumps(payload, indent=2)}")
         
         # Check audience
         if api_audience not in payload['aud']:
