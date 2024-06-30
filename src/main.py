@@ -28,8 +28,8 @@ from flask_jwt_extended import (create_access_token, create_refresh_token,
 
 from services import fetch_rss_feed
 
-from auth0.v3.authentication import GetToken
-from auth0.v3.management import Auth0
+from auth0.authentication import GetToken
+from auth0.management import Auth0
 
 app = Flask(__name__)
 file_handler = FileHandler('errorlog.txt')

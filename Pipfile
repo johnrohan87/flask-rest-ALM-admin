@@ -26,6 +26,7 @@ sqlalchemy-orm = "*"
 feedparser = "*"
 requests = "*"
 validators = "*"
+auth0-python = "*"
 
 [requires]
 python_version = "3.8"
