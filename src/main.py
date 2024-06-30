@@ -15,7 +15,7 @@ import validators
 from sqlalchemy.exc import SQLAlchemyError
 from auth0.authentication import GetToken
 from auth0.management import Auth0
-from utils import generate_sitemap, decode_jwt, APIException, requires_auth, AuthError
+from utils import decode_jwt_token, generate_sitemap, decode_jwt, APIException, requires_auth, AuthError
 from admin import setup_admin
 from models import db, User, Person, TextFile, FeedPost, Todo, Feed, Story
 from flask_jwt_extended import (create_access_token, create_refresh_token, 
@@ -102,7 +102,7 @@ def user_feed():
     token = request.headers.get('Authorization', None).split(' ')[1]
     print('token',token)
     try:
-        userinfo = JOSE.decode(token, os.environ.get('JWT_SECRET_KEY'))
+        userinfo = decode_jwt_token(token)
         print('userinfo',userinfo)
         email = userinfo.get('https://voluble-boba-2e3a2e.netlify.app/email')
         if not email:

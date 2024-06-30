@@ -4,7 +4,7 @@ import json
 import base64
 from flask import request, g, url_for
 from functools import wraps, lru_cache
-from jose import jwk, jwt, jwe
+from jose import jwk, jwt, jwe as JOSE
 from jose.utils import base64url_decode
 from jose.exceptions import ExpiredSignatureError, JWTClaimsError, JWTError
 
@@ -156,7 +156,7 @@ def decode_jwt(token, auth0_domain, api_audience):
             raise Exception("No appropriate keys found")
         
         # Decode the token
-        payload = jwt.decode(
+        payload = JOSE.decode(
             token,
             rsa_key,
             algorithms=['RS256'],
