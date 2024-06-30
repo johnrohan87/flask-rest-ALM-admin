@@ -62,21 +62,16 @@ def get_jwks():
     return jwks
 
 def decode_jwt(token):
-    jwks = get_jwks()
-    unverified_header = jwt.get_unverified_header(token)
-    rsa_key = {}
-    for key in jwks['keys']:
-        if key['kid'] == unverified_header['kid']:
-            rsa_key = {
-                'kty': key['kty'],
-                'kid': key['kid'],
-                'use': key['use'],
-                'n': key['n'],
-                'e': key['e']
-            }
+    headers = token.split('.')[0]
+    decoded_headers = base64.urlsafe_b64decode(headers + '==').decode('utf-8')
+    headers = json.loads(decoded_headers)
+    kid = headers['kid']
+
+    jwks = requests.get(f'https://{app.config["AUTH0_DOMAIN"]}/.well-known/jwks.json').json()
+    rsa_key = next((key for key in jwks['keys'] if key['kid'] == kid), None)
     if rsa_key:
         try:
-            # Validate the token using the RSA key
+            # Use the rsa_key to validate the token
             payload = jwt.decode(
                 token,
                 rsa_key,
@@ -85,13 +80,10 @@ def decode_jwt(token):
                 issuer=f'https://{app.config["AUTH0_DOMAIN"]}/'
             )
             return payload
-        except jwt.ExpiredSignatureError:
-            raise Exception("token expired")
-        except jwt.JWTClaimsError:
-            raise Exception("invalid claims")
-        except Exception as e:
-            raise Exception(f"unable to parse token: {str(e)}")
-    raise Exception("no appropriate keys found")
+        except jwt.JWTError as e:
+            raise Exception(f"JWT Error: {str(e)}")
+    else:
+        raise Exception("Appropriate key not found")
 
 @app.route('/user_feed', methods=['GET'])
 @requires_auth
