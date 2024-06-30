@@ -52,6 +52,61 @@ cors = CORS(app)
 setup_admin(app)
 
 
+@lru_cache()
+def get_jwks():
+    jwks_url = f'https://{app.config["AUTH0_DOMAIN"]}/.well-known/jwks.json'
+    jwks = requests.get(jwks_url).json()
+    return jwks
+
+def decode_jwt(token):
+    try:
+        # Split the token into its parts
+        header, payload, signature = token.split('.')
+        
+        # Decode the header and payload
+        header_json = json.loads(base64.urlsafe_b64decode(header + '==').decode('utf-8'))
+        payload_json = json.loads(base64.urlsafe_b64decode(payload + '==').decode('utf-8'))
+        
+        # Extract the kid from the header
+        kid = header_json['kid']
+        
+        # Fetch the JWKS
+        jwks = get_jwks()
+        
+        # Find the appropriate key
+        rsa_key = {}
+        for key in jwks['keys']:
+            if key['kid'] == kid:
+                rsa_key = {
+                    'kty': key['kty'],
+                    'kid': key['kid'],
+                    'use': key['use'],
+                    'n': key['n'],
+                    'e': key['e']
+                }
+        
+        if not rsa_key:
+            raise Exception("No appropriate keys found")
+        
+        # Validate the token using the RSA key
+        payload = jwt.decode(
+            token,
+            rsa_key,
+            algorithms=['RS256'],
+            audience=app.config['API_AUDIENCE'],
+            issuer=f'https://{app.config["AUTH0_DOMAIN"]}/'
+        )
+        return payload
+
+    except ExpiredSignatureError:
+        raise Exception("Token expired")
+    except JWTClaimsError:
+        raise Exception("Invalid claims")
+    except JWTError as e:
+        raise Exception(f"Unable to parse token: {str(e)}")
+    except Exception as e:
+        raise Exception(f"Error decoding token: {str(e)}")
+
 @app.route('/import_feed', methods=['POST'])
 @requires_auth
 def import_feed():
@@ -107,7 +162,7 @@ def edit_story(story_id):
 def user_feed():
     token = request.headers.get('Authorization', None).split(' ')[1]
     try:
-        userinfo = decode_jwt(token, app.config['AUTH0_DOMAIN'], app.config['API_AUDIENCE'])
+        userinfo = decode_jwt(token)
     except Exception as e:
         return jsonify({'error': str(e)}), 401
 
@@ -180,51 +235,6 @@ def handle_auth_error(error):
     response.status_code = error.status_code
     return response
 
-@lru_cache()
-def get_jwks():
-    jwks_url = f'https://{app.config["AUTH0_DOMAIN"]}/.well-known/jwks.json'
-    jwks = requests.get(jwks_url).json()
-    return jwks
-
-def decode_jwt(token, auth0_domain, api_audience):
-    jwks = get_jwks()
-    header, payload, signature = token.split('.')
-    
-    # Decode the JWT payload without verification
-    payload_decoded = base64.urlsafe_b64decode(payload + '==').decode('utf-8')
-    payload_json = json.loads(payload_decoded)
-
-    # Find the appropriate key
-    rsa_key = {}
-    for key in jwks['keys']:
-        if key['kid'] == payload_json.get('kid'):
-            rsa_key = {
-                'kty': key['kty'],
-                'kid': key['kid'],
-                'use': key['use'],
-                'n': key['n'],
-                'e': key['e']
-            }
-
-    if rsa_key:
-        try:
-            # Validate the token using the RSA key
-            payload = jwt.decode(
-                token,
-                rsa_key,
-                algorithms=['RS256'],
-                audience=api_audience,
-                issuer=f'https://{auth0_domain}/'
-            )
-            return payload
-        except ExpiredSignatureError:
-            raise Exception("Token expired")
-        except JWTClaimsError:
-            raise Exception("Invalid claims")
-        except JWTError as e:
-            raise Exception(f"Unable to parse token: {str(e)}")
-    raise Exception("No appropriate keys found")
-
 @app.route('/auth0protected')
 def auth0protected():
     token = request.headers.get('Authorization', None)
@@ -232,16 +242,16 @@ def auth0protected():
         return jsonify({'message': "Authorization header is expected"}), 401
     token = token.split()[1]
     try:
-        payload = decode_jwt(token, app.config['AUTH0_DOMAIN'], app.config['API_AUDIENCE'])
+        payload = decode_jwt(token)
         return jsonify({'message': "Protected content!", 'user': payload}), 200
     except Exception as e:
         return jsonify({'message': str(e)}), 401
 
+# Handle/serialize errors like a JSON object
 @RateLimiter(max_calls=10, period=1)
 @app.errorhandler(APIException)
 def handle_invalid_usage(error):
     return jsonify(error.to_dict()), error.status_code
-
 # generate sitemap with all your endpoints
 @RateLimiter(max_calls=10, period=1)
 @app.route('/')
