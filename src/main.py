@@ -44,7 +44,7 @@ def decode_jwt(token):
         header, payload, signature = token.split('.')
         decoded_header = json.loads(base64_url_decode(header))
         kid = decoded_header.get('kid')
-        
+
         jwks_url = f'https://{os.environ["AUTH0_DOMAIN"]}/.well-known/jwks.json'
         jwks = requests.get(jwks_url).json()
         
@@ -61,14 +61,20 @@ def decode_jwt(token):
                 break
 
         if rsa_key:
-            payload = jwt.decode(
-                token,
-                rsa_key,
-                algorithms=['RS256'],
-                audience=os.environ['API_AUDIENCE'],
-                issuer=f'https://{os.environ["AUTH0_DOMAIN"]}/'
-            )
-            return payload
+            public_key = jwk.construct(rsa_key)
+            message, encoded_signature = '.'.join([header, payload]), signature
+            decoded_signature = base64url_decode(encoded_signature.encode('utf-8'))
+
+            if not public_key.verify(message.encode("utf8"), decoded_signature):
+                raise JWTError("Signature verification failed")
+
+            decoded_payload = json.loads(base64_url_decode(payload))
+            if decoded_payload['aud'] != os.environ['API_AUDIENCE']:
+                raise JWTClaimsError("Invalid audience")
+            if decoded_payload['iss'] != f'https://{os.environ["AUTH0_DOMAIN"]}/':
+                raise JWTClaimsError("Invalid issuer")
+
+            return decoded_payload
         else:
             raise Exception("No matching key found")
 
