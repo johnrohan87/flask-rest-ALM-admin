@@ -64,7 +64,7 @@ def get_jwks():
     jwks = requests.get(jwks_url).json()
     return jwks
 
-def decode_jwt(token, jwks):
+def decode_jwt(token):
     jwks = get_jwks()
     try:
         unverified_header = jwt.get_unverified_header(token)
