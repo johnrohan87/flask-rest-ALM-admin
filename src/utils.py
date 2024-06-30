@@ -6,6 +6,7 @@ from flask import request, g, url_for
 from functools import wraps, lru_cache
 from jose import jwk, jwt
 from jose.utils import base64url_decode
+from jose.backends.cryptography_backend import RSAAlgorithm
 from jose.exceptions import ExpiredSignatureError, JWTClaimsError, JWTError
 
 
@@ -152,8 +153,8 @@ def decode_jwt(token, auth0_domain, api_audience):
                     'kty': key['kty'],
                     'kid': key['kid'],
                     'use': key['use'],
-                    'n': key['n'],
-                    'e': key['e']
+                    'n': base64_url_decode(key['n']),
+                    'e': base64_url_decode(key['e'])
                 }
                 break
         
@@ -161,8 +162,9 @@ def decode_jwt(token, auth0_domain, api_audience):
             raise Exception("No appropriate keys found")
         
         # Construct the key using jwk.construct
-        key = jwk.construct(rsa_key)
-        print(f"Constructed Key: {key}")
+        rsa_algorithm = RSAAlgorithm(RSAAlgorithm.SHA256)
+        public_key = rsa_algorithm.from_jwk(rsa_key)
+        print(f"Constructed Key: {public_key}")
         
         # Split the token and decode the signature
         message, encoded_sig = token.rsplit('.', 1)
