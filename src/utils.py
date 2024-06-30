@@ -51,6 +51,7 @@ def generate_sitemap(app):
 
 AUTH0_DOMAIN = os.environ.get('AUTH0_DOMAIN')
 AUTH0_AUDIENCE = os.environ.get('AUTH0_AUDIENCE')
+API_AUDIENCE = os.environ.get('API_AUDIENCE')
 ALGORITHMS = ['RS256']
 
 class AuthError(Exception):
@@ -122,9 +123,7 @@ def requires_auth(f):
 
 def decode_jwt_token(token):
     try:
-        auth0_domain = app.config["AUTH0_DOMAIN"]
-        api_audience = app.config["API_AUDIENCE"]
-        return decode_jwt(token, auth0_domain, api_audience)
+        return decode_jwt(token, AUTH0_DOMAIN, API_AUDIENCE)
     except Exception as e:
         raise Exception(f"Error decoding token: {str(e)}")
 
