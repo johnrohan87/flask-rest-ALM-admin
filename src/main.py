@@ -87,6 +87,7 @@ def decode_jwt(token):
 
         # Validate the token's claims
         if payload['aud'] != app.config['API_AUDIENCE']:
+            print(payload['aud'], app.config['API_AUDIENCE'])
             raise Exception("Invalid claims: incorrect audience")
         if payload['iss'] != f'https://{app.config["AUTH0_DOMAIN"]}/':
             raise Exception("Invalid claims: incorrect issuer")
@@ -102,7 +103,7 @@ def decode_jwt(token):
     except Exception as e:
         raise Exception(f"Error decoding token: {str(e)}")
     
-    
+
 @app.route('/import_feed', methods=['POST'])
 @requires_auth
 def import_feed():
