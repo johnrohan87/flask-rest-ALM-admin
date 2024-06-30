@@ -51,13 +51,20 @@ def get_jwks():
     jwks = requests.get(jwks_url).json()
     return jwks
 
+def base64_url_decode(input):
+    input += '=' * (4 - len(input) % 4)  # Pad with "=" characters
+    return base64.urlsafe_b64decode(input)
+
 def decode_jwt(token):
     try:
-        unverified_header = jwt.get_unverified_header(token)
-        kid = unverified_header['kid']
+        # Manually decode the JWT header
+        header = json.loads(base64_url_decode(token.split('.')[0]).decode('utf-8'))
+        kid = header['kid']
         
+        # Fetch the JWKS
         jwks = get_jwks()
         
+        # Find the key that matches the kid
         rsa_key = {}
         for key in jwks['keys']:
             if key['kid'] == kid:
@@ -72,6 +79,7 @@ def decode_jwt(token):
         if not rsa_key:
             raise Exception("No appropriate keys found")
         
+        # Validate the token using the RSA key
         payload = jwt.decode(
             token,
             rsa_key,
@@ -235,6 +243,7 @@ def auth0protected():
 @app.errorhandler(APIException)
 def handle_invalid_usage(error):
     return jsonify(error.to_dict()), error.status_code
+
 
 
 # generate sitemap with all your endpoints
