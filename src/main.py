@@ -102,7 +102,7 @@ def user_feed():
     token = request.headers.get('Authorization', None).split(' ')[1]
     print('token',token)
     try:
-        userinfo = jwe.decrypt(token, os.environ.get('JWT_SECRET_KEY'))
+        userinfo = jwe.decrypt(token, os.environ.get('JWT_SECRET_KEY'), algorithms=['RS256'])
         print('userinfo',userinfo)
         email = userinfo.get('https://voluble-boba-2e3a2e.netlify.app/email')
         if not email:
