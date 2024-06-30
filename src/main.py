@@ -1,18 +1,14 @@
-"""
-This module takes care of starting the API Server, Loading the DB and Adding the endpoints
-"""
-
 import os
 import json
 import base64
-from logging import FileHandler,WARNING
+from logging import FileHandler, WARNING
 from functools import lru_cache
 from datetime import timedelta
 import requests
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, url_for, make_response
 from flask_migrate import Migrate
 from flask_cors import CORS
-from jose import jwt, jwk
+from jose import jwt
 from jose.exceptions import JWTError, ExpiredSignatureError, JWTClaimsError
 from ratelimiter import RateLimiter
 import validators 
@@ -22,11 +18,10 @@ from auth0.management import Auth0
 from utils import APIException, generate_sitemap, requires_auth, get_userinfo, AuthError
 from admin import setup_admin
 from models import db, User, Person, TextFile, FeedPost, Todo, Feed, Story
-from flask_jwt_extended import (create_access_token, create_refresh_token,
+from flask_jwt_extended import (create_access_token, create_refresh_token, 
                                 get_jwt_identity, get_jwt, current_user,
                                 jwt_required, JWTManager)
 from services import fetch_rss_feed
-
 
 app = Flask(__name__)
 file_handler = FileHandler('errorlog.txt')
@@ -40,7 +35,6 @@ app.config['CORS_ORIGINS'] = ['*']
 app.config['CORS_HEADERS'] = 'Content-Type, Authorization, application/json'
 app.config['CORS_AUTOMATIC_OPTIONS'] = True
 
-
 app.config["JWT_SECRET_KEY"] = os.environ.get('JWT_SECRET_KEY')
 app.config['AUTH0_DOMAIN'] = os.environ.get('AUTH0_DOMAIN')
 app.config['API_AUDIENCE'] = os.environ.get('API_AUDIENCE')
@@ -51,7 +45,6 @@ db.init_app(app)
 cors = CORS(app)
 setup_admin(app)
 
-
 @lru_cache()
 def get_jwks():
     jwks_url = f'https://{app.config["AUTH0_DOMAIN"]}/.well-known/jwks.json'
@@ -60,20 +53,11 @@ def get_jwks():
 
 def decode_jwt(token):
     try:
-        # Split the token into its parts
-        header, payload, signature = token.split('.')
+        unverified_header = jwt.get_unverified_header(token)
+        kid = unverified_header['kid']
         
-        # Decode the header and payload
-        header_json = json.loads(base64.urlsafe_b64decode(header + '==').decode('utf-8'))
-        payload_json = json.loads(base64.urlsafe_b64decode(payload + '==').decode('utf-8'))
-        
-        # Extract the kid from the header
-        kid = header_json['kid']
-        
-        # Fetch the JWKS
         jwks = get_jwks()
         
-        # Find the appropriate key
         rsa_key = {}
         for key in jwks['keys']:
             if key['kid'] == kid:
@@ -88,7 +72,6 @@ def decode_jwt(token):
         if not rsa_key:
             raise Exception("No appropriate keys found")
         
-        # Validate the token using the RSA key
         payload = jwt.decode(
             token,
             rsa_key,
@@ -252,6 +235,8 @@ def auth0protected():
 @app.errorhandler(APIException)
 def handle_invalid_usage(error):
     return jsonify(error.to_dict()), error.status_code
+
+
 # generate sitemap with all your endpoints
 @RateLimiter(max_calls=10, period=1)
 @app.route('/')
