@@ -67,6 +67,7 @@ def user_feed():
     
     email = userinfo.get('email')
     if not email:
+        print("Email not found in user info:", userinfo)
         return jsonify({'error': 'Email not provided in token'}), 400
 
     user = User.query.filter_by(auth0_id=userinfo['sub']).first()
