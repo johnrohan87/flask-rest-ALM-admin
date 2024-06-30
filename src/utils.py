@@ -91,13 +91,33 @@ def requires_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         token = get_token_auth_header()
-        try:
-            payload = decode_jwt(token)
-        except AuthError as e:
-            return handle_auth_error(e)
-        
-        g.current_user = payload
-        return f(*args, **kwargs)
+        jsonurl = requests.get(f'https://{AUTH0_DOMAIN}/.well-known/jwks.json')
+        jwks = jsonurl.json()
+        header = json.loads(base64_url_decode(token.split('.')[0]).decode('utf-8'))
+        rsa_key = {}
+        for key in jwks['keys']:
+            if key['kid'] == header['kid']:
+                rsa_key = {
+                    'kty': key['kty'],
+                    'kid': key['kid'],
+                    'use': key['use'],
+                    'n': key['n'],
+                    'e': key['e']
+                }
+        if rsa_key:
+            try:
+                payload = decode_jwt(token, AUTH0_DOMAIN, AUTH0_AUDIENCE)
+                g.current_user = payload
+                return f(*args, **kwargs)
+            except Exception as e:
+                raise AuthError({
+                    'code': 'invalid_token',
+                    'description': str(e)
+                }, 401)
+        raise AuthError({
+            'code': 'invalid_header',
+            'description': 'Unable to find appropriate key'
+        }, 401)
     return decorated
 
 def base64_url_decode(input):
@@ -108,27 +128,20 @@ def base64_url_decode(input):
     return base64.urlsafe_b64decode(input)
 
 @lru_cache()
-def base64_url_decode(input):
-    """Helper function to decode base64 urls"""
-    rem = len(input) % 4
-    if rem > 0:
-        input += '=' * (4 - rem)
-    return base64.urlsafe_b64decode(input)
-
-def get_jwks():
-    jwks_url = f'https://{app.config["AUTH0_DOMAIN"]}/.well-known/jwks.json'
+def get_jwks(auth0_domain):
+    jwks_url = f'https://{auth0_domain}/.well-known/jwks.json'
     response = requests.get(jwks_url)
     response.raise_for_status()
     return response.json()
 
-def decode_jwt(token):
+def decode_jwt(token, auth0_domain, api_audience):
     try:
         # Decode the JWT header manually
         header = json.loads(base64_url_decode(token.split('.')[0]).decode('utf-8'))
         kid = header['kid']
         
         # Fetch the JWKS
-        jwks = get_jwks()
+        jwks = get_jwks(auth0_domain)
         
         # Find the key that matches the kid
         rsa_key = None
@@ -156,12 +169,12 @@ def decode_jwt(token):
             token,
             rsa_key,
             algorithms=['RS256'],
-            audience=app.config['API_AUDIENCE'],
-            issuer=f'https://{app.config["AUTH0_DOMAIN"]}/'
+            audience=api_audience,
+            issuer=f'https://{auth0_domain}/'
         )
         
         # Check audience
-        if app.config['API_AUDIENCE'] not in payload['aud']:
+        if api_audience not in payload['aud']:
             raise Exception("Invalid claims: incorrect audience")
 
         return payload

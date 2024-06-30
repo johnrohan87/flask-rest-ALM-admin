@@ -107,10 +107,12 @@ def user_feed():
 
     user = User.query.filter_by(auth0_id=userinfo['sub']).first()
     if not user:
+        # User not found, create a new user record
         user = User(auth0_id=userinfo['sub'], email=userinfo.get('https://voluble-boba-2e3a2e.netlify.app/email'), username=userinfo.get('nickname', 'Unknown'))
         db.session.add(user)
         db.session.commit()
 
+    # Proceed with fetching user's feeds
     feeds = Feed.query.filter_by(user_id=user.id).all()
     user_feed = []
     for feed in feeds:
