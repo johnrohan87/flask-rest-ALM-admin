@@ -5,20 +5,20 @@ This module takes care of starting the API Server, Loading the DB and Adding the
 #import email
 import os
 import json
-import base64
+import requests
+from flask import Flask, request, jsonify
+from flask_migrate import Migrate
+from flask_cors import CORS
+from jose import jwt, JWTError
+from jose.exceptions import JWTError, ExpiredSignatureError, JWTClaimsError
+from sqlalchemy.exc import SQLAlchemyError
+
 from logging import FileHandler,WARNING
 from functools import lru_cache
 from datetime import timedelta
-import requests
-from flask import Flask, request, jsonify, url_for, make_response
-from flask_migrate import Migrate
-#from flask_swagger import swagger
-from flask_cors import CORS
-from jose import jwt, JWTError
-#from jose.exceptions import JWTError, ExpiredSignatureError, JWTClaimsError
+
 from ratelimiter import RateLimiter
 import validators 
-from sqlalchemy.exc import SQLAlchemyError
 from auth0.authentication import GetToken
 from auth0.management import Auth0
 from utils import APIException, generate_sitemap, requires_auth, get_userinfo, AuthError
@@ -26,36 +26,12 @@ from admin import setup_admin
 from models import db, User, Person, TextFile, FeedPost, Todo, Feed, Story
 #from models import Person
 
-from flask_jwt_extended import (create_access_token, create_refresh_token, 
-                                get_jwt_identity, get_jwt, current_user,
-                                jwt_required, JWTManager)
+from flask_jwt_extended import (create_access_token, create_refresh_token, get_jwt_identity, current_user, jwt_required, JWTManager)
 
 from services import fetch_rss_feed
 
 
 app = Flask(__name__)
-file_handler = FileHandler('errorlog.txt')
-file_handler.setLevel(WARNING)
-app.url_map.strict_slashes = False
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DB_CONNECTION_STRING')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=15)
-app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=30)
-app.config['CORS_ORIGINS'] = ['*']
-app.config['CORS_HEADERS'] = 'Content-Type, Authorization, application/json'
-app.config['CORS_AUTOMATIC_OPTIONS'] = True
-
-
-# Setup the Flask-JWT-Extended extension
-app.config["JWT_SECRET_KEY"] = os.environ.get('JWT_SECRET_KEY')
-app.config['AUTH0_DOMAIN'] = os.environ.get('AUTH0_DOMAIN')
-app.config['API_AUDIENCE'] = os.environ.get('API_AUDIENCE')
-jwt = JWTManager(app)
-
-MIGRATE = Migrate(app, db)
-db.init_app(app)
-cors = CORS(app)
-setup_admin(app)
 
 @lru_cache()
 def get_jwks():
@@ -94,6 +70,30 @@ def decode_jwt(token):
         raise Exception(f'JWTError: {str(e)}')
     except Exception as e:
         raise Exception(f'Error decoding token: {str(e)}')
+
+file_handler = FileHandler('errorlog.txt')
+file_handler.setLevel(WARNING)
+app.url_map.strict_slashes = False
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DB_CONNECTION_STRING')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=15)
+app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=30)
+app.config['CORS_ORIGINS'] = ['*']
+app.config['CORS_HEADERS'] = 'Content-Type, Authorization, application/json'
+app.config['CORS_AUTOMATIC_OPTIONS'] = True
+
+
+# Setup the Flask-JWT-Extended extension
+app.config["JWT_SECRET_KEY"] = os.environ.get('JWT_SECRET_KEY')
+app.config['AUTH0_DOMAIN'] = os.environ.get('AUTH0_DOMAIN')
+app.config['API_AUDIENCE'] = os.environ.get('API_AUDIENCE')
+jwt = JWTManager(app)
+
+MIGRATE = Migrate(app, db)
+db.init_app(app)
+cors = CORS(app)
+setup_admin(app)
+
 
 @app.route('/user_feed', methods=['GET'])
 @requires_auth
