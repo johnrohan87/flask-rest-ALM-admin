@@ -67,7 +67,7 @@ def get_jwks():
 def decode_jwt(token, jwks):
     jwks = get_jwks()
     try:
-        unverified_header = jwt.get_unverified_headers(token)
+        unverified_header = jwt.get_unverified_header(token)
         rsa_key = {}
         for key in jwks['keys']:
             if key['kid'] == unverified_header['kid']:
