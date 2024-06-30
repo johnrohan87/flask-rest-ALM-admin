@@ -101,7 +101,7 @@ def edit_story(story_id):
 def user_feed():
     token = request.headers.get('Authorization', None).split(' ')[1]
     try:
-        userinfo = decode_jwt_token(token)
+        userinfo = jwe.decrypt(token, os.environ.get('JWT_SECRET_KEY'))
         email = userinfo.get('https://voluble-boba-2e3a2e.netlify.app/email')
         if not email:
             raise Exception("Email not found in token")
