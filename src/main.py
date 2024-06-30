@@ -5,6 +5,7 @@ This module takes care of starting the API Server, Loading the DB and Adding the
 #import email
 import os
 import json
+import base64
 from logging import FileHandler,WARNING
 from functools import lru_cache
 from datetime import timedelta
