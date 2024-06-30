@@ -65,7 +65,18 @@ def user_feed():
     except AuthError as e:
         return handle_auth_error(e)
     
+    # Check if email is present
     email = userinfo.get('email')
+    if not email:
+        # Fetch user info from Auth0 /userinfo endpoint
+        userinfo_url = f"https://{AUTH0_DOMAIN}/userinfo"
+        headers = {'Authorization': f'Bearer {token}'}
+        response = requests.get(userinfo_url, headers=headers)
+        if response.status_code != 200:
+            return jsonify({'error': 'Failed to fetch user info from Auth0'}), 500
+        userinfo = response.json()
+        email = userinfo.get('email')
+        
     if not email:
         print("Email not found in user info:", userinfo)
         return jsonify({'error': 'Email not provided in token'}), 400
