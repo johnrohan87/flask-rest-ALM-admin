@@ -10,7 +10,8 @@ import requests
 from flask import Flask, request, jsonify
 from flask_migrate import Migrate
 from flask_cors import CORS
-from jose import jwt, JWTError
+from jose import jwt, jwk
+from jose.utils import base64url_decode
 from jose.exceptions import JWTError, ExpiredSignatureError, JWTClaimsError
 from sqlalchemy.exc import SQLAlchemyError
 
