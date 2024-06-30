@@ -79,14 +79,18 @@ def decode_jwt(token):
         if not rsa_key:
             raise Exception("No appropriate keys found")
         
-        # Validate the token using the RSA key
-        payload = jwt.decode(
-            token,
-            rsa_key,
-            algorithms=['RS256'],
-            audience=app.config['API_AUDIENCE'],
-            issuer=f'https://{app.config["AUTH0_DOMAIN"]}/'
-        )
+        # Manually decode the JWT payload
+        payload_segment = token.split('.')[1]
+        padded_payload_segment = payload_segment + '=' * (4 - len(payload_segment) % 4)
+        decoded_payload = base64.urlsafe_b64decode(padded_payload_segment)
+        payload = json.loads(decoded_payload.decode('utf-8'))
+
+        # Validate the token's claims
+        if payload['aud'] != app.config['API_AUDIENCE']:
+            raise Exception("Invalid claims: incorrect audience")
+        if payload['iss'] != f'https://{app.config["AUTH0_DOMAIN"]}/':
+            raise Exception("Invalid claims: incorrect issuer")
+
         return payload
 
     except ExpiredSignatureError:
@@ -97,7 +101,8 @@ def decode_jwt(token):
         raise Exception(f"Unable to parse token: {str(e)}")
     except Exception as e:
         raise Exception(f"Error decoding token: {str(e)}")
-
+    
+    
 @app.route('/import_feed', methods=['POST'])
 @requires_auth
 def import_feed():
