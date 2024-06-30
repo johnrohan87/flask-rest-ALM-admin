@@ -1,10 +1,13 @@
-from flask import jsonify, request, g
-from functools import wraps, lru_cache
-import json
 import requests
-from jose import jwt, jwk
-from jose.exceptions import JWTError, ExpiredSignatureError, JWTClaimsError
 import os
+import json
+import base64
+from flask import request, g
+from functools import wraps, lru_cache
+from jose import jwk, jwt
+from jose.utils import base64url_decode
+from jose.exceptions import ExpiredSignatureError, JWTClaimsError, JWTError
+
 
 
 class APIException(Exception):
@@ -97,64 +100,77 @@ def requires_auth(f):
         return f(*args, **kwargs)
     return decorated
 
+def base64_url_decode(input):
+    """Helper function to decode base64 urls"""
+    rem = len(input) % 4
+    if rem > 0:
+        input += '=' * (4 - rem)
+    return base64.urlsafe_b64decode(input)
+
 @lru_cache()
+def base64_url_decode(input):
+    """Helper function to decode base64 urls"""
+    rem = len(input) % 4
+    if rem > 0:
+        input += '=' * (4 - rem)
+    return base64.urlsafe_b64decode(input)
+
 def get_jwks():
-    jwks_url = f'https://{AUTH0_DOMAIN}/.well-known/jwks.json'
-    jwks = requests.get(jwks_url).json()
-    return jwks
-
-def decode_jwt(token):
-    jwks = get_jwks()
-    unverified_header = jwt.get_unverified_header(token)
-    rsa_key = {}
-    for key in jwks['keys']:
-        if key['kid'] == unverified_header['kid']:
-            rsa_key = {
-                'kty': key['kty'],
-                'kid': key['kid'],
-                'use': key['use'],
-                'n': key['n'],
-                'e': key['e']
-            }
-    if rsa_key:
-        try:
-            payload = jwt.decode(
-                token,
-                rsa_key,
-                algorithms=ALGORITHMS,
-                audience=AUTH0_AUDIENCE,
-                issuer=f'https://{AUTH0_DOMAIN}/'
-            )
-            return payload
-        except ExpiredSignatureError:
-            raise AuthError({
-                'code': 'token_expired',
-                'description': 'Token is expired'
-            }, 401)
-        except JWTClaimsError:
-            raise AuthError({
-                'code': 'invalid_claims',
-                'description': 'Incorrect claims, please check the audience and issuer'
-            }, 401)
-        except JWTError:
-            raise AuthError({
-                'code': 'invalid_header',
-                'description': 'Unable to parse authentication token.'
-            }, 401)
-    raise AuthError({
-        'code': 'invalid_header',
-        'description': 'Unable to find appropriate key'
-    }, 401)
-
-def get_userinfo(request):
-    auth = request.headers.get('Authorization', None)
-    token = auth.split()[1]
-    userinfo_url = f"https://{AUTH0_DOMAIN}/user_info"
-    headers = {'Authorization': f'Bearer {token}'}
-    response = requests.get(userinfo_url, headers=headers)
+    jwks_url = f'https://{app.config["AUTH0_DOMAIN"]}/.well-known/jwks.json'
+    response = requests.get(jwks_url)
+    response.raise_for_status()
     return response.json()
 
-def handle_auth_error(ex):
-    response = jsonify(ex.error)
-    response.status_code = ex.status_code
-    return response
+def decode_jwt(token):
+    try:
+        # Decode the JWT header manually
+        header = json.loads(base64_url_decode(token.split('.')[0]).decode('utf-8'))
+        kid = header['kid']
+        
+        # Fetch the JWKS
+        jwks = get_jwks()
+        
+        # Find the key that matches the kid
+        rsa_key = None
+        for key in jwks['keys']:
+            if key['kid'] == kid:
+                rsa_key = key
+                break
+        
+        if not rsa_key:
+            raise Exception("No appropriate keys found")
+        
+        # Construct the key using jwk.construct
+        key = jwk.construct(rsa_key)
+        
+        # Split the token and decode the signature
+        message, encoded_sig = token.rsplit('.', 1)
+        decoded_sig = base64url_decode(encoded_sig)
+        
+        # Verify the signature
+        if not key.verify(message, decoded_sig):
+            raise JWTError("Signature verification failed")
+
+        # Validate the token and extract the payload
+        payload = jwt.decode(
+            token,
+            rsa_key,
+            algorithms=['RS256'],
+            audience=app.config['API_AUDIENCE'],
+            issuer=f'https://{app.config["AUTH0_DOMAIN"]}/'
+        )
+        
+        # Check audience
+        if app.config['API_AUDIENCE'] not in payload['aud']:
+            raise Exception("Invalid claims: incorrect audience")
+
+        return payload
+
+    except ExpiredSignatureError:
+        raise Exception("Token expired")
+    except JWTClaimsError:
+        raise Exception("Invalid claims")
+    except JWTError as e:
+        raise Exception(f"Unable to parse token: {str(e)}")
+    except Exception as e:
+        raise Exception(f"Error decoding token: {str(e)}")

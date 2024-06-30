@@ -45,73 +45,6 @@ db.init_app(app)
 cors = CORS(app)
 setup_admin(app)
 
-@lru_cache()
-def get_jwks():
-    jwks_url = f'https://{app.config["AUTH0_DOMAIN"]}/.well-known/jwks.json'
-    jwks = requests.get(jwks_url).json()
-    return jwks
-
-def base64_url_decode(input):
-    input += '=' * (4 - len(input) % 4)  # Pad with "=" characters
-    return base64.urlsafe_b64decode(input)
-
-def decode_jwt(token):
-    try:
-        # Manually decode the JWT header
-        header = json.loads(base64_url_decode(token.split('.')[0]).decode('utf-8'))
-        kid = header['kid']
-        
-        # Fetch the JWKS
-        jwks = get_jwks()
-        
-        # Find the key that matches the kid
-        rsa_key = {}
-        for key in jwks['keys']:
-            if key['kid'] == kid:
-                rsa_key = {
-                    'kty': key['kty'],
-                    'kid': key['kid'],
-                    'use': key['use'],
-                    'n': key['n'],
-                    'e': key['e']
-                }
-        
-        if not rsa_key:
-            raise Exception("No appropriate keys found")
-        
-        # Manually decode the JWT payload
-        payload_segment = token.split('.')[1]
-        padded_payload_segment = payload_segment + '=' * (4 - len(payload_segment) % 4)
-        decoded_payload = base64.urlsafe_b64decode(padded_payload_segment)
-        payload = json.loads(decoded_payload.decode('utf-8'))
-
-        print("Decoded JWT payload:", payload)
-
-        # Validate the token's claims
-        expected_audience = app.config['API_AUDIENCE']
-        if isinstance(payload['aud'], list):
-            if expected_audience not in payload['aud']:
-                print(payload['aud'], expected_audience)
-                raise Exception("Invalid claims: incorrect audience")
-        else:
-            if payload['aud'] != expected_audience:
-                print(payload['aud'], expected_audience)
-                raise Exception("Invalid claims: incorrect audience")
-        
-        if payload['iss'] != f'https://{app.config["AUTH0_DOMAIN"]}/':
-            raise Exception("Invalid claims: incorrect issuer")
-
-        return payload
-
-    except ExpiredSignatureError:
-        raise Exception("Token expired")
-    except JWTClaimsError:
-        raise Exception("Invalid claims")
-    except JWTError as e:
-        raise Exception(f"Unable to parse token: {str(e)}")
-    except Exception as e:
-        raise Exception(f"Error decoding token: {str(e)}")
-    
 
 @app.route('/import_feed', methods=['POST'])
 @requires_auth
@@ -168,16 +101,13 @@ def edit_story(story_id):
 def user_feed():
     token = request.headers.get('Authorization', None).split(' ')[1]
     try:
-        userinfo = decode_jwt(token)
+        userinfo = decode_jwt(token, app.config['AUTH0_DOMAIN'], app.config['API_AUDIENCE'])
     except Exception as e:
         return jsonify({'error': str(e)}), 401
 
-    if 'email' not in userinfo:
-        return jsonify({'error': 'Email not found in token'}), 400
-
     user = User.query.filter_by(auth0_id=userinfo['sub']).first()
     if not user:
-        user = User(auth0_id=userinfo['sub'], email=userinfo['email'], username=userinfo.get('nickname', 'Unknown'))
+        user = User(auth0_id=userinfo['sub'], email=userinfo.get('https://voluble-boba-2e3a2e.netlify.app/email'), username=userinfo.get('nickname', 'Unknown'))
         db.session.add(user)
         db.session.commit()
 
