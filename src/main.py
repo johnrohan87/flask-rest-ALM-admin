@@ -14,8 +14,8 @@ from flask import Flask, request, jsonify, url_for, make_response
 from flask_migrate import Migrate
 #from flask_swagger import swagger
 from flask_cors import CORS
-from jose import jwt
-from jose.exceptions import JWTError, ExpiredSignatureError, JWTClaimsError
+from jose import jwt, JWTError
+#from jose.exceptions import JWTError, ExpiredSignatureError, JWTClaimsError
 from ratelimiter import RateLimiter
 import validators 
 from sqlalchemy.exc import SQLAlchemyError
@@ -65,35 +65,35 @@ def get_jwks():
     return jwks
 
 def decode_jwt(token):
-    jwks = get_jwks()
     try:
+        jwks = get_jwks()
         unverified_header = jwt.get_unverified_header(token)
         rsa_key = {}
         for key in jwks['keys']:
             if key['kid'] == unverified_header['kid']:
-                rsa_key = key
+                rsa_key = {
+                    'kty': key['kty'],
+                    'kid': key['kid'],
+                    'use': key['use'],
+                    'n': key['n'],
+                    'e': key['e']
+                }
                 break
 
         if rsa_key:
-            public_key = jwt.construct_rsa_public_key(rsa_key)
             payload = jwt.decode(
                 token,
-                public_key,
+                rsa_key,
                 algorithms=['RS256'],
                 audience='YOUR_API_AUDIENCE',
-                issuer=f'https://{auth0_domain}/'
+                issuer=f'https://YOUR_AUTH0_DOMAIN/'
             )
             return payload
-    except ExpiredSignatureError:
-        raise Exception("Token has expired")
-    except JWTClaimsError:
-        raise Exception("Invalid claims")
-    except JWTError as e:
-        raise Exception(f"Error processing token: {e}")
-    except Exception as e:
-        raise Exception(f"Error decoding token: {e}")
 
-    raise Exception("Appropriate key not found")
+    except JWTError as e:
+        raise Exception(f'JWTError: {str(e)}')
+    except Exception as e:
+        raise Exception(f'Error decoding token: {str(e)}')
 
 @app.route('/user_feed', methods=['GET'])
 @requires_auth
