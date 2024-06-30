@@ -160,7 +160,7 @@ def decode_jwt(token, auth0_domain, api_audience):
         decoded_sig = base64url_decode(encoded_sig)
         
         # Verify the signature
-        if not key.verify(message.encode(), decoded_sig):
+        if not key.verify(message.encode('utf-8'), decoded_sig):
             raise JWTError("Signature verification failed")
 
         # Validate the token and extract the payload
