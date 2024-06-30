@@ -138,9 +138,11 @@ def decode_jwt(token, auth0_domain, api_audience):
         # Decode the JWT header manually
         header = json.loads(base64_url_decode(token.split('.')[0]).decode('utf-8'))
         kid = header['kid']
+        print(f"Decoded JWT Header: {header}")
         
         # Fetch the JWKS
         jwks = get_jwks(auth0_domain)
+        print(f"JWKS: {jwks}")
         
         # Find the key that matches the kid
         rsa_key = None
@@ -154,6 +156,7 @@ def decode_jwt(token, auth0_domain, api_audience):
         
         # Construct the key using jwk.construct
         key = jwk.construct(rsa_key)
+        print(f"Constructed Key: {key}")
         
         # Split the token and decode the signature
         message, encoded_sig = token.rsplit('.', 1)
@@ -162,6 +165,8 @@ def decode_jwt(token, auth0_domain, api_audience):
         # Verify the signature
         if not key.verify(message.encode('utf-8'), decoded_sig):
             raise JWTError("Signature verification failed")
+        
+        print("Signature verified successfully")
 
         # Validate the token and extract the payload
         payload = jwt.decode(
@@ -171,9 +176,12 @@ def decode_jwt(token, auth0_domain, api_audience):
             audience=api_audience,
             issuer=f'https://{auth0_domain}/'
         )
+
+        print(f"Decoded Payload: {payload}")
         
         # Check audience
         if api_audience not in payload['aud']:
+            print(f"Audience mismatch: {payload['aud']} != {api_audience}")
             raise Exception("Invalid claims: incorrect audience")
 
         return payload
