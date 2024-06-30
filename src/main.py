@@ -40,6 +40,12 @@ def base64_url_decode(input):
     input += '=' * (4 - (len(input) % 4))
     return base64.urlsafe_b64decode(input)
 
+@lru_cache()
+def get_jwks():
+    jwks_url = f'https://{app.config["AUTH0_DOMAIN"]}/.well-known/jwks.json'
+    jwks = requests.get(jwks_url).json()
+    return jwks
+
 def decode_jwt(token):
     try:
         header, payload, signature = token.split('.')
@@ -240,6 +246,11 @@ def handle_auth_error(error):
     })
     response.status_code = error.status_code
     return response
+
+@RateLimiter(max_calls=10, period=1)
+@app.errorhandler(APIException)
+def handle_invalid_usage(error):
+    return jsonify(error.to_dict()), error.status_code
 
 @app.route('/auth0protected')
 def auth0protected():
