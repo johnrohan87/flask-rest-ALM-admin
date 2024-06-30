@@ -145,32 +145,30 @@ def decode_jwt(token, auth0_domain, api_audience):
         print(f"JWKS: {json.dumps(jwks, indent=2)}")
         
         # Find the key that matches the kid
-        rsa_key = None
+        rsa_key = {}
         for key in jwks['keys']:
             if key['kid'] == kid:
-                rsa_key = key
+                rsa_key = {
+                    'kty': key['kty'],
+                    'kid': key['kid'],
+                    'use': key['use'],
+                    'n': key['n'],
+                    'e': key['e']
+                }
                 break
         
         if not rsa_key:
             raise Exception("No appropriate keys found")
         
-        # Construct the key using jwk.construct
-        key = jwk.construct(rsa_key)
-        print(f"Constructed Key: {key}")
-        
-        # Verify the signature
-        message, signature = token.rsplit('.', 1)
-        message_bytes = message.encode('utf-8')
-        decoded_signature = base64url_decode(signature)
-        
-        # Verify the signature
-        if not key.verify(message_bytes, decoded_signature):
-            raise JWTError("Signature verification failed")
-        
-        print("Signature verified successfully")
+        # Decode the token
+        payload = jwt.decode(
+            token,
+            rsa_key,
+            algorithms=['RS256'],
+            audience=api_audience,
+            issuer=f'https://{auth0_domain}/'
+        )
 
-        # Extract the payload
-        payload = json.loads(base64_url_decode(token.split('.')[1]).decode('utf-8'))
         print(f"Decoded Payload: {json.dumps(payload, indent=2)}")
         
         # Check audience
@@ -179,6 +177,7 @@ def decode_jwt(token, auth0_domain, api_audience):
             raise Exception("Invalid claims: incorrect audience")
 
         return payload
+
 
     except ExpiredSignatureError:
         raise Exception("Token expired")
