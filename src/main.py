@@ -64,6 +64,10 @@ def user_feed():
         userinfo = decode_jwt(token)
     except AuthError as e:
         return handle_auth_error(e)
+    
+    email = userinfo.get('email')
+    if not email:
+        return jsonify({'error': 'Email not provided in token'}), 400
 
     user = User.query.filter_by(auth0_id=userinfo['sub']).first()
     if not user:
