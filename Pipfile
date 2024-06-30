@@ -13,7 +13,6 @@ flask-migrate = "*"
 flask-swagger = "*"
 psycopg2-binary = "*"
 python-dotenv = "*"
-python-jose = "*"
 mysql-connector-python = "*"
 flask-cors = "*"
 gunicorn = "*"
@@ -27,6 +26,7 @@ feedparser = "*"
 requests = "*"
 validators = "*"
 auth0-python = "*"
+python-jose = {extras = ["cryptography"], version = "*"}
 
 [requires]
 python_version = "3.8"
