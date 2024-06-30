@@ -160,10 +160,11 @@ def decode_jwt(token, auth0_domain, api_audience):
         
         # Verify the signature
         message, signature = token.rsplit('.', 1)
-        message += "."
+        message_bytes = message.encode('utf-8')
         decoded_signature = base64url_decode(signature)
         
-        if not key.verify(message.encode('utf-8'), decoded_signature):
+        # Verify the signature
+        if not key.verify(message_bytes, decoded_signature):
             raise JWTError("Signature verification failed")
         
         print("Signature verified successfully")
