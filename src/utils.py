@@ -121,7 +121,6 @@ def requires_auth(f):
     return decorated
 
 def base64_url_decode(input):
-    """Helper function to decode base64 urls"""
     rem = len(input) % 4
     if rem > 0:
         input += '=' * (4 - rem)
@@ -161,7 +160,7 @@ def decode_jwt(token, auth0_domain, api_audience):
         decoded_sig = base64url_decode(encoded_sig)
         
         # Verify the signature
-        if not key.verify(message, decoded_sig):
+        if not key.verify(message.encode(), decoded_sig):
             raise JWTError("Signature verification failed")
 
         # Validate the token and extract the payload
