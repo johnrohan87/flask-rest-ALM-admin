@@ -148,7 +148,13 @@ def decode_jwt(token, auth0_domain, api_audience):
         rsa_key = None
         for key in jwks['keys']:
             if key['kid'] == kid:
-                rsa_key = key
+                rsa_key = {
+                    'kty': key['kty'],
+                    'kid': key['kid'],
+                    'use': key['use'],
+                    'n': key['n'],
+                    'e': key['e']
+                }
                 break
         
         if not rsa_key:
