@@ -160,7 +160,7 @@ def decode_jwt(token, auth0_domain, api_audience):
         
         # Decrypt the token
         decrypted_token = jwe.decrypt(token, key)
-        payload = json.loads(decrypted_token)
+        payload = json.loads(decrypted_token.decode('utf-8'))
 
         print(f"Decoded Payload: {json.dumps(payload, indent=2)}")
         
