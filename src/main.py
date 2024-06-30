@@ -2,93 +2,35 @@
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
 
-#import email
 import os
 import json
 import base64
+from logging import FileHandler,WARNING
+from functools import lru_cache
+from datetime import timedelta
 import requests
 from flask import Flask, request, jsonify
 from flask_migrate import Migrate
 from flask_cors import CORS
 from jose import jwt, jwk
-from jose.utils import base64url_decode
 from jose.exceptions import JWTError, ExpiredSignatureError, JWTClaimsError
 from sqlalchemy.exc import SQLAlchemyError
+from utils import APIException, generate_sitemap, requires_auth, get_userinfo, AuthError, decode_jwt
+from admin import setup_admin
+from models import db, User, Person, TextFile, FeedPost, Todo, Feed, Story
 
-from logging import FileHandler,WARNING
-from functools import lru_cache
-from datetime import timedelta
 
 from ratelimiter import RateLimiter
 import validators 
 from auth0.authentication import GetToken
 from auth0.management import Auth0
-from utils import APIException, generate_sitemap, requires_auth, get_userinfo, AuthError
-from admin import setup_admin
-from models import db, User, Person, TextFile, FeedPost, Todo, Feed, Story
-#from models import Person
+
 
 from flask_jwt_extended import (create_access_token, create_refresh_token, get_jwt_identity, current_user, jwt_required, JWTManager)
-
 from services import fetch_rss_feed
 
 
 app = Flask(__name__)
-
-@lru_cache()
-def base64_url_decode(input):
-    input += '=' * (4 - (len(input) % 4))
-    return base64.urlsafe_b64decode(input)
-
-@lru_cache()
-def get_jwks():
-    jwks_url = f'https://{app.config["AUTH0_DOMAIN"]}/.well-known/jwks.json'
-    jwks = requests.get(jwks_url).json()
-    return jwks
-
-def decode_jwt(token):
-    try:
-        header, payload, signature = token.split('.')
-        decoded_header = json.loads(base64_url_decode(header))
-        kid = decoded_header.get('kid')
-
-        jwks_url = f'https://{os.environ["AUTH0_DOMAIN"]}/.well-known/jwks.json'
-        jwks = requests.get(jwks_url).json()
-        
-        rsa_key = {}
-        for key in jwks['keys']:
-            if key['kid'] == kid:
-                rsa_key = {
-                    'kty': key['kty'],
-                    'kid': key['kid'],
-                    'use': key['use'],
-                    'n': key['n'],
-                    'e': key['e']
-                }
-                break
-
-        if rsa_key:
-            public_key = jwk.construct(rsa_key)
-            message, encoded_signature = '.'.join([header, payload]), signature
-            decoded_signature = base64url_decode(encoded_signature.encode('utf-8'))
-
-            if not public_key.verify(message.encode("utf8"), decoded_signature):
-                raise JWTError("Signature verification failed")
-
-            decoded_payload = json.loads(base64_url_decode(payload))
-            if decoded_payload['aud'] != os.environ['API_AUDIENCE']:
-                raise JWTClaimsError("Invalid audience")
-            if decoded_payload['iss'] != f'https://{os.environ["AUTH0_DOMAIN"]}/':
-                raise JWTClaimsError("Invalid issuer")
-
-            return decoded_payload
-        else:
-            raise Exception("No matching key found")
-
-    except JWTError as e:
-        raise Exception(f'JWTError: {str(e)}')
-    except Exception as e:
-        raise Exception(f'Error decoding token: {str(e)}')
 
 file_handler = FileHandler('errorlog.txt')
 file_handler.setLevel(WARNING)
@@ -117,22 +59,15 @@ setup_admin(app)
 @app.route('/user_feed', methods=['GET'])
 @requires_auth
 def user_feed():
-    if 'Authorization' not in request.headers:
-        return jsonify({'error': 'Authorization header is missing'}), 401
-
-    token = request.headers['Authorization'].split(' ')[1]
+    token = request.headers.get('Authorization', None).split(' ')[1]
     try:
         userinfo = decode_jwt(token)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 401
+    except AuthError as e:
+        return handle_auth_error(e)
 
     user = User.query.filter_by(auth0_id=userinfo['sub']).first()
     if not user:
-        user = User(
-            auth0_id=userinfo['sub'], 
-            email=userinfo.get('email'), 
-            username=userinfo.get('nickname', 'Unknown')
-        )
+        user = User(auth0_id=userinfo['sub'], email=userinfo.get('email'), username=userinfo.get('nickname', 'Unknown'))
         db.session.add(user)
         db.session.commit()
 
@@ -146,8 +81,24 @@ def user_feed():
                 'content': story.custom_content or story.data.get('summary', 'No Content')
             }
             user_feed.append(story_data)
-
+    
     return jsonify({'feed': user_feed}), 200
+
+@app.errorhandler(AuthError)
+def handle_auth_error(error):
+    response = jsonify({
+        "success": False,
+        "error": error.status_code,
+        "message": error.error['description']
+    })
+    response.status_code = error.status_code
+    return response
+
+@RateLimiter(max_calls=10, period=1)
+@app.errorhandler(APIException)
+def handle_invalid_usage(error):
+    return jsonify(error.to_dict()), error.status_code
+
 
 @app.route('/import_feed', methods=['POST'])
 @requires_auth
@@ -236,21 +187,6 @@ def user_info():
         user_data['feeds'].append(feed_data)
 
     return jsonify(user_data)
-
-@app.errorhandler(AuthError)
-def handle_auth_error(error):
-    response = jsonify({
-        "success": False,
-        "error": error.status_code,
-        "message": error.error['description']
-    })
-    response.status_code = error.status_code
-    return response
-
-@RateLimiter(max_calls=10, period=1)
-@app.errorhandler(APIException)
-def handle_invalid_usage(error):
-    return jsonify(error.to_dict()), error.status_code
 
 @app.route('/auth0protected')
 def auth0protected():

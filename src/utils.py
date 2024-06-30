@@ -1,9 +1,9 @@
-from flask import jsonify, url_for, request, g
+from flask import jsonify, request, g
 from functools import wraps
 import json
-import urllib.request
 import requests
-from jose import jwt
+from jose import jwt, jwk
+from jose.exceptions import JWTError, ExpiredSignatureError, JWTClaimsError
 import os
 
 
@@ -30,8 +30,6 @@ def has_no_empty_params(rule):
 def generate_sitemap(app):
     links = ['/admin/']
     for rule in app.url_map.iter_rules():
-        # Filter out rules we can't navigate to in a browser
-        # and rules that require parameters
         if "GET" in rule.methods and has_no_empty_params(rule):
             url = url_for(rule.endpoint, **(rule.defaults or {}))
             if "/admin/" not in url:
@@ -43,7 +41,7 @@ def generate_sitemap(app):
         <img style="max-height: 80px" src='https://ucarecdn.com/3a0e7d8b-25f3-4e2f-add2-016064b04075/rigobaby.jpg' />
         <h1>Rigo welcomes you to your API!!</h1>
         <p>API HOST: <script>document.write('<input style="padding: 5px; width: 300px" type="text" value="'+window.location.href+'" />');</script></p>
-        <p>Start working on your proyect by following the <a href="https://github.com/4GeeksAcademy/flask-rest-hello/blob/master/docs/_QUICK_START.md" target="_blank">Quick Start</a></p>
+        <p>Start working on your project by following the <a href="https://github.com/4GeeksAcademy/flask-rest-hello/blob/master/docs/_QUICK_START.md" target="_blank">Quick Start</a></p>
         <p>Remember to specify a real endpoint path like: </p>
         <ul style="text-align: left;">"""+links_html+"</ul></div>"
 
@@ -90,51 +88,63 @@ def requires_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         token = get_token_auth_header()
-        jsonurl = requests.get(f'https://{AUTH0_DOMAIN}/.well-known/jwks.json')
-        jwks = jsonurl.json()
-        unverified_header = jwt.get_unverified_header(token)
-        rsa_key = {}
-        for key in jwks['keys']:
-            if key['kid'] == unverified_header['kid']:
-                rsa_key = {
-                    'kty': key['kty'],
-                    'kid': key['kid'],
-                    'use': key['use'],
-                    'n': key['n'],
-                    'e': key['e']
-                }
-        if rsa_key:
-            try:
-                payload = jwt.decode(
-                    token,
-                    rsa_key,
-                    algorithms=ALGORITHMS,
-                    audience=AUTH0_AUDIENCE,
-                    issuer=f'https://{AUTH0_DOMAIN}/'
-                )
-            except jwt.ExpiredSignatureError:
-                raise AuthError({
-                    'code': 'token_expired',
-                    'description': 'Token is expired'
-                }, 401)
-            except jwt.JWTClaimsError:
-                raise AuthError({
-                    'code': 'invalid_claims',
-                    'description': 'Incorrect claims, please check the audience and issuer'
-                }, 401)
-            except Exception:
-                raise AuthError({
-                    'code': 'invalid_header',
-                    'description': 'Unable to parse authentication token.'
-                }, 401)
-
-            g.current_user = payload  # Storing the user info in Flask's global context
-            return f(*args, **kwargs)
-        raise AuthError({
-            'code': 'invalid_header',
-            'description': 'Unable to find appropriate key'
-        }, 401)
+        try:
+            payload = decode_jwt(token)
+        except AuthError as e:
+            return handle_auth_error(e)
+        
+        g.current_user = payload
+        return f(*args, **kwargs)
     return decorated
+
+@lru_cache()
+def get_jwks():
+    jwks_url = f'https://{AUTH0_DOMAIN}/.well-known/jwks.json'
+    jwks = requests.get(jwks_url).json()
+    return jwks
+
+def decode_jwt(token):
+    jwks = get_jwks()
+    unverified_header = jwt.get_unverified_header(token)
+    rsa_key = {}
+    for key in jwks['keys']:
+        if key['kid'] == unverified_header['kid']:
+            rsa_key = {
+                'kty': key['kty'],
+                'kid': key['kid'],
+                'use': key['use'],
+                'n': key['n'],
+                'e': key['e']
+            }
+    if rsa_key:
+        try:
+            payload = jwt.decode(
+                token,
+                rsa_key,
+                algorithms=ALGORITHMS,
+                audience=AUTH0_AUDIENCE,
+                issuer=f'https://{AUTH0_DOMAIN}/'
+            )
+            return payload
+        except ExpiredSignatureError:
+            raise AuthError({
+                'code': 'token_expired',
+                'description': 'Token is expired'
+            }, 401)
+        except JWTClaimsError:
+            raise AuthError({
+                'code': 'invalid_claims',
+                'description': 'Incorrect claims, please check the audience and issuer'
+            }, 401)
+        except JWTError:
+            raise AuthError({
+                'code': 'invalid_header',
+                'description': 'Unable to parse authentication token.'
+            }, 401)
+    raise AuthError({
+        'code': 'invalid_header',
+        'description': 'Unable to find appropriate key'
+    }, 401)
 
 def get_userinfo(request):
     auth = request.headers.get('Authorization', None)
