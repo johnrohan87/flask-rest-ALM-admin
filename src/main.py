@@ -5,6 +5,7 @@ This module takes care of starting the API Server, Loading the DB and Adding the
 #import email
 import os
 import json
+import base64
 import requests
 from flask import Flask, request, jsonify
 from flask_migrate import Migrate
@@ -34,19 +35,22 @@ from services import fetch_rss_feed
 app = Flask(__name__)
 
 @lru_cache()
-def get_jwks():
-    auth0_domain = os.environ.get('AUTH0_DOMAIN')
-    jwks_url = f'https://{auth0_domain}/.well-known/jwks.json'
-    jwks = requests.get(jwks_url).json()
-    return jwks
+def base64_url_decode(input):
+    input += '=' * (4 - (len(input) % 4))
+    return base64.urlsafe_b64decode(input)
 
 def decode_jwt(token):
     try:
-        jwks = get_jwks()
-        unverified_header = jwt.get_unverified_claims(token)
+        header, payload, signature = token.split('.')
+        decoded_header = json.loads(base64_url_decode(header))
+        kid = decoded_header.get('kid')
+        
+        jwks_url = f'https://{os.environ["AUTH0_DOMAIN"]}/.well-known/jwks.json'
+        jwks = requests.get(jwks_url).json()
+        
         rsa_key = {}
         for key in jwks['keys']:
-            if key['kid'] == unverified_header['kid']:
+            if key['kid'] == kid:
                 rsa_key = {
                     'kty': key['kty'],
                     'kid': key['kid'],
@@ -61,10 +65,12 @@ def decode_jwt(token):
                 token,
                 rsa_key,
                 algorithms=['RS256'],
-                audience='YOUR_API_AUDIENCE',
-                issuer=f'https://YOUR_AUTH0_DOMAIN/'
+                audience=os.environ['API_AUDIENCE'],
+                issuer=f'https://{os.environ["AUTH0_DOMAIN"]}/'
             )
             return payload
+        else:
+            raise Exception("No matching key found")
 
     except JWTError as e:
         raise Exception(f'JWTError: {str(e)}')
