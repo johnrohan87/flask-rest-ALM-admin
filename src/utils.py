@@ -4,9 +4,8 @@ import json
 import base64
 from flask import request, g, url_for
 from functools import wraps, lru_cache
-from jose import jwk, jwt
+from jose import jwk, jwt, jwe
 from jose.utils import base64url_decode
-from jose.backends.cryptography_backend import RSAAlgorithm
 from jose.exceptions import ExpiredSignatureError, JWTClaimsError, JWTError
 
 
@@ -149,41 +148,19 @@ def decode_jwt(token, auth0_domain, api_audience):
         rsa_key = None
         for key in jwks['keys']:
             if key['kid'] == kid:
-                rsa_key = {
-                    'kty': key['kty'],
-                    'kid': key['kid'],
-                    'use': key['use'],
-                    'n': base64_url_decode(key['n']),
-                    'e': base64_url_decode(key['e'])
-                }
+                rsa_key = key
                 break
         
         if not rsa_key:
             raise Exception("No appropriate keys found")
         
         # Construct the key using jwk.construct
-        rsa_algorithm = RSAAlgorithm(RSAAlgorithm.SHA256)
-        public_key = rsa_algorithm.from_jwk(rsa_key)
-        print(f"Constructed Key: {public_key}")
+        key = jwk.construct(rsa_key)
+        print(f"Constructed Key: {key}")
         
-        # Split the token and decode the signature
-        message, encoded_sig = token.rsplit('.', 1)
-        decoded_sig = base64url_decode(encoded_sig)
-        
-        # Verify the signature
-        if not key.verify(message.encode('utf-8'), decoded_sig):
-            raise JWTError("Signature verification failed")
-        
-        print("Signature verified successfully")
-
-        # Validate the token and extract the payload
-        payload = jwt.decode(
-            token,
-            rsa_key,
-            algorithms=['RS256'],
-            audience=api_audience,
-            issuer=f'https://{auth0_domain}/'
-        )
+        # Decrypt the token
+        decrypted_token = jwe.decrypt(token, key)
+        payload = json.loads(decrypted_token)
 
         print(f"Decoded Payload: {json.dumps(payload, indent=2)}")
         
