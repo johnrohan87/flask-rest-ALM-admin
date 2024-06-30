@@ -120,18 +120,13 @@ def requires_auth(f):
         }, 401)
     return decorated
 
-def base64_url_decode(input):
-    rem = len(input) % 4
-    if rem > 0:
-        input += '=' * (4 - rem)
-    return base64.urlsafe_b64decode(input)
-
-@lru_cache()
-def get_jwks(auth0_domain):
-    jwks_url = f'https://{auth0_domain}/.well-known/jwks.json'
-    response = requests.get(jwks_url)
-    response.raise_for_status()
-    return response.json()
+def decode_jwt_token(token):
+    try:
+        auth0_domain = app.config["AUTH0_DOMAIN"]
+        api_audience = app.config["API_AUDIENCE"]
+        return decode_jwt(token, auth0_domain, api_audience)
+    except Exception as e:
+        raise Exception(f"Error decoding token: {str(e)}")
 
 def decode_jwt(token, auth0_domain, api_audience):
     try:
@@ -178,7 +173,6 @@ def decode_jwt(token, auth0_domain, api_audience):
 
         return payload
 
-
     except ExpiredSignatureError:
         raise Exception("Token expired")
     except JWTClaimsError:
@@ -187,3 +181,15 @@ def decode_jwt(token, auth0_domain, api_audience):
         raise Exception(f"Unable to parse token: {str(e)}")
     except Exception as e:
         raise Exception(f"Error decoding token: {str(e)}")
+
+def get_jwks(auth0_domain):
+    jwks_url = f'https://{auth0_domain}/.well-known/jwks.json'
+    response = requests.get(jwks_url)
+    response.raise_for_status()
+    return response.json()
+
+def base64_url_decode(input):
+    rem = len(input) % 4
+    if rem > 0:
+        input += '=' * (4 - rem)
+    return base64.urlsafe_b64decode(input)

@@ -101,29 +101,41 @@ def edit_story(story_id):
 def user_feed():
     token = request.headers.get('Authorization', None).split(' ')[1]
     try:
-        userinfo = decode_jwt(token, app.config['AUTH0_DOMAIN'], app.config['API_AUDIENCE'])
+        userinfo = decode_jwt_token(token)
+        email = userinfo.get('https://voluble-boba-2e3a2e.netlify.app/email')
+        if not email:
+            raise Exception("Email not found in token")
+
+        # Check if user exists
+        user = User.query.filter_by(auth0_id=userinfo['sub']).first()
+        if not user:
+            # User not found, create a new user record
+            user = User(
+                auth0_id=userinfo['sub'],
+                email=email,
+                username=userinfo.get('nickname', 'Unknown'),
+                password='none',  
+                is_active=True
+            )
+            db.session.add(user)
+            db.session.commit()
+
+        # Fetch user's feeds
+        feeds = Feed.query.filter_by(user_id=user.id).all()
+        user_feed = []
+        for feed in feeds:
+            stories = Story.query.filter_by(feed_id=feed.id).all()
+            for story in stories:
+                story_data = {
+                    'title': story.custom_title or story.data.get('title', 'No Title'),
+                    'content': story.custom_content or story.data.get('summary', 'No Content')
+                }
+                user_feed.append(story_data)
+
+        return jsonify({'feed': user_feed}), 200
+
     except Exception as e:
         return jsonify({'error': str(e)}), 401
-
-    user = User.query.filter_by(auth0_id=userinfo['sub']).first()
-    if not user:
-        # User not found, create a new user record
-        user = User(auth0_id=userinfo['sub'], email=userinfo.get('https://voluble-boba-2e3a2e.netlify.app/email'), username=userinfo.get('nickname', 'Unknown'))
-        db.session.add(user)
-        db.session.commit()
-
-    # Proceed with fetching user's feeds
-    feeds = Feed.query.filter_by(user_id=user.id).all()
-    user_feed = []
-    for feed in feeds:
-        stories = Story.query.filter_by(feed_id=feed.id).all()
-        for story in stories:
-            story_data = {
-                'title': story.custom_title or story.data.get('title', 'No Title'),
-                'content': story.custom_content or story.data.get('summary', 'No Content')
-            }
-            user_feed.append(story_data)
-    return jsonify({'feed': user_feed}), 200
 
 @app.route('/user_info', methods=['GET'])
 @requires_auth
