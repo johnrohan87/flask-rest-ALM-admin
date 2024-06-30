@@ -15,7 +15,7 @@ import validators
 from sqlalchemy.exc import SQLAlchemyError
 from auth0.authentication import GetToken
 from auth0.management import Auth0
-from utils import decode_jwt, APIException, requires_auth, get_userinfo, AuthError
+from utils import decode_jwt, APIException, requires_auth, AuthError
 from admin import setup_admin
 from models import db, User, Person, TextFile, FeedPost, Todo, Feed, Story
 from flask_jwt_extended import (create_access_token, create_refresh_token, 
