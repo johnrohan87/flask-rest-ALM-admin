@@ -158,10 +158,18 @@ def decode_jwt(token, auth0_domain, api_audience):
         key = jwk.construct(rsa_key)
         print(f"Constructed Key: {key}")
         
-        # Decrypt the token
-        decrypted_token = jwe.decrypt(token, key)
-        payload = json.loads(decrypted_token.decode('utf-8'))
+        # Verify the signature
+        message, signature = token.rsplit('.', 1)
+        message += "."
+        decoded_signature = base64url_decode(signature)
+        
+        if not key.verify(message.encode('utf-8'), decoded_signature):
+            raise JWTError("Signature verification failed")
+        
+        print("Signature verified successfully")
 
+        # Extract the payload
+        payload = json.loads(base64_url_decode(token.split('.')[1]).decode('utf-8'))
         print(f"Decoded Payload: {json.dumps(payload, indent=2)}")
         
         # Check audience
