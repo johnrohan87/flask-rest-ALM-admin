@@ -14,7 +14,7 @@ from flask import Flask, request, jsonify, url_for, make_response
 from flask_migrate import Migrate
 #from flask_swagger import swagger
 from flask_cors import CORS
-from jose import jwt
+from jose import jwt, JWTError, ExpiredSignatureError, JWTClaimsError
 from ratelimiter import RateLimiter
 import validators 
 from sqlalchemy.exc import SQLAlchemyError
@@ -66,7 +66,7 @@ def decode_jwt(token):
     headers = token.split('.')[0]
     decoded_headers = base64.urlsafe_b64decode(headers + '==').decode('utf-8')
     headers = json.loads(decoded_headers)
-    kid = headers['kid']
+    kid = headers.get('kid', None)
 
     jwks = requests.get(f'https://{app.config["AUTH0_DOMAIN"]}/.well-known/jwks.json').json()
     rsa_key = next((key for key in jwks['keys'] if key['kid'] == kid), None)
@@ -81,8 +81,12 @@ def decode_jwt(token):
                 issuer=f'https://{app.config["AUTH0_DOMAIN"]}/'
             )
             return payload
-        except jwt.JWTError as e:
-            raise Exception(f"JWT Error: {str(e)}")
+        except ExpiredSignatureError:
+            raise Exception("Token has expired")
+        except JWTClaimsError:
+            raise Exception("Invalid claims")
+        except Exception as e:
+            raise Exception(f"Unable to parse token: {str(e)}")
     else:
         raise Exception("Appropriate key not found")
 
