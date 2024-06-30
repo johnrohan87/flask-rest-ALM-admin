@@ -15,7 +15,7 @@ from flask_cors import CORS
 from jose import jwt, jwk
 from jose.exceptions import JWTError, ExpiredSignatureError, JWTClaimsError
 from sqlalchemy.exc import SQLAlchemyError
-from utils import APIException, generate_sitemap, requires_auth, get_userinfo, AuthError, decode_jwt
+from utils import APIException, generate_sitemap, requires_auth, get_userinfo, AuthError
 from admin import setup_admin
 from models import db, User, Person, TextFile, FeedPost, Todo, Feed, Story
 
@@ -54,66 +54,6 @@ MIGRATE = Migrate(app, db)
 db.init_app(app)
 cors = CORS(app)
 setup_admin(app)
-
-
-@app.route('/user_feed', methods=['GET'])
-@requires_auth
-def user_feed():
-    token = request.headers.get('Authorization', None).split(' ')[1]
-    try:
-        userinfo = decode_jwt(token)
-    except AuthError as e:
-        return handle_auth_error(e)
-    
-    # Check if email is present
-    email = userinfo.get('email')
-    if not email:
-        # Fetch user info from Auth0 /userinfo endpoint
-        userinfo_url = f"https://{AUTH0_DOMAIN}/userinfo"
-        headers = {'Authorization': f'Bearer {token}'}
-        response = requests.get(userinfo_url, headers=headers)
-        if response.status_code != 200:
-            return jsonify({'error': 'Failed to fetch user info from Auth0'}), 500
-        userinfo = response.json()
-        email = userinfo.get('email')
-        
-    if not email:
-        print("Email not found in user info:", userinfo)
-        return jsonify({'error': 'Email not provided in token'}), 400
-
-    user = User.query.filter_by(auth0_id=userinfo['sub']).first()
-    if not user:
-        user = User(auth0_id=userinfo['sub'], email=userinfo.get('email'), username=userinfo.get('nickname', 'Unknown'))
-        db.session.add(user)
-        db.session.commit()
-
-    feeds = Feed.query.filter_by(user_id=user.id).all()
-    user_feed = []
-    for feed in feeds:
-        stories = Story.query.filter_by(feed_id=feed.id).all()
-        for story in stories:
-            story_data = {
-                'title': story.custom_title or story.data.get('title', 'No Title'),
-                'content': story.custom_content or story.data.get('summary', 'No Content')
-            }
-            user_feed.append(story_data)
-    
-    return jsonify({'feed': user_feed}), 200
-
-@app.errorhandler(AuthError)
-def handle_auth_error(error):
-    response = jsonify({
-        "success": False,
-        "error": error.status_code,
-        "message": error.error['description']
-    })
-    response.status_code = error.status_code
-    return response
-
-@RateLimiter(max_calls=10, period=1)
-@app.errorhandler(APIException)
-def handle_invalid_usage(error):
-    return jsonify(error.to_dict()), error.status_code
 
 
 @app.route('/import_feed', methods=['POST'])
@@ -166,6 +106,36 @@ def edit_story(story_id):
 
     return jsonify({'message': 'Story updated successfully'})
 
+@app.route('/user_feed', methods=['GET'])
+@requires_auth
+def user_feed():
+    token = request.headers.get('Authorization', None).split(' ')[1]
+    try:
+        userinfo = decode_jwt(token, app.config['AUTH0_DOMAIN'], app.config['API_AUDIENCE'])
+    except Exception as e:
+        return jsonify({'error': str(e)}), 401
+
+    if 'email' not in userinfo:
+        return jsonify({'error': 'Email not found in token'}), 400
+
+    user = User.query.filter_by(auth0_id=userinfo['sub']).first()
+    if not user:
+        user = User(auth0_id=userinfo['sub'], email=userinfo['email'], username=userinfo.get('nickname', 'Unknown'))
+        db.session.add(user)
+        db.session.commit()
+
+    feeds = Feed.query.filter_by(user_id=user.id).all()
+    user_feed = []
+    for feed in feeds:
+        stories = Story.query.filter_by(feed_id=feed.id).all()
+        for story in stories:
+            story_data = {
+                'title': story.custom_title or story.data.get('title', 'No Title'),
+                'content': story.custom_content or story.data.get('summary', 'No Content')
+            }
+            user_feed.append(story_data)
+    return jsonify({'feed': user_feed}), 200
+
 @app.route('/user_info', methods=['GET'])
 @requires_auth
 def user_info():
@@ -204,20 +174,65 @@ def user_info():
 
     return jsonify(user_data)
 
+@app.errorhandler(AuthError)
+def handle_auth_error(error):
+    response = jsonify({
+        "success": False,
+        "error": error.status_code,
+        "message": error.error['description']
+    })
+    response.status_code = error.status_code
+    return response
+
+@lru_cache()
+def get_jwks():
+    jwks_url = f'https://{app.config["AUTH0_DOMAIN"]}/.well-known/jwks.json'
+    jwks = requests.get(jwks_url).json()
+    return jwks
+
+def decode_jwt(token, auth0_domain, api_audience):
+    jwks = get_jwks()
+    unverified_header = jwt.get_unverified_header(token)
+    rsa_key = {}
+    for key in jwks['keys']:
+        if key['kid'] == unverified_header['kid']:
+            rsa_key = {
+                'kty': key['kty'],
+                'kid': key['kid'],
+                'use': key['use'],
+                'n': key['n'],
+                'e': key['e']
+            }
+    if rsa_key:
+        try:
+            payload = jwt.decode(
+                token,
+                rsa_key,
+                algorithms=['RS256'],
+                audience=api_audience,
+                issuer=f'https://{auth0_domain}/'
+            )
+            return payload
+        except ExpiredSignatureError:
+            raise Exception("Token expired")
+        except JWTClaimsError:
+            raise Exception("Invalid claims")
+        except JWTError as e:
+            raise Exception(f"Unable to parse token: {str(e)}")
+    raise Exception("No appropriate keys found")
+
 @app.route('/auth0protected')
 def auth0protected():
     token = request.headers.get('Authorization', None)
     if not token:
         return jsonify({'message': "Authorization header is expected"}), 401
-    token = token.split()[1]  # Assuming the token is prefixed with 'Bearer'
+    token = token.split()[1]  
     try:
-        payload = decode_jwt(token)
+        payload = decode_jwt(token, app.config['AUTH0_DOMAIN'], app.config['API_AUDIENCE'])
         return jsonify({'message': "Protected content!", 'user': payload}), 200
     except Exception as e:
         return jsonify({'message': str(e)}), 401
 
-
-# Handle/serialize errors like a JSON object
 @RateLimiter(max_calls=10, period=1)
 @app.errorhandler(APIException)
 def handle_invalid_usage(error):

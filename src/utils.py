@@ -149,7 +149,7 @@ def decode_jwt(token):
 def get_userinfo(request):
     auth = request.headers.get('Authorization', None)
     token = auth.split()[1]
-    userinfo_url = f"https://{AUTH0_DOMAIN}/userinfo"
+    userinfo_url = f"https://{AUTH0_DOMAIN}/user_info"
     headers = {'Authorization': f'Bearer {token}'}
     response = requests.get(userinfo_url, headers=headers)
     return response.json()
