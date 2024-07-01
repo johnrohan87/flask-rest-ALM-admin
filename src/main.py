@@ -49,52 +49,81 @@ setup_admin(app)
 @app.route('/import_feed', methods=['POST'])
 @requires_auth
 def import_feed():
-    userinfo = get_userinfo(request)
-    user = User.query.filter_by(auth0_id=userinfo['sub']).first()
-    if not user:
-        user = User(auth0_id=userinfo['sub'], username=userinfo['name'])
-        db.session.add(user)
+    token = request.headers.get('Authorization', None).split(' ')[1]
+    try:
+        userinfo = decode_jwt_token(token)
+        email = userinfo.get('https://voluble-boba-2e3a2e.netlify.app/email')
+        if not email:
+            raise Exception("Email not found in token")
+
+        # Check if user exists
+        user = User.query.filter_by(auth0_id=userinfo['sub']).first()
+        if not user:
+            # User not found, create a new user record
+            user = User(
+                auth0_id=userinfo['sub'],
+                email=email,
+                username=userinfo.get('nickname', 'Unknown'),
+                password='none',  
+                is_active=True
+            )
+            db.session.add(user)
+            db.session.commit()
+
+        data = request.get_json()
+        url = data.get('url')
+        
+        if not validators.url(url):
+            return jsonify({'error': 'Invalid URL'}), 400
+
+        stories, raw_xml = fetch_rss_feed(url)
+        feed = Feed(url=url, user_id=user.id, raw_xml=raw_xml)
+        db.session.add(feed)
         db.session.commit()
 
-    data = request.get_json()
-    url = data.get('url')
-    
-    if not validators.url(url):
-        return jsonify({'error': 'Invalid URL'}), 400
+        for story_data in stories:
+            story = Story(
+                feed_id=feed.id,
+                data=story_data
+            )
+            db.session.add(story)
+        db.session.commit()
 
-    stories, raw_xml = fetch_rss_feed(url)
-    feed = Feed(url=url, user_id=user.id, raw_xml=raw_xml)
-    db.session.add(feed)
-    db.session.commit()
+        return jsonify({'message': 'Feed imported successfully'}), 200
 
-    for story_data in stories:
-        story = Story(
-            feed_id=feed.id,
-            data=story_data
-        )
-        db.session.add(story)
-    db.session.commit()
+    except Exception as e:
+        return jsonify({'error': str(e)}), 401
 
-    return jsonify({'message': 'Feed imported successfully'})
 
 @app.route('/edit_story/<int:story_id>', methods=['PUT'])
 @requires_auth
 def edit_story(story_id):
-    userinfo = get_userinfo(request)
-    user = User.query.filter_by(auth0_id=userinfo['sub']).first()
-    if not user:
-        return jsonify({'error': 'User not found'}), 404
+    token = request.headers.get('Authorization', None).split(' ')[1]
+    try:
+        userinfo = decode_jwt_token(token)
+        email = userinfo.get('https://voluble-boba-2e3a2e.netlify.app/email')
+        if not email:
+            raise Exception("Email not found in token")
 
-    story = Story.query.get(story_id)
-    if not story or story.feed.user_id != user.id:
-        return jsonify({'error': 'Story not found or unauthorized'}), 404
+        # Check if user exists
+        user = User.query.filter_by(auth0_id=userinfo['sub']).first()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
 
-    data = request.get_json()
-    story.custom_title = data.get('custom_title', story.custom_title)
-    story.custom_content = data.get('custom_content', story.custom_content)
-    db.session.commit()
+        story = Story.query.get(story_id)
+        if not story or story.feed.user_id != user.id:
+            return jsonify({'error': 'Story not found or unauthorized'}), 404
 
-    return jsonify({'message': 'Story updated successfully'})
+        data = request.get_json()
+        story.custom_title = data.get('custom_title', story.custom_title)
+        story.custom_content = data.get('custom_content', story.custom_content)
+        db.session.commit()
+
+        return jsonify({'message': 'Story updated successfully'}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 401
+
 
 @app.route('/user_feed', methods=['GET'])
 @requires_auth
