@@ -124,6 +124,39 @@ def edit_story(story_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 401
 
+@app.route('/delete_stories', methods=['DELETE'])
+@requires_auth
+def delete_stories():
+    try:
+        # Get the current user
+        current_user_id = get_jwt_identity()
+
+        # Get story IDs from the request body
+        story_ids = request.json.get('story_ids')
+        if not story_ids:
+            return jsonify({'error': 'No story IDs provided'}), 400
+
+        # Fetch the stories
+        stories = Story.query.filter(Story.id.in_(story_ids)).all()
+        if not stories:
+            return jsonify({'error': 'No stories found'}), 404
+
+        # Check if all stories belong to the current user
+        for story in stories:
+            feed = Feed.query.get(story.feed_id)
+            if feed.user_id != current_user_id:
+                return jsonify({'error': 'Unauthorized'}), 403
+
+        # Delete the stories
+        for story in stories:
+            db.session.delete(story)
+        db.session.commit()
+
+        return jsonify({'message': 'Stories deleted successfully'}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 @app.route('/user_feed', methods=['GET'])
 @requires_auth
