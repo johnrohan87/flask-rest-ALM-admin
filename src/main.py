@@ -187,13 +187,13 @@ def user_feed():
         # Fetch user's feeds
         feeds = Feed.query.filter_by(user_id=user.id).all()
         user_feed = []
+
         for feed in feeds:
             stories = Story.query.filter_by(feed_id=feed.id).all()
             for story in stories:
-                story_data = {
-                    'title': story.custom_title or story.data.get('title', 'No Title'),
-                    'content': story.custom_content or story.data.get('summary', 'No Content')
-                }
+                story_data = story.data
+                #story_data['custom_title'] = story.custom_title
+                #story_data['custom_content'] = story.custom_content
                 user_feed.append(story_data)
 
         return jsonify({'feed': user_feed}), 200
