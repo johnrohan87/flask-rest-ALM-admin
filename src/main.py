@@ -160,6 +160,46 @@ def delete_stories():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/debug_stories', methods=['GET'])
+@requires_auth
+def debug_stories():
+    try:
+        userinfo = g.current_user
+        current_user_id = userinfo['sub']
+        
+        print(f"Current user ID: {current_user_id}")
+
+        # Fetch all feeds for the current user
+        feeds = Feed.query.filter_by(user_id=current_user_id).all()
+        if not feeds:
+            print(f"No feeds found for user ID: {current_user_id}")
+            return jsonify({'error': 'No feeds found for this user'}), 404
+
+        # Collect all stories for these feeds
+        all_stories = []
+        for feed in feeds:
+            stories = Story.query.filter_by(feed_id=feed.id).all()
+            for story in stories:
+                story_data = {
+                    'id': story.id,
+                    'feed_id': story.feed_id,
+                    'data': story.data,
+                    'custom_title': story.custom_title,
+                    'custom_content': story.custom_content,
+                }
+                all_stories.append(story_data)
+
+        # Print the stories for debugging
+        for story in all_stories:
+            print(f"Story ID: {story['id']}, Feed ID: {story['feed_id']}, Data: {story['data']}")
+
+        return jsonify({'stories': all_stories}), 200
+
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
 
 @app.route('/user_feed', methods=['GET'])
 @requires_auth
