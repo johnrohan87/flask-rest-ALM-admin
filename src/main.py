@@ -191,15 +191,20 @@ def user_feed():
         for feed in feeds:
             stories = Story.query.filter_by(feed_id=feed.id).all()
             for story in stories:
-                story_data = story.data
-                #story_data['custom_title'] = story.custom_title
-                #story_data['custom_content'] = story.custom_content
+                story_data = {
+                    'id': story.id,
+                    'feed_id': story.feed_id,
+                    'data': story.data,
+                    'custom_title': story.custom_title,
+                    'custom_content': story.custom_content,
+                }
                 user_feed.append(story_data)
 
         return jsonify({'feed': user_feed}), 200
 
     except Exception as e:
         return jsonify({'error': str(e)}), 401
+        
 
 @app.route('/user_info', methods=['GET'])
 @requires_auth
