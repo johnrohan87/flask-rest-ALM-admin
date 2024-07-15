@@ -92,9 +92,18 @@ def requires_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         token = get_token_auth_header()
-        jsonurl = requests.get(f'https://{AUTH0_DOMAIN}/.well-known/jwks.json')
-        jwks = jsonurl.json()
-        header = json.loads(base64_url_decode(token.split('.')[0]).decode('utf-8'))
+        try:
+            payload = decode_jwt(token, AUTH0_DOMAIN, API_AUDIENCE)
+            g.current_user = payload
+        except AuthError as e:
+            return jsonify(e.error), e.status_code
+        return f(*args, **kwargs)
+    return decorated
+
+def decode_jwt(token, auth0_domain, api_audience):
+    try:
+        header = JOSE.get_unverified_header(token)
+        jwks = get_jwks(auth0_domain)
         rsa_key = {}
         for key in jwks['keys']:
             if key['kid'] == header['kid']:
@@ -105,90 +114,42 @@ def requires_auth(f):
                     'n': key['n'],
                     'e': key['e']
                 }
-        if rsa_key:
-            try:
-                payload = decode_jwt(token, AUTH0_DOMAIN, AUTH0_AUDIENCE)
-                g.current_user = payload
-                return f(*args, **kwargs)
-            except Exception as e:
-                raise AuthError({
-                    'code': 'invalid_token',
-                    'description': str(e)
-                }, 401)
-        raise AuthError({
-            'code': 'invalid_header',
-            'description': 'Unable to find appropriate key'
-        }, 401)
-    return decorated
-
-def decode_jwt_token(token):
-    try:
-        return decode_jwt(token, AUTH0_DOMAIN, API_AUDIENCE)
-    except Exception as e:
-        raise Exception(f"Error decoding token: {str(e)}")
-
-def decode_jwt(token, auth0_domain, api_audience):
-    try:
-        # Decode the JWT header manually
-        header = json.loads(base64_url_decode(token.split('.')[0]).decode('utf-8'))
-        kid = header['kid']
-        print(f"Decoded JWT Header: {header}")
-        
-        # Fetch the JWKS
-        jwks = get_jwks(auth0_domain)
-        print(f"JWKS: {json.dumps(jwks, indent=2)}")
-        
-        # Find the key that matches the kid
-        rsa_key = {}
-        for key in jwks['keys']:
-            if key['kid'] == kid:
-                rsa_key = {
-                    'kty': key['kty'],
-                    'kid': key['kid'],
-                    'use': key['use'],
-                    'n': key['n'],
-                    'e': key['e']
-                }
                 break
         
         if not rsa_key:
-            raise Exception("No appropriate keys found")
-        
-        # Decode the token
+            raise AuthError({
+                'code': 'invalid_header',
+                'description': 'Unable to find appropriate key'
+            }, 401)
+
         payload = JOSE.decode(
             token,
             rsa_key,
-            algorithms=['RS256'],
+            algorithms=ALGORITHMS,
             audience=api_audience,
             issuer=f'https://{auth0_domain}/'
         )
 
-        print(f"Decoded Payload: {json.dumps(payload, indent=2)}")
-        
-        # Check audience
-        if api_audience not in payload['aud']:
-            print(f"Audience mismatch: {payload['aud']} != {api_audience}")
-            raise Exception("Invalid claims: incorrect audience")
-
         return payload
 
     except ExpiredSignatureError:
-        raise Exception("Token expired")
+        raise AuthError({
+            'code': 'token_expired',
+            'description': 'token is expired'
+        }, 401)
     except JWTClaimsError:
-        raise Exception("Invalid claims")
-    except JWTError as e:
-        raise Exception(f"Unable to parse token: {str(e)}")
-    except Exception as e:
-        raise Exception(f"Error decoding token: {str(e)}")
+        raise AuthError({
+            'code': 'invalid_claims',
+            'description': 'incorrect claims, please check the audience and issuer'
+        }, 401)
+    except JWTError:
+        raise AuthError({
+            'code': 'invalid_token',
+            'description': 'token is invalid'
+        }, 401)
 
 def get_jwks(auth0_domain):
     jwks_url = f'https://{auth0_domain}/.well-known/jwks.json'
     response = requests.get(jwks_url)
     response.raise_for_status()
     return response.json()
-
-def base64_url_decode(input):
-    rem = len(input) % 4
-    if rem > 0:
-        input += '=' * (4 - rem)
-    return base64.urlsafe_b64decode(input)

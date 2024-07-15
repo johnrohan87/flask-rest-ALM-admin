@@ -204,7 +204,7 @@ def user_feed():
 
     except Exception as e:
         return jsonify({'error': str(e)}), 401
-        
+
 
 @app.route('/user_info', methods=['GET'])
 @requires_auth
