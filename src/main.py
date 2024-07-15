@@ -15,7 +15,7 @@ import validators
 from sqlalchemy.exc import SQLAlchemyError
 from auth0.authentication import GetToken
 from auth0.management import Auth0
-from utils import decode_jwt_token, generate_sitemap, decode_jwt, APIException, requires_auth, AuthError
+from utils import generate_sitemap, decode_jwt, APIException, requires_auth, AuthError
 from admin import setup_admin
 from models import db, User, Person, TextFile, FeedPost, Todo, Feed, Story
 from flask_jwt_extended import (create_access_token, create_refresh_token, 
@@ -49,9 +49,8 @@ setup_admin(app)
 @app.route('/import_feed', methods=['POST'])
 @requires_auth
 def import_feed():
-    token = request.headers.get('Authorization', None).split(' ')[1]
     try:
-        userinfo = decode_jwt_token(token)
+        userinfo = g.current_user
         email = userinfo.get('https://voluble-boba-2e3a2e.netlify.app/email')
         if not email:
             raise Exception("Email not found in token")
@@ -98,9 +97,8 @@ def import_feed():
 @app.route('/edit_story/<int:story_id>', methods=['PUT'])
 @requires_auth
 def edit_story(story_id):
-    token = request.headers.get('Authorization', None).split(' ')[1]
     try:
-        userinfo = decode_jwt_token(token)
+        userinfo = g.current_user
         email = userinfo.get('https://voluble-boba-2e3a2e.netlify.app/email')
         if not email:
             raise Exception("Email not found in token")
@@ -123,6 +121,7 @@ def edit_story(story_id):
 
     except Exception as e:
         return jsonify({'error': str(e)}), 401
+
 
 @app.route('/delete_stories', methods=['DELETE'])
 @requires_auth
@@ -161,11 +160,8 @@ def delete_stories():
 @app.route('/user_feed', methods=['GET'])
 @requires_auth
 def user_feed():
-    token = request.headers.get('Authorization', None).split(' ')[1]
-    print('token',token)
     try:
-        userinfo = decode_jwt_token(token)
-        print('userinfo',userinfo)
+        userinfo = g.current_user
         email = userinfo.get('https://voluble-boba-2e3a2e.netlify.app/email')
         if not email:
             raise Exception("Email not found in token")
