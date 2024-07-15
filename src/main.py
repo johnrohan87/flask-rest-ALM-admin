@@ -127,6 +127,7 @@ def edit_story(story_id):
 @requires_auth
 def delete_stories():
     try:
+        # Get the current user
         userinfo = g.current_user
         current_user_id = userinfo['sub']
 
@@ -134,6 +135,8 @@ def delete_stories():
         story_ids = request.json.get('story_ids')
         if not story_ids:
             return jsonify({'error': 'No story IDs provided'}), 400
+
+        print(f"Received story IDs for deletion: {story_ids}")
 
         # Fetch the stories
         stories = Story.query.filter(Story.id.in_(story_ids)).all()
@@ -155,6 +158,7 @@ def delete_stories():
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 
 @app.route('/user_feed', methods=['GET'])
