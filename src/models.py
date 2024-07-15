@@ -29,8 +29,8 @@ class User(db.Model):
 class Feed(db.Model):
     id = db.Column(Integer, primary_key=True)
     url = db.Column(String(255), nullable=False)
-    user_id = db.Column(Integer, ForeignKey('user.id'), nullable=False)
     raw_xml = db.Column(Text, nullable=True)
+    user_id = db.Column(Integer, ForeignKey('user.id'), nullable=False)
     stories = db.relationship('Story', backref='feed', lazy=True)
 
 class Story(db.Model):
