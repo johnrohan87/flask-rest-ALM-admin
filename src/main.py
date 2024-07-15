@@ -5,7 +5,7 @@ from logging import FileHandler, WARNING
 from functools import lru_cache
 from datetime import timedelta
 import requests
-from flask import Flask, request, jsonify, url_for, make_response
+from flask import Flask, request, jsonify, url_for, make_response, g
 from flask_migrate import Migrate
 from flask_cors import CORS
 from jose import jwt as JOSE
@@ -127,8 +127,8 @@ def edit_story(story_id):
 @requires_auth
 def delete_stories():
     try:
-        # Get the current user
-        current_user_id = get_jwt_identity()
+        userinfo = g.current_user
+        current_user_id = userinfo['sub']
 
         # Get story IDs from the request body
         story_ids = request.json.get('story_ids')
