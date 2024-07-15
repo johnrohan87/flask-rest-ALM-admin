@@ -129,15 +129,19 @@ def delete_stories():
     try:
         # Get the current user
         userinfo = g.current_user
+        print('g.current_user',userinfo)
         current_user_id = userinfo['sub']
+        print('current_user_id',current_user_id)
 
         # Get the user by auth0_id
         user = User.query.filter_by(auth0_id=current_user_id).first()
+        print('user',user)
         if not user:
             return jsonify({'error': 'User not found'}), 404
 
         # Get story IDs from the request body
         story_ids = request.json.get('story_ids')
+        print('story_ids',story_ids)
         if not story_ids:
             return jsonify({'error': 'No story IDs provided'}), 400
 
@@ -145,6 +149,7 @@ def delete_stories():
 
         # Fetch the stories based on story IDs
         stories = Story.query.filter(Story.id.in_(story_ids)).all()
+        print('stories',stories)
         if not stories:
             return jsonify({'error': 'No stories found'}), 404
 
