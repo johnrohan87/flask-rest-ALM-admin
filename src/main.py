@@ -131,6 +131,11 @@ def delete_stories():
         userinfo = g.current_user
         current_user_id = userinfo['sub']
 
+        # Get the user by auth0_id
+        user = User.query.filter_by(auth0_id=current_user_id).first()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
         # Get story IDs from the request body
         story_ids = request.json.get('story_ids')
         if not story_ids:
@@ -146,7 +151,7 @@ def delete_stories():
         # Check if all stories belong to the current user
         for story in stories:
             feed = Feed.query.get(story.feed_id)
-            if feed.user_id != current_user_id:
+            if feed.user_id != user.id:
                 return jsonify({'error': 'Unauthorized'}), 403
 
         # Delete the stories
@@ -166,13 +171,19 @@ def debug_stories():
     try:
         userinfo = g.current_user
         current_user_id = userinfo['sub']
-        
+
         print(f"Current user ID: {current_user_id}")
 
+        # Get the user by auth0_id
+        user = User.query.filter_by(auth0_id=current_user_id).first()
+        if not user:
+            print(f"User not found for auth0_id: {current_user_id}")
+            return jsonify({'error': 'User not found'}), 404
+
         # Fetch all feeds for the current user
-        feeds = Feed.query.filter_by(user_id=current_user_id).all()
+        feeds = Feed.query.filter_by(user_id=user.id).all()
         if not feeds:
-            print(f"No feeds found for user ID: {current_user_id}")
+            print(f"No feeds found for user ID: {user.id}")
             return jsonify({'error': 'No feeds found for this user'}), 404
 
         # Collect all stories for these feeds
@@ -198,7 +209,6 @@ def debug_stories():
     except Exception as e:
         print(f"Error: {str(e)}")
         return jsonify({'error': str(e)}), 500
-
 
 
 @app.route('/user_feed', methods=['GET'])
