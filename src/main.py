@@ -149,14 +149,17 @@ def delete_stories():
 
         print(f"Received story IDs for deletion: {story_ids}")
 
-        # Fetch the stories based on story IDs
-        stories = Story.query.filter(Story.id.in_(story_ids)).all()
+        # Fetch the stories based on story IDs and ensure they belong to the user's feeds
+        stories = Story.query.join(Feed).filter(
+            Story.id.in_(story_ids),
+            Feed.user_id == user.id
+        ).all()
+
         print('stories', stories)
         if not stories:
-            print(f"No stories found for IDs: {story_ids}")
             return jsonify({'error': 'No stories found'}), 404
 
-        # Check if all stories belong to the current user
+        # Check if all stories belong to the current user (already ensured by the query)
         for story in stories:
             feed = Feed.query.get(story.feed_id)
             print(f"Story ID: {story.id}, Feed ID: {story.feed_id}, User ID: {feed.user_id}, Current User ID: {user.id}")
@@ -172,6 +175,7 @@ def delete_stories():
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 @app.route('/debug_stories', methods=['GET'])
 @requires_auth
