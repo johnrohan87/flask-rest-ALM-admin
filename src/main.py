@@ -142,9 +142,9 @@ def delete_stories():
         print(f'User found: {user}')
 
         # Get story IDs from the request body
-        story_ids = request.json.get('story_ids')
-        print('story_ids', story_ids)
-        if not story_ids:
+        story_ids_dict = request.json.get('story_ids')
+        print('story_ids_dict', story_ids_dict)
+        if not story_ids_dict:
             return jsonify({'error': 'No story IDs provided'}), 400
 
         # Extract the story IDs from the dictionary
