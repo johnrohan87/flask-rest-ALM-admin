@@ -152,9 +152,9 @@ def delete_stories():
         print(f"Received story IDs for deletion: {story_ids}")
 
         # Fetch all stories associated with the user for debugging
-        all_user_stories = Story.query.join(Feed).filter(Feed.user_id == user.id).all()
-        for story in all_user_stories:
-            print(f"All Stories - Story ID: {story.id}, Feed ID: {story.feed_id}, Data: {story.data}")
+        #all_user_stories = Story.query.join(Feed).filter(Feed.user_id == user.id).all()
+        #for story in all_user_stories:
+        #    print(f"All Stories - Story ID: {story.id}, Feed ID: {story.feed_id}, Data: {story.data}")
 
         # Fetch the stories based on story IDs and ensure they belong to the user's feeds
         stories = Story.query.filter(
