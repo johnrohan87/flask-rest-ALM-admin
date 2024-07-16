@@ -147,6 +147,8 @@ def delete_stories():
         if not story_ids:
             return jsonify({'error': 'No story IDs provided'}), 400
 
+        # Extract the story IDs from the dictionary
+        story_ids = story_ids_dict['story_ids']
         print(f"Received story IDs for deletion: {story_ids}")
 
         # Fetch all stories associated with the user for debugging
@@ -156,7 +158,7 @@ def delete_stories():
 
         # Fetch the stories based on story IDs and ensure they belong to the user's feeds
         stories = Story.query.filter(
-            Story.id.in_(story_ids.story_ids),
+            Story.id.in_(story_ids),
             Story.feed_id.in_([feed.id for feed in Feed.query.filter_by(user_id=user.id).all()])
         ).all()
 
