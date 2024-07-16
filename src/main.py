@@ -156,7 +156,7 @@ def delete_stories():
 
         # Fetch the stories based on story IDs and ensure they belong to the user's feeds
         stories = Story.query.filter(
-            Story.id.in_(story_ids),
+            Story.id.in_(story_ids.story_ids),
             Story.feed_id.in_([feed.id for feed in Feed.query.filter_by(user_id=user.id).all()])
         ).all()
 
