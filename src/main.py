@@ -163,7 +163,6 @@ def delete_stories():
                 return jsonify({'error': f'Unauthorized: Feed user_id {feed.user_id} does not match current user_id {user.id}'}), 403
 
 
-
 @app.route('/debug_stories', methods=['GET'])
 @requires_auth
 def debug_stories():
