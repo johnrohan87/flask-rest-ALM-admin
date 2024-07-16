@@ -49,6 +49,7 @@ setup_admin(app)
 @app.route('/import_feed', methods=['POST'])
 @requires_auth
 def import_feed():
+    token = request.headers.get('Authorization', None).split(' ')[1]
     try:
         userinfo = g.current_user
         email = userinfo.get('https://voluble-boba-2e3a2e.netlify.app/email')
@@ -171,7 +172,6 @@ def delete_stories():
         return jsonify({'error': str(e)}), 500
 
 
-
 @app.route('/debug_stories', methods=['GET'])
 @requires_auth
 def debug_stories():
@@ -182,9 +182,14 @@ def debug_stories():
         print(f"Current user ID: {current_user_id}")
 
         # Fetch all feeds for the current user
-        feeds = Feed.query.filter_by(user_id=current_user_id).all()
+        user = User.query.filter_by(auth0_id=current_user_id).first()
+        if not user:
+            print(f"User not found for auth0_id: {current_user_id}")
+            return jsonify({'error': 'User not found for this auth0_id'}), 404
+
+        feeds = Feed.query.filter_by(user_id=user.id).all()
         if not feeds:
-            print(f"No feeds found for user ID: {current_user_id}")
+            print(f"No feeds found for user ID: {user.id}")
             return jsonify({'error': 'No feeds found for this user'}), 404
 
         # Collect all stories for these feeds
@@ -216,8 +221,11 @@ def debug_stories():
 @app.route('/user_feed', methods=['GET'])
 @requires_auth
 def user_feed():
+    token = request.headers.get('Authorization', None).split(' ')[1]
+    print('token', token)
     try:
         userinfo = g.current_user
+        print('userinfo', userinfo)
         email = userinfo.get('https://voluble-boba-2e3a2e.netlify.app/email')
         if not email:
             raise Exception("Email not found in token")
