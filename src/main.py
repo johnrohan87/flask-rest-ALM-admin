@@ -153,6 +153,7 @@ def delete_stories():
         stories = Story.query.filter(Story.id.in_(story_ids)).all()
         print('stories', stories)
         if not stories:
+            print(f"No stories found for IDs: {story_ids}")
             return jsonify({'error': 'No stories found'}), 404
 
         # Check if all stories belong to the current user
@@ -171,7 +172,6 @@ def delete_stories():
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
 
 @app.route('/debug_stories', methods=['GET'])
 @requires_auth
