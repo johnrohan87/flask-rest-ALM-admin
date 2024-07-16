@@ -161,7 +161,7 @@ def delete_stories():
             print(f"Story ID: {story.id}, Feed ID: {story.feed_id}, User ID: {feed.user_id}, Current User ID: {user.id}")
             if feed.user_id != user.id:
                 return jsonify({'error': f'Unauthorized: Feed user_id {feed.user_id} does not match current user_id {user.id}'}), 403
-                
+
 
 
 @app.route('/debug_stories', methods=['GET'])
@@ -207,7 +207,6 @@ def debug_stories():
     except Exception as e:
         print(f"Error: {str(e)}")
         return jsonify({'error': str(e)}), 500
-
 
 
 @app.route('/user_feed', methods=['GET'])
