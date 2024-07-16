@@ -152,7 +152,7 @@ def delete_stories():
         # Fetch all stories associated with the user for debugging
         all_user_stories = Story.query.join(Feed).filter(Feed.user_id == user.id).all()
         for story in all_user_stories:
-            print(f"Story ID: {story.id}, Feed ID: {story.feed_id}, Data: {story.data}")
+            print(f"All Stories - Story ID: {story.id}, Feed ID: {story.feed_id}, Data: {story.data}")
 
         # Fetch the stories based on story IDs and ensure they belong to the user's feeds
         stories = Story.query.filter(
@@ -164,10 +164,10 @@ def delete_stories():
         if not stories:
             return jsonify({'error': 'No stories found'}), 404
 
-        # Check if all stories belong to the current user (already ensured by the query)
+        # Check if all stories belong to the current user
         for story in stories:
             feed = Feed.query.get(story.feed_id)
-            print(f"Story ID: {story.id}, Feed ID: {story.feed_id}, User ID: {feed.user_id}, Current User ID: {user.id}")
+            print(f"Deleting - Story ID: {story.id}, Feed ID: {story.feed_id}, User ID: {feed.user_id}, Current User ID: {user.id}")
             if feed.user_id != user.id:
                 return jsonify({'error': f'Unauthorized: Feed user_id {feed.user_id} does not match current_user_id {user.id}'}), 403
 
@@ -180,6 +180,7 @@ def delete_stories():
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 
 @app.route('/debug_stories', methods=['GET'])
