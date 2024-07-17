@@ -27,18 +27,26 @@ class User(db.Model):
         }
     
 class Feed(db.Model):
-    id = db.Column(Integer, primary_key=True)
-    url = db.Column(String(255), nullable=False)
-    raw_xml = db.Column(Text, nullable=True)
-    user_id = db.Column(Integer, ForeignKey('user.id'), nullable=False)
-    stories = db.relationship('Story', backref='feed', lazy=True)
+    id = Column(Integer, primary_key=True)
+    url = Column(String, nullable=False)
+    user_id = Column(Integer, ForeignKey('user.id'), nullable=False)
+    raw_xml = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    user = relationship('User', back_populates='feeds')
+    stories = relationship('Story', back_populates='feed', cascade='all, delete-orphan')
 
 class Story(db.Model):
-    id = db.Column(Integer, primary_key=True)
-    feed_id = db.Column(Integer, ForeignKey('feed.id'), nullable=False)
-    data = db.Column(JSON, nullable=False)  # JSON column to store story data
-    custom_title = db.Column(String(255))
-    custom_content = db.Column(Text)
+    id = Column(Integer, primary_key=True)
+    feed_id = Column(Integer, ForeignKey('feed.id'), nullable=False)
+    data = Column(String, nullable=False)
+    custom_title = Column(String, nullable=True)
+    custom_content = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    feed = relationship('Feed', back_populates='stories')
 
 class Person(db.Model):
     __tablename__ = "person_account"
