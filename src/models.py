@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Integer, String, Boolean, Text, ForeignKey, Column, Table
 from sqlalchemy.orm import relationship, DeclarativeBase, backref
 from sqlalchemy.dialects.mysql import JSON
+from datetime import datetime
 
 db = SQLAlchemy()
 
