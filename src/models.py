@@ -13,9 +13,9 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(80), unique=False, nullable=False)
-    auth0_id = db.Column(String(80), unique=True, nullable=False)
-    username = db.Column(String(80), nullable=False)
-    feeds = db.relationship('Feed', backref='user', lazy=True)
+    auth0_id = db.Column(db.String(80), unique=True, nullable=False)
+    username = db.Column(db.String(80), nullable=False)
+    feeds = db.relationship('Feed', back_populates='user', lazy=True)
     is_active = db.Column(db.Boolean(), unique=False, nullable=False)
 
     def __repr__(self):
@@ -28,15 +28,16 @@ class User(db.Model):
         }
     
 class Feed(db.Model):
-    id = Column(Integer, primary_key=True)
-    url = Column(String, nullable=False)
-    user_id = Column(Integer, ForeignKey('user.id'), nullable=False)
-    raw_xml = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    id = db.Column(db.Integer, primary_key=True)
+    url = db.Column(db.String, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    raw_xml = db.Column(db.String, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    user = relationship('User', back_populates='feeds')
-    stories = relationship('Story', back_populates='feed', cascade='all, delete-orphan')
+    user = db.relationship('User', back_populates='feeds')
+    stories = db.relationship('Story', back_populates='feed', cascade='all, delete-orphan')
+
 
 class Story(db.Model):
     id = Column(Integer, primary_key=True)
