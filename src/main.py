@@ -118,53 +118,35 @@ def edit_story(story_id):
 
 
 
-@app.route('/user_feed', methods=['GET'])
+@app.route('/user_feeds', methods=['GET'])
 @requires_auth
-def user_feed():
-    token = request.headers.get('Authorization', None).split(' ')[1]
-    print('token', token)
+def user_feeds():
     try:
         userinfo = g.current_user
-        print('userinfo', userinfo)
-        email = userinfo.get('https://voluble-boba-2e3a2e.netlify.app/email')
-        if not email:
-            raise Exception("Email not found in token")
-
-        # Check if user exists
-        user = User.query.filter_by(auth0_id=userinfo['sub']).first()
+        current_user_id = userinfo['sub']
+        
+        user = User.query.filter_by(auth0_id=current_user_id).first()
         if not user:
-            # User not found, create a new user record
-            user = User(
-                auth0_id=userinfo['sub'],
-                email=email,
-                username=userinfo.get('nickname', 'Unknown'),
-                password='none',  
-                is_active=True
-            )
-            db.session.add(user)
-            db.session.commit()
+            return jsonify({'error': 'User not found'}), 404
 
-        # Fetch user's feeds
         feeds = Feed.query.filter_by(user_id=user.id).all()
-        user_feed = []
-
+        user_feeds = []
+        
         for feed in feeds:
-            stories = Story.query.filter_by(feed_id=feed.id).all()
-            for story in stories:
-                story_data = {
-                    'id': story.id,
-                    'feed_id': story.feed_id,
-                    'data': story.data,
-                    'custom_title': story.custom_title,
-                    'custom_content': story.custom_content,
-                }
-                user_feed.append(story_data)
+            feed_data = {
+                'id': feed.id,
+                'url': feed.url,
+                'raw_xml': feed.raw_xml,
+                'created_at': feed.created_at,
+                'updated_at': feed.updated_at,
+                'user_id': feed.user_id
+            }
+            user_feeds.append(feed_data)
 
-        return jsonify({'feed': user_feed}), 200
+        return jsonify({'feeds': user_feeds}), 200
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 401
-
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/user_stories', methods=['GET'])
@@ -309,26 +291,24 @@ def debug_stories():
 @app.route('/user_feed', methods=['GET'])
 @requires_auth
 def user_feed():
+    token = request.headers.get('Authorization', None).split(' ')[1]
+    print('token', token)
     try:
-        token = request.headers.get('Authorization', None).split(' ')[1]
-        print('token', token)
-
         userinfo = g.current_user
         print('userinfo', userinfo)
-
         email = userinfo.get('https://voluble-boba-2e3a2e.netlify.app/email')
         if not email:
-            raise ValueError("Email not found in token")
+            raise Exception("Email not found in token")
 
         # Check if user exists
         user = User.query.filter_by(auth0_id=userinfo['sub']).first()
         if not user:
-            print(f"User not found. Creating new user with email {email}")
+            # User not found, create a new user record
             user = User(
                 auth0_id=userinfo['sub'],
                 email=email,
                 username=userinfo.get('nickname', 'Unknown'),
-                password='none',
+                password='none',  
                 is_active=True
             )
             db.session.add(user)
@@ -350,15 +330,10 @@ def user_feed():
                 }
                 user_feed.append(story_data)
 
-        print(f"User feed retrieved for user {user.id}")
         return jsonify({'feed': user_feed}), 200
 
-    except ValueError as ve:
-        print(f"Validation error: {ve}")
-        return jsonify({'error': str(ve)}), 400
     except Exception as e:
-        print(f"Unexpected error: {e}")
-        return jsonify({'error': 'An unexpected error occurred.'}), 500
+        return jsonify({'error': str(e)}), 401
 
 
 @app.route('/user_info', methods=['GET'])
