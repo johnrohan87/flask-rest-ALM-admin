@@ -145,6 +145,43 @@ def edit_story(story_id):
 
 
 
+@app.route('/fetch_feeds', methods=['GET'])
+@requires_auth
+def fetch_feeds():
+    try:
+        # Get the current user information
+        userinfo = g.current_user
+        current_user_id = userinfo['sub']
+        
+        # Fetch the user by auth0_id
+        user = User.query.filter_by(auth0_id=current_user_id).first()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        # Fetch all feeds for this user
+        feeds = Feed.query.filter_by(user_id=user.id).all()
+        if not feeds:
+            return jsonify({'feeds': []}), 200  # Return an empty array if no feeds are found
+
+        # Prepare the feed data for response
+        feeds_data = []
+        for feed in feeds:
+            feed_data = {
+                'id': feed.id,
+                'url': feed.url,
+                'created_at': feed.created_at,
+                'updated_at': feed.updated_at
+            }
+            feeds_data.append(feed_data)
+        
+        return jsonify({'feeds': feeds_data}), 200
+
+    except Exception as e:
+        print(f"Error in fetch_feeds: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+
 @app.route('/user_feeds', methods=['GET'])
 @requires_auth
 def get_user_feeds():
