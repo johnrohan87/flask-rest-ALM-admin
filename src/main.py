@@ -50,20 +50,33 @@ setup_admin(app)
 @requires_auth
 def import_feed():
     try:
+        # Fetch and validate user information
         userinfo = g.current_user
+        if not userinfo:
+            return jsonify({'error': 'User information is missing'}), 400
+
         user = get_or_create_user(userinfo)
-        
+
+        # Parse and validate incoming data
         data = request.get_json()
-        url = data.get('url')
+        if not data or 'url' not in data:
+            return jsonify({'error': 'URL is required'}), 400
         
+        url = data.get('url')
         if not validators.url(url):
             return jsonify({'error': 'Invalid URL'}), 400
 
+        # Fetch RSS feed data
         stories, raw_xml = fetch_rss_feed(url)
+        if not stories or not raw_xml:
+            return jsonify({'error': 'Failed to fetch or parse the RSS feed'}), 500
+
+        # Save feed to the database
         feed = Feed(url=url, user_id=user.id, raw_xml=raw_xml)
         db.session.add(feed)
         db.session.commit()
 
+        # Save each story to the database
         for story_data in stories:
             story = Story(
                 feed_id=feed.id,
@@ -74,9 +87,16 @@ def import_feed():
 
         return jsonify({'message': 'Feed imported successfully'}), 200
 
-    except Exception as e:
-        return jsonify({'error': str(e)}), 401
+    except validators.ValidationFailure:
+        return jsonify({'error': 'Validation error occurred with the URL'}), 400
 
+    except SQLAlchemyError as db_error:
+        db.session.rollback()
+        return jsonify({'error': 'Database error occurred: {}'.format(str(db_error))}), 500
+
+    except Exception as e:
+        # Catch-all for unexpected errors
+        return jsonify({'error': 'An unexpected error occurred: {}'.format(str(e))}), 500
 
 
 @app.route('/edit_story/<int:story_id>', methods=['PUT'])
