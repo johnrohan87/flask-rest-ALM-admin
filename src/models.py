@@ -8,47 +8,42 @@ from datetime import datetime
 
 db = SQLAlchemy()
 
-class User(db.Model):
-    #__tablename__ = "user"
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(80), unique=False, nullable=False)
-    auth0_id = db.Column(db.String(80), unique=True, nullable=False)
-    username = db.Column(db.String(80), nullable=False)
-    feeds = db.relationship('Feed', back_populates='user', lazy=True)
-    is_active = db.Column(db.Boolean(), unique=False, nullable=False)
+from .database import Base
 
-    def __repr__(self):
-        return '<User %r>' % self.auth0_id
-
-    def serialize(self):
-        return {
-            "id": self.id,
-            "email": self.email,
-        }
+class User(Base):
+    __tablename__ = 'users'
     
-class Feed(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    url = db.Column(db.String(2048), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    raw_xml = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    user = db.relationship('User', back_populates='feeds')
-    stories = db.relationship('Story', back_populates='feed', cascade='all, delete-orphan')
+    id = Column(Integer, primary_key=True)
+    auth0_id = Column(String, unique=True)
+    email = Column(String, unique=True)
+    username = Column(String)
+    password = Column(String)
+    is_active = Column(Boolean, default=True)
+    feeds = relationship('Feed', back_populates='user', cascade="all, delete-orphan", primaryjoin="Feed.user_id == User.id")
 
+class Feed(Base):
+    __tablename__ = 'feeds'
 
-class Story(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    feed_id = db.Column(db.Integer, ForeignKey('feed.id'), nullable=False)
-    data = db.Column(db.Text, nullable=False)
-    custom_title = db.Column(db.String(255), nullable=True)
-    custom_content = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    feed = relationship('Feed', back_populates='stories')
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    url = Column(String)
+    raw_xml = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    user = relationship('User', back_populates='feeds', primaryjoin="Feed.user_id == User.id")
+    stories = relationship('Story', back_populates='feed', cascade="all, delete-orphan", primaryjoin="Story.feed_id == Feed.id")
+
+class Story(Base):
+    __tablename__ = 'stories'
+
+    id = Column(Integer, primary_key=True)
+    feed_id = Column(Integer, ForeignKey('feeds.id'), nullable=False)
+    data = Column(Text)
+    custom_title = Column(String)
+    custom_content = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    feed = relationship('Feed', back_populates='stories', primaryjoin="Story.feed_id == Feed.id")
 
 class Person(db.Model):
     __tablename__ = "person_account"
