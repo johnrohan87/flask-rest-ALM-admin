@@ -225,24 +225,26 @@ def debug_stories():
 @app.route('/user_feed', methods=['GET'])
 @requires_auth
 def user_feed():
-    token = request.headers.get('Authorization', None).split(' ')[1]
-    print('token', token)
     try:
+        token = request.headers.get('Authorization', None).split(' ')[1]
+        print('token', token)
+
         userinfo = g.current_user
         print('userinfo', userinfo)
+
         email = userinfo.get('https://voluble-boba-2e3a2e.netlify.app/email')
         if not email:
-            raise Exception("Email not found in token")
+            raise ValueError("Email not found in token")
 
         # Check if user exists
         user = User.query.filter_by(auth0_id=userinfo['sub']).first()
         if not user:
-            # User not found, create a new user record
+            print(f"User not found. Creating new user with email {email}")
             user = User(
                 auth0_id=userinfo['sub'],
                 email=email,
                 username=userinfo.get('nickname', 'Unknown'),
-                password='none',  
+                password='none',
                 is_active=True
             )
             db.session.add(user)
@@ -264,10 +266,15 @@ def user_feed():
                 }
                 user_feed.append(story_data)
 
+        print(f"User feed retrieved for user {user.id}")
         return jsonify({'feed': user_feed}), 200
 
+    except ValueError as ve:
+        print(f"Validation error: {ve}")
+        return jsonify({'error': str(ve)}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 401
+        print(f"Unexpected error: {e}")
+        return jsonify({'error': 'An unexpected error occurred.'}), 500
 
 
 @app.route('/user_info', methods=['GET'])
