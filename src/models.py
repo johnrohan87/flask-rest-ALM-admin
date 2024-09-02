@@ -8,42 +8,28 @@ from datetime import datetime
 
 db = SQLAlchemy()
 
-from .database import Base
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    auth0_id = db.Column(db.String(100), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    username = db.Column(db.String(80), nullable=False)
+    password = db.Column(db.String(200), nullable=True)
+    is_active = db.Column(db.Boolean, default=True)
+    feeds = db.relationship('Feed', backref='user', lazy=True)
 
-class User(Base):
-    __tablename__ = 'users'
-    
-    id = Column(Integer, primary_key=True)
-    auth0_id = Column(String, unique=True)
-    email = Column(String, unique=True)
-    username = Column(String)
-    password = Column(String)
-    is_active = Column(Boolean, default=True)
-    feeds = relationship('Feed', back_populates='user', cascade="all, delete-orphan", primaryjoin="Feed.user_id == User.id")
+class Feed(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    url = db.Column(db.String(500), nullable=False)
+    raw_xml = db.Column(db.Text, nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    stories = db.relationship('Story', backref='feed', lazy=True)
 
-class Feed(Base):
-    __tablename__ = 'feeds'
-
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    url = Column(String)
-    raw_xml = Column(Text)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    user = relationship('User', back_populates='feeds', primaryjoin="Feed.user_id == User.id")
-    stories = relationship('Story', back_populates='feed', cascade="all, delete-orphan", primaryjoin="Story.feed_id == Feed.id")
-
-class Story(Base):
-    __tablename__ = 'stories'
-
-    id = Column(Integer, primary_key=True)
-    feed_id = Column(Integer, ForeignKey('feeds.id'), nullable=False)
-    data = Column(Text)
-    custom_title = Column(String)
-    custom_content = Column(String)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    feed = relationship('Feed', back_populates='stories', primaryjoin="Story.feed_id == Feed.id")
+class Story(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    feed_id = db.Column(db.Integer, db.ForeignKey('feed.id'), nullable=False)
+    data = db.Column(db.JSON, nullable=False)
+    custom_title = db.Column(db.String(200), nullable=True)
+    custom_content = db.Column(db.Text, nullable=True)
 
 class Person(db.Model):
     __tablename__ = "person_account"

@@ -49,34 +49,38 @@ setup_admin(app)
 @app.route('/import_feed', methods=['POST'])
 @requires_auth
 def import_feed():
+    token = request.headers.get('Authorization', None).split(' ')[1]
     try:
-        # Fetch and validate user information
         userinfo = g.current_user
-        if not userinfo:
-            return jsonify({'error': 'User information is missing'}), 400
+        email = userinfo.get('https://voluble-boba-2e3a2e.netlify.app/email')
+        if not email:
+            raise Exception("Email not found in token")
 
-        user = get_or_create_user(userinfo)
+        # Check if user exists
+        user = User.query.filter_by(auth0_id=userinfo['sub']).first()
+        if not user:
+            # User not found, create a new user record
+            user = User(
+                auth0_id=userinfo['sub'],
+                email=email,
+                username=userinfo.get('nickname', 'Unknown'),
+                password='none',  
+                is_active=True
+            )
+            db.session.add(user)
+            db.session.commit()
 
-        # Parse and validate incoming data
         data = request.get_json()
-        if not data or 'url' not in data:
-            return jsonify({'error': 'URL is required'}), 400
-        
         url = data.get('url')
+        
         if not validators.url(url):
             return jsonify({'error': 'Invalid URL'}), 400
 
-        # Fetch RSS feed data
         stories, raw_xml = fetch_rss_feed(url)
-        if not stories or not raw_xml:
-            return jsonify({'error': 'Failed to fetch or parse the RSS feed'}), 500
-
-        # Save feed to the database
         feed = Feed(url=url, user_id=user.id, raw_xml=raw_xml)
         db.session.add(feed)
         db.session.commit()
 
-        # Save each story to the database
         for story_data in stories:
             story = Story(
                 feed_id=feed.id,
@@ -87,16 +91,8 @@ def import_feed():
 
         return jsonify({'message': 'Feed imported successfully'}), 200
 
-    except validators.ValidationFailure:
-        return jsonify({'error': 'Validation error occurred with the URL'}), 400
-
-    except SQLAlchemyError as db_error:
-        db.session.rollback()
-        return jsonify({'error': 'Database error occurred: {}'.format(str(db_error))}), 500
-
     except Exception as e:
-        # Catch-all for unexpected errors
-        return jsonify({'error': 'An unexpected error occurred: {}'.format(str(e))}), 500
+        return jsonify({'error': str(e)}), 401
 
 
 @app.route('/edit_story/<int:story_id>', methods=['PUT'])
@@ -202,20 +198,40 @@ def user_stories():
 @requires_auth
 def delete_stories():
     try:
+        # Get the current user
         userinfo = g.current_user
-        user = get_or_create_user(userinfo)
+        print('g.current_user', userinfo)
+        current_user_id = userinfo['sub']
+        print('current_user_id', current_user_id)
 
+        # Get the user by auth0_id
+        user = User.query.filter_by(auth0_id=current_user_id).first()
+        print('user', user)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        # Get story IDs from the request body
         story_ids = request.json.get('story_ids')
+        print('story_ids', story_ids)
         if not story_ids:
             return jsonify({'error': 'No story IDs provided'}), 400
 
-        stories = Story.query.join(Feed).filter(
-            Story.id.in_(story_ids),
-            Feed.user_id == user.id
-        ).all()
+        print(f"Received story IDs for deletion: {story_ids}")
+
+        # Fetch the stories based on story IDs
+        stories = Story.query.filter(Story.id.in_(story_ids)).all()
+        print('stories', stories)
         if not stories:
             return jsonify({'error': 'No stories found'}), 404
 
+        # Check if all stories belong to the current user
+        for story in stories:
+            feed = Feed.query.get(story.feed_id)
+            print(f"Story ID: {story.id}, Feed ID: {story.feed_id}, User ID: {feed.user_id}, Current User ID: {user.id}")
+            if feed.user_id != user.id:
+                return jsonify({'error': f'Unauthorized: Feed user_id {feed.user_id} does not match current user_id {user.id}'}), 403
+
+        # Delete the stories
         for story in stories:
             db.session.delete(story)
         db.session.commit()
@@ -223,8 +239,8 @@ def delete_stories():
         return jsonify({'message': 'Stories deleted successfully'}), 200
 
     except Exception as e:
+        print(f"Error: {str(e)}")
         return jsonify({'error': str(e)}), 500
-
 
 
 @app.route('/debug_stories', methods=['GET'])
