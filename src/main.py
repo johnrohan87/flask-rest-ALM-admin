@@ -46,35 +46,80 @@ cors = CORS(app)
 setup_admin(app)
 
 
+
 @app.route('/import_feed', methods=['POST'])
 @requires_auth
 def import_feed():
     try:
-        user = get_or_create_user()
+        # Get and print the authorization token
+        token = request.headers.get('Authorization', None).split(' ')[1]
+        print(f"Token received: {token}")
 
+        # Retrieve user information
+        userinfo = g.current_user
+        print(f"User info from token: {userinfo}")
+
+        # Get and print the user's email
+        email = userinfo.get('https://voluble-boba-2e3a2e.netlify.app/email')
+        if not email:
+            raise Exception("Email not found in token")
+        print(f"User email: {email}")
+
+        # Check if the user exists or create a new user
+        user = User.query.filter_by(auth0_id=userinfo['sub']).first()
+        if not user:
+            print("User not found. Creating new user.")
+            user = User(
+                auth0_id=userinfo['sub'],
+                email=email,
+                username=userinfo.get('nickname', 'Unknown'),
+                password='none',
+                is_active=True
+            )
+            db.session.add(user)
+            db.session.commit()
+            print(f"New user created: {user}")
+        else:
+            print(f"Existing user found: {user}")
+
+        # Get the feed URL from the request body
         data = request.get_json()
         url = data.get('url')
+        print(f"Feed URL received: {url}")
+
+        # Validate the URL
         if not validators.url(url):
+            print(f"Invalid URL: {url}")
             return jsonify({'error': 'Invalid URL'}), 400
 
+        # Fetch the RSS feed
+        print(f"Fetching RSS feed from: {url}")
         stories, raw_xml = fetch_rss_feed(url)
+        print(f"Fetched {len(stories)} stories from feed")
+
+        # Create and commit the new feed
         feed = Feed(url=url, user_id=user.id, raw_xml=raw_xml)
         db.session.add(feed)
         db.session.commit()
+        print(f"Feed added to database with ID: {feed.id}")
 
+        # Add stories to the database
         for story_data in stories:
             story = Story(
                 feed_id=feed.id,
                 data=story_data
             )
             db.session.add(story)
+            print(f"Story added: {story_data['title']}")
         db.session.commit()
+        print("All stories committed to the database.")
 
         return jsonify({'message': 'Feed imported successfully'}), 200
 
     except Exception as e:
+        print(f"Error during import_feed: {str(e)}")
         return jsonify({'error': str(e)}), 500
-
+    
 
 
 @app.route('/edit_story/<int:story_id>', methods=['PUT'])
