@@ -29,9 +29,9 @@ class User(db.Model):
     
 class Feed(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    url = db.Column(db.String, nullable=False)
+    url = db.Column(db.String(2048), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    raw_xml = db.Column(db.String, nullable=True)
+    raw_xml = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
