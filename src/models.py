@@ -40,13 +40,13 @@ class Feed(db.Model):
 
 
 class Story(db.Model):
-    id = Column(Integer, primary_key=True)
-    feed_id = Column(Integer, ForeignKey('feed.id'), nullable=False)
-    data = Column(String, nullable=False)
-    custom_title = Column(String, nullable=True)
-    custom_content = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    id = db.Column(db.Integer, primary_key=True)
+    feed_id = db.Column(db.Integer, ForeignKey('feed.id'), nullable=False)
+    data = db.Column(db.Text, nullable=False)
+    custom_title = db.Column(db.String(255), nullable=True)
+    custom_content = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     feed = relationship('Feed', back_populates='stories')
 
