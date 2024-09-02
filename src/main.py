@@ -49,30 +49,11 @@ setup_admin(app)
 @app.route('/import_feed', methods=['POST'])
 @requires_auth
 def import_feed():
-    token = request.headers.get('Authorization', None).split(' ')[1]
     try:
-        userinfo = g.current_user
-        email = userinfo.get('https://voluble-boba-2e3a2e.netlify.app/email')
-        if not email:
-            raise Exception("Email not found in token")
-
-        # Check if user exists
-        user = User.query.filter_by(auth0_id=userinfo['sub']).first()
-        if not user:
-            # User not found, create a new user record
-            user = User(
-                auth0_id=userinfo['sub'],
-                email=email,
-                username=userinfo.get('nickname', 'Unknown'),
-                password='none',  
-                is_active=True
-            )
-            db.session.add(user)
-            db.session.commit()
+        user = get_or_create_user()
 
         data = request.get_json()
         url = data.get('url')
-        
         if not validators.url(url):
             return jsonify({'error': 'Invalid URL'}), 400
 
@@ -92,7 +73,8 @@ def import_feed():
         return jsonify({'message': 'Feed imported successfully'}), 200
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 401
+        return jsonify({'error': str(e)}), 500
+
 
 
 @app.route('/edit_story/<int:story_id>', methods=['PUT'])
@@ -120,118 +102,81 @@ def edit_story(story_id):
 
 @app.route('/user_feeds', methods=['GET'])
 @requires_auth
-def user_feeds():
+def get_user_feeds():
     try:
-        userinfo = g.current_user
-        current_user_id = userinfo['sub']
-        
-        user = User.query.filter_by(auth0_id=current_user_id).first()
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
-
+        user = get_or_create_user()
         feeds = Feed.query.filter_by(user_id=user.id).all()
-        user_feeds = []
-        
-        for feed in feeds:
-            feed_data = {
+
+        if not feeds:
+            return jsonify({'feeds': []}), 200
+
+        feed_list = [
+            {
                 'id': feed.id,
                 'url': feed.url,
-                'raw_xml': feed.raw_xml,
                 'created_at': feed.created_at,
                 'updated_at': feed.updated_at,
-                'user_id': feed.user_id
             }
-            user_feeds.append(feed_data)
-
-        return jsonify({'feeds': user_feeds}), 200
+            for feed in feeds
+        ]
+        return jsonify({'feeds': feed_list}), 200
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 
+
 @app.route('/user_stories', methods=['GET'])
 @requires_auth
-def user_stories():
+def get_user_stories():
     try:
-        userinfo = g.current_user
-        current_user_id = userinfo['sub']
-        
-        user = User.query.filter_by(auth0_id=current_user_id).first()
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
+        user = get_or_create_user()
+        feed_id = request.args.get('feed_id', None)
 
-        feed_id = request.args.get('feed_id')
         if feed_id:
-            feed = Feed.query.filter_by(id=feed_id, user_id=user.id).first()
-            if not feed:
-                return jsonify({'error': 'Feed not found or unauthorized'}), 404
-
-            stories = Story.query.filter_by(feed_id=feed.id).all()
+            stories = Story.query.filter_by(feed_id=feed_id).all()
         else:
             feeds = Feed.query.filter_by(user_id=user.id).all()
-            stories = []
-            for feed in feeds:
-                feed_stories = Story.query.filter_by(feed_id=feed.id).all()
-                stories.extend(feed_stories)
+            feed_ids = [feed.id for feed in feeds]
+            stories = Story.query.filter(Story.feed_id.in_(feed_ids)).all()
 
-        user_stories = []
-        for story in stories:
-            story_data = {
+        story_list = [
+            {
                 'id': story.id,
                 'feed_id': story.feed_id,
                 'data': story.data,
                 'custom_title': story.custom_title,
                 'custom_content': story.custom_content,
                 'created_at': story.created_at,
-                'updated_at': story.updated_at
+                'updated_at': story.updated_at,
             }
-            user_stories.append(story_data)
+            for story in stories
+        ]
 
-        return jsonify({'stories': user_stories}), 200
+        return jsonify({'stories': story_list}), 200
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
 
 
 @app.route('/delete_stories', methods=['DELETE'])
 @requires_auth
 def delete_stories():
     try:
-        # Get the current user
-        userinfo = g.current_user
-        print('g.current_user', userinfo)
-        current_user_id = userinfo['sub']
-        print('current_user_id', current_user_id)
+        user = get_or_create_user()
 
-        # Get the user by auth0_id
-        user = User.query.filter_by(auth0_id=current_user_id).first()
-        print('user', user)
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
-
-        # Get story IDs from the request body
         story_ids = request.json.get('story_ids')
-        print('story_ids', story_ids)
         if not story_ids:
             return jsonify({'error': 'No story IDs provided'}), 400
 
-        print(f"Received story IDs for deletion: {story_ids}")
+        stories = Story.query.join(Feed).filter(
+            Story.id.in_(story_ids),
+            Feed.user_id == user.id
+        ).all()
 
-        # Fetch the stories based on story IDs
-        stories = Story.query.filter(Story.id.in_(story_ids)).all()
-        print('stories', stories)
         if not stories:
             return jsonify({'error': 'No stories found'}), 404
 
-        # Check if all stories belong to the current user
-        for story in stories:
-            feed = Feed.query.get(story.feed_id)
-            print(f"Story ID: {story.id}, Feed ID: {story.feed_id}, User ID: {feed.user_id}, Current User ID: {user.id}")
-            if feed.user_id != user.id:
-                return jsonify({'error': f'Unauthorized: Feed user_id {feed.user_id} does not match current user_id {user.id}'}), 403
-
-        # Delete the stories
         for story in stories:
             db.session.delete(story)
         db.session.commit()
@@ -239,7 +184,6 @@ def delete_stories():
         return jsonify({'message': 'Stories deleted successfully'}), 200
 
     except Exception as e:
-        print(f"Error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 

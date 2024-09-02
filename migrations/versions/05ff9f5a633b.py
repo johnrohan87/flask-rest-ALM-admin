@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import mysql
 
 # revision identifiers, used by Alembic.
-revision = '05ff9f5a633b' #just in case - 22db6cec8e8b
+revision = '05ff9f5a633b' #just in case - 22db6cec8e8b 2nd- ec55d5c850d9
 down_revision = '59bf011ca080'
 branch_labels = None
 depends_on = None

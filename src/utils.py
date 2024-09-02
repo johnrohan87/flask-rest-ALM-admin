@@ -154,20 +154,19 @@ def get_jwks(auth0_domain):
     response.raise_for_status()
     return response.json()
 
-def get_or_create_user(userinfo):
+def get_or_create_user():
+    userinfo = g.current_user
     email = userinfo.get('https://voluble-boba-2e3a2e.netlify.app/email')
     if not email:
         raise Exception("Email not found in token")
 
-    # Check if user exists
     user = User.query.filter_by(auth0_id=userinfo['sub']).first()
     if not user:
-        # User not found, create a new user record
         user = User(
             auth0_id=userinfo['sub'],
             email=email,
             username=userinfo.get('nickname', 'Unknown'),
-            password='none',  
+            password='none',
             is_active=True
         )
         db.session.add(user)
