@@ -169,9 +169,14 @@ def fetch_feeds():
             feed_data = {
                 'id': feed.id,
                 'url': feed.url,
-                'created_at': feed.created_at,
-                'updated_at': feed.updated_at
             }
+    
+            if hasattr(feed, 'created_at') and feed.created_at:
+                feed_data['created_at'] = feed.created_at
+            
+            if hasattr(feed, 'updated_at') and feed.updated_at:
+                feed_data['updated_at'] = feed.updated_at
+            
             feeds_data.append(feed_data)
         
         return jsonify({'feeds': feeds_data}), 200
