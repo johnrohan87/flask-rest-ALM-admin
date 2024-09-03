@@ -15,6 +15,8 @@ class User(db.Model):
     username = db.Column(db.String(80), nullable=False)
     password = db.Column(db.String(200), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     feeds = db.relationship('Feed', backref='user', lazy=True)
 
 class Feed(db.Model):
@@ -22,6 +24,8 @@ class Feed(db.Model):
     url = db.Column(db.String(500), nullable=False)
     raw_xml = db.Column(db.Text, nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     stories = db.relationship('Story', backref='feed', lazy=True)
 
 class Story(db.Model):
@@ -30,6 +34,8 @@ class Story(db.Model):
     data = db.Column(db.JSON, nullable=False)
     custom_title = db.Column(db.String(200), nullable=True)
     custom_content = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 class Person(db.Model):
     __tablename__ = "person_account"
