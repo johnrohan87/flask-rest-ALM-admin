@@ -7,7 +7,7 @@ from functools import wraps, lru_cache
 from jose import jwt as JOSE
 from jose.utils import base64url_decode
 from jose.exceptions import ExpiredSignatureError, JWTClaimsError, JWTError
-
+from datetime import datetime
 from models import db, User
 
 
@@ -156,8 +156,6 @@ def get_jwks(auth0_domain):
     response.raise_for_status()
     return response.json()
 
-from datetime import datetime
-from your_models_file import db, User  # Import db and User model from the appropriate module
 
 def get_or_create_user():
     userinfo = g.current_user
@@ -172,15 +170,9 @@ def get_or_create_user():
             email=email,
             username=userinfo.get('nickname', 'Unknown'),
             password='none',
-            is_active=True,
-            created_at=datetime.utcnow(),  # Set created_at to current time
-            updated_at=datetime.utcnow()   # Set updated_at to current time
+            is_active=True
         )
         db.session.add(user)
-        db.session.commit()
-    else:
-        # Update the updated_at field whenever the user is retrieved or updated
-        user.updated_at = datetime.utcnow()
         db.session.commit()
 
     return user

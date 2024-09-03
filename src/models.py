@@ -15,8 +15,8 @@ class User(db.Model):
     username = db.Column(db.String(80), nullable=False)
     password = db.Column(db.String(200), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.now(datetime.UTC))
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.now(datetime.UTC), onupdate=datetime.now(datetime.UTC))
     feeds = db.relationship('Feed', backref='user', lazy=True)
 
 class Feed(db.Model):
