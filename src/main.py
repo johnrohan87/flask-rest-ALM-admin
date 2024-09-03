@@ -368,6 +368,30 @@ def user_feed():
         return jsonify({'error': str(e)}), 401
 
 
+@app.route('/delete_feed/<int:feed_id>', methods=['DELETE'])
+@requires_auth
+def delete_feed(feed_id):
+    try:
+        user = get_or_create_user()
+        feed = Feed.query.filter_by(id=feed_id, user_id=user.id).first()
+
+        if not feed:
+            return jsonify({'error': 'Feed not found or not authorized to delete this feed'}), 404
+
+        # Delete associated stories
+        Story.query.filter_by(feed_id=feed.id).delete()
+        
+        # Delete the feed
+        db.session.delete(feed)
+        db.session.commit()
+
+        return jsonify({'success': True, 'message': 'Feed and associated stories deleted successfully'}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/user_info', methods=['GET'])
 @requires_auth
 def user_info():
