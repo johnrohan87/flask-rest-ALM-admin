@@ -8,7 +8,7 @@ from jose import jwt as JOSE
 from jose.utils import base64url_decode
 from jose.exceptions import ExpiredSignatureError, JWTClaimsError, JWTError
 from datetime import datetime
-from .models import db, User
+from models import db, User
 
 
 
