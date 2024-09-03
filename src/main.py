@@ -213,7 +213,7 @@ def get_user_feeds():
 
 
 
-@app.route('/user_stories', methods=['GET'])
+@app.route('/fetch_stories', methods=['GET'])
 @requires_auth
 def get_user_stories():
     try:
