@@ -217,23 +217,16 @@ def get_user_feeds():
 @requires_auth
 def get_user_stories():
     try:
-        print("Fetching or creating user")
         user = get_or_create_user()
+
         feed_id = request.args.get('feed_id', None)
-        
-        print(f"Received feed_id: {feed_id}")
+
         if feed_id:
-            print("Querying stories for specific feed_id")
             stories = Story.query.filter_by(feed_id=feed_id).all()
-            print(f"Stories found: {len(stories)}")
         else:
-            print("Querying all feeds for user")
             feeds = Feed.query.filter_by(user_id=user.id).all()
-            print(f"Feeds found for user: {len(feeds)}")
             feed_ids = [feed.id for feed in feeds]
-            print(f"Feed IDs: {feed_ids}")
             stories = Story.query.filter(Story.feed_id.in_(feed_ids)).all()
-            print(f"Stories found: {len(stories)}")
 
         story_list = [
             {
@@ -247,14 +240,11 @@ def get_user_stories():
             }
             for story in stories
         ]
-        print(f"Story list prepared with {len(story_list)} stories")
-        
+
         return jsonify({'stories': story_list}), 200
 
     except Exception as e:
-        print(f"Error in get_user_stories: {str(e)}")
         return jsonify({'error': str(e)}), 500
-
 
 
 @app.route('/delete_stories', methods=['DELETE'])
