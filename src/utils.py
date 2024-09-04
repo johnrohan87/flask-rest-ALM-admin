@@ -2,6 +2,7 @@ import requests
 import os
 import json
 import base64
+import re
 from flask import request, g, url_for
 from functools import wraps, lru_cache
 from jose import jwt as JOSE
@@ -9,6 +10,7 @@ from jose.utils import base64url_decode
 from jose.exceptions import ExpiredSignatureError, JWTClaimsError, JWTError
 from models import db, User
 import xml.etree.ElementTree as ET
+from urllib.parse import urlparse
 
 
 
@@ -195,3 +197,21 @@ def fetch_rss_feed(url):
         stories.append(story)
 
     return stories, response.content  # Return both stories and the raw XML
+
+
+def url(url):
+    """
+    Validates a URL to ensure it has a valid structure.
+    
+    Args:
+        url (str): The URL string to validate.
+
+    Returns:
+        bool: True if the URL is valid, False otherwise.
+    """
+    try:
+        result = urlparse(url)
+        # Ensure the URL has both a scheme and netloc
+        return all([result.scheme, result.netloc])
+    except ValueError:
+        return False

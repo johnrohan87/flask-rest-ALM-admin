@@ -15,7 +15,7 @@ import validators
 from sqlalchemy.exc import SQLAlchemyError
 from auth0.authentication import GetToken
 from auth0.management import Auth0
-from utils import fetch_rss_feed, get_or_create_user, generate_sitemap, decode_jwt, APIException, requires_auth, AuthError, validators
+from utils import fetch_rss_feed, get_or_create_user, generate_sitemap, decode_jwt, APIException, requires_auth, AuthError, url
 from admin import setup_admin
 from models import db, User, Person, TextFile, FeedPost, Todo, Feed, Story
 from flask_jwt_extended import (create_access_token, create_refresh_token, 
@@ -58,7 +58,7 @@ def preview_feed():
         print(f"Feed URL received for preview: {url}")
 
         # Validate the URL
-        if not validators.url(url):
+        if not url(url):
             print(f"Invalid URL: {url}")
             return jsonify({'error': 'Invalid URL'}), 400
 
