@@ -51,36 +51,13 @@ setup_admin(app)
 @requires_auth
 def import_feed():
     try:
-        # Get and print the authorization token
+        # Extract and print the authorization token
         token = request.headers.get('Authorization', None).split(' ')[1]
         print(f"Token received: {token}")
 
-        # Retrieve user information
-        userinfo = g.current_user
-        print(f"User info from token: {userinfo}")
-
-        # Get and print the user's email
-        email = userinfo.get('https://voluble-boba-2e3a2e.netlify.app/email')
-        if not email:
-            raise Exception("Email not found in token")
-        print(f"User email: {email}")
-
-        # Check if the user exists or create a new user
-        user = User.query.filter_by(auth0_id=userinfo['sub']).first()
-        if not user:
-            print("User not found. Creating new user.")
-            user = User(
-                auth0_id=userinfo['sub'],
-                email=email,
-                username=userinfo.get('nickname', 'Unknown'),
-                password='none',
-                is_active=True
-            )
-            db.session.add(user)
-            db.session.commit()
-            print(f"New user created: {user}")
-        else:
-            print(f"Existing user found: {user}")
+        # Retrieve or create the user
+        user = get_or_create_user()
+        print(f"User processed: {user.email}")
 
         # Get the feed URL from the request body
         data = request.get_json()
@@ -105,12 +82,9 @@ def import_feed():
 
         # Add stories to the database
         for story_data in stories:
-            story = Story(
-                feed_id=feed.id,
-                data=story_data
-            )
+            story = Story(feed_id=feed.id, data=story_data)
             db.session.add(story)
-            print(f"Story added: {story_data['title']}")
+            print(f"Story added: {story_data.get('title', 'No Title')}")
         db.session.commit()
         print("All stories committed to the database.")
 
@@ -119,7 +93,6 @@ def import_feed():
     except Exception as e:
         print(f"Error during import_feed: {str(e)}")
         return jsonify({'error': str(e)}), 500
-    
 
 
 @app.route('/edit_story/<int:story_id>', methods=['PUT'])
