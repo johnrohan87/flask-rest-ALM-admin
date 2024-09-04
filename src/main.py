@@ -47,6 +47,38 @@ setup_admin(app)
 
 
 
+@app.route('/import_feed', methods=['GET'])
+@requires_auth
+def preview_feed():
+    try:
+        # Retrieve the feed URL from the query parameters
+        url = request.args.get('url')
+        if not url:
+            return jsonify({'error': 'No URL provided'}), 400
+        print(f"Feed URL received for preview: {url}")
+
+        # Validate the URL
+        if not validators.url(url):
+            print(f"Invalid URL: {url}")
+            return jsonify({'error': 'Invalid URL'}), 400
+
+        # Fetch the RSS feed
+        print(f"Fetching RSS feed from: {url}")
+        stories, raw_xml = fetch_rss_feed(url)
+        print(f"Fetched {len(stories)} stories from feed")
+
+        # Return the fetched data without saving to the database
+        return jsonify({
+            'url': url,
+            'stories': stories,
+            'raw_xml': raw_xml
+        }), 200
+
+    except Exception as e:
+        print(f"Error during preview_feed: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/import_feed', methods=['POST'])
 @requires_auth
 def import_feed():
