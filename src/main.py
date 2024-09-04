@@ -15,7 +15,7 @@ import validators
 from sqlalchemy.exc import SQLAlchemyError
 from auth0.authentication import GetToken
 from auth0.management import Auth0
-from utils import get_or_create_user, generate_sitemap, decode_jwt, APIException, requires_auth, AuthError
+from utils import fetch_rss_feed, get_or_create_user, generate_sitemap, decode_jwt, APIException, requires_auth, AuthError, validators
 from admin import setup_admin
 from models import db, User, Person, TextFile, FeedPost, Todo, Feed, Story
 from flask_jwt_extended import (create_access_token, create_refresh_token, 
@@ -383,18 +383,24 @@ def delete_feed(feed_id):
         if not feed:
             return jsonify({'error': 'Feed not found or not authorized to delete this feed'}), 404
 
-        # Delete associated stories
-        Story.query.filter_by(feed_id=feed.id).delete()
-        
-        # Delete the feed
+        # Log deletion attempt
+        print(f"Attempting to delete feed with ID: {feed_id} for user: {user.email}")
+
+        # Delete the feed (and associated stories via cascading delete)
         db.session.delete(feed)
         db.session.commit()
+
+        # Log successful deletion
+        print(f"Feed with ID: {feed_id} and associated stories deleted successfully.")
 
         return jsonify({'success': True, 'message': 'Feed and associated stories deleted successfully'}), 200
 
     except Exception as e:
+        # Rollback in case of error
         db.session.rollback()
+        print(f"Error during delete_feed: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
 
 
 @app.route('/user_info', methods=['GET'])

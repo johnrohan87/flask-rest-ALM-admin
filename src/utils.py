@@ -8,6 +8,7 @@ from jose import jwt as JOSE
 from jose.utils import base64url_decode
 from jose.exceptions import ExpiredSignatureError, JWTClaimsError, JWTError
 from models import db, User
+import xml.etree.ElementTree as ET
 
 
 
@@ -175,3 +176,22 @@ def get_or_create_user():
         db.session.commit()
 
     return user
+
+
+def fetch_rss_feed(url):
+    response = requests.get(url)
+    if response.status_code != 200:
+        raise Exception(f"Failed to fetch RSS feed: {response.status_code}")
+
+    root = ET.fromstring(response.content)
+    stories = []
+    for item in root.findall('.//item'):
+        story = {
+            'title': item.find('title').text if item.find('title') is not None else 'No Title',
+            'description': item.find('description').text if item.find('description') is not None else 'No Description',
+            'link': item.find('link').text if item.find('link') is not None else '',
+            # Add other fields as needed
+        }
+        stories.append(story)
+
+    return stories, response.content  # Return both stories and the raw XML
