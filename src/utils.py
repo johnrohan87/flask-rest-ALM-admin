@@ -199,19 +199,32 @@ def fetch_rss_feed(url):
     return stories, response.content  # Return both stories and the raw XML
 
 
-def url(url):
+def validate_url(url_str):
     """
     Validates a URL to ensure it has a valid structure.
     
     Args:
-        url (str): The URL string to validate.
+        url_str (str): The URL string to validate.
 
     Returns:
         bool: True if the URL is valid, False otherwise.
     """
     try:
-        result = urlparse(url)
+        result = urlparse(url_str)
         # Ensure the URL has both a scheme and netloc
         return all([result.scheme, result.netloc])
     except ValueError:
         return False
+
+def validate_email(email):
+    """
+    Validates an email address using a regular expression.
+
+    Args:
+        email (str): The email string to validate.
+
+    Returns:
+        bool: True if the email is valid, False otherwise.
+    """
+    email_regex = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
+    return re.match(email_regex, email) is not None

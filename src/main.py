@@ -15,7 +15,7 @@ import validators
 from sqlalchemy.exc import SQLAlchemyError
 from auth0.authentication import GetToken
 from auth0.management import Auth0
-from utils import fetch_rss_feed, get_or_create_user, generate_sitemap, decode_jwt, APIException, requires_auth, AuthError, url
+from utils import fetch_rss_feed, get_or_create_user, generate_sitemap, decode_jwt, APIException, requires_auth, AuthError, validate_url
 from admin import setup_admin
 from models import db, User, Person, TextFile, FeedPost, Todo, Feed, Story
 from flask_jwt_extended import (create_access_token, create_refresh_token, 
@@ -52,24 +52,24 @@ setup_admin(app)
 def preview_feed():
     try:
         # Retrieve the feed URL from the query parameters
-        url = request.args.get('url')
-        if not url:
+        url_input = request.args.get('url')
+        if not url_input:
             return jsonify({'error': 'No URL provided'}), 400
-        print(f"Feed URL received for preview: {url}")
+        print(f"Feed URL received for preview: {url_input}")
 
         # Validate the URL
-        if not url(url):
-            print(f"Invalid URL: {url}")
+        if not validate_url(url_input):
+            print(f"Invalid URL: {url_input}")
             return jsonify({'error': 'Invalid URL'}), 400
 
         # Fetch the RSS feed
-        print(f"Fetching RSS feed from: {url}")
-        stories, raw_xml = fetch_rss_feed(url)
+        print(f"Fetching RSS feed from: {url_input}")
+        stories, raw_xml = fetch_rss_feed(url_input)
         print(f"Fetched {len(stories)} stories from feed")
 
         # Return the fetched data without saving to the database
         return jsonify({
-            'url': url,
+            'url': url_input,
             'stories': stories,
             'raw_xml': raw_xml
         }), 200
@@ -93,21 +93,21 @@ def import_feed():
 
         # Get the feed URL from the request body
         data = request.get_json()
-        url = data.get('url')
-        print(f"Feed URL received: {url}")
+        url_input = data.get('url')
+        print(f"Feed URL received: {url_input}")
 
         # Validate the URL
-        if not validators.url(url):
-            print(f"Invalid URL: {url}")
+        if not validate_url(url_input):
+            print(f"Invalid URL: {url_input}")
             return jsonify({'error': 'Invalid URL'}), 400
 
         # Fetch the RSS feed
-        print(f"Fetching RSS feed from: {url}")
-        stories, raw_xml = fetch_rss_feed(url)
+        print(f"Fetching RSS feed from: {url_input}")
+        stories, raw_xml = fetch_rss_feed(url_input)
         print(f"Fetched {len(stories)} stories from feed")
 
         # Create and commit the new feed
-        feed = Feed(url=url, user_id=user.id, raw_xml=raw_xml)
+        feed = Feed(url=url_input, user_id=user.id, raw_xml=raw_xml)
         db.session.add(feed)
         db.session.commit()
         print(f"Feed added to database with ID: {feed.id}")
