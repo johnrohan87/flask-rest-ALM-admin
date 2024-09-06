@@ -29,7 +29,7 @@ auth0-python = "*"
 python-jose = {extras = ["cryptography"], version = "*"}
 
 [requires]
-python_version = "3.12.5"
+python_version = "3.12"
 
 [scripts]
 start="flask run -p 3000 -h 0.0.0.0"
