@@ -908,7 +908,6 @@ def todoAppModify(todo_id, todo_updatedText):
         return jsonify({'id': todo.id, 'text': todo.text}), 200
 
     
-
 @app.route("/api/todos/<int:todo_id>", methods=["PUT", "DELETE"])
 @jwt_required(fresh=True)
 #@cross_origin(origin='*',headers=['Content-Type','Authorization','application/json'])
