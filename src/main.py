@@ -10,7 +10,8 @@ from flask_migrate import Migrate
 from flask_cors import CORS
 from jose import jwt as JOSE
 from jose.exceptions import JWTError, ExpiredSignatureError, JWTClaimsError
-from ratelimiter import RateLimiter
+from throttler import Throttler
+import asyncio
 import validators 
 from sqlalchemy.exc import SQLAlchemyError
 from auth0.authentication import GetToken
@@ -464,7 +465,7 @@ def auth0protected():
         return jsonify({'message': str(e)}), 401
 
 # Handle/serialize errors like a JSON object
-@RateLimiter(max_calls=10, period=1)
+@Throttler(rate_limit=10, period=60)
 @app.errorhandler(APIException)
 def handle_invalid_usage(error):
     return jsonify(error.to_dict()), error.status_code
@@ -472,12 +473,12 @@ def handle_invalid_usage(error):
 
 
 # generate sitemap with all your endpoints
-@RateLimiter(max_calls=10, period=1)
+@Throttler(rate_limit=10, period=60)
 @app.route('/')
 def sitemap():
     return generate_sitemap(app)
 
-@RateLimiter(max_calls=10, period=1)
+@Throttler(rate_limit=10, period=60)
 @app.route('/user', methods=['GET'])
 def handle_hello():
 
@@ -498,7 +499,7 @@ def user_identity_lookup(user):
 
 # Create a route to authenticate your users and return JWTs. The
 # create_access_token() function is used to actually generate the JWT.
-@RateLimiter(max_calls=10, period=1)
+@Throttler(rate_limit=10, period=60)
 @app.route("/login", methods=["POST"])
 def login():
     email = request.json.get("email", None)
@@ -514,7 +515,7 @@ def login():
 
 
 
-@RateLimiter(max_calls=10, period=1)
+@Throttler(rate_limit=10, period=60)
 @app.route("/refresh", methods=["POST"])
 @jwt_required(refresh=True)
 def refresh():
@@ -541,7 +542,7 @@ def refresh():
 
 # Protect a route with jwt_required, which will kick out requests
 # without a valid JWT present.
-@RateLimiter(max_calls=10, period=1)
+@Throttler(rate_limit=10, period=60)
 @app.route("/protected", methods=["GET", "POST", "PUT"])
 @jwt_required(fresh=True)
 def protected():
@@ -646,7 +647,7 @@ def protected():
                 'db results - roles':db_query_results[0].roles},
                 status_code=400)
 
-@RateLimiter(max_calls=10, period=1)
+@Throttler(rate_limit=10, period=60)
 @app.route("/textfile", methods=["GET","PUT","POST"])
 @jwt_required(fresh=True)
 def textfile():
@@ -711,7 +712,7 @@ def textfile():
             print(repr(error))
             return "!!!!" + {'error':str(error)}
         
-@RateLimiter(max_calls=10, period=1)
+@Throttler(rate_limit=10, period=60)
 @app.route("/feedpost", methods=["GET","PUT"])
 @jwt_required(fresh=True)
 def feedpost():
@@ -758,7 +759,7 @@ def feedpost():
             print(repr(error))
             return ("!!!!" + repr(error))
         
-@RateLimiter(max_calls=10, period=1)
+@Throttler(rate_limit=10, period=60)
 @app.route("/addrss", methods=["PUT","POST"])
 @jwt_required(fresh=True)
 def addrss():
@@ -867,7 +868,7 @@ def user_lookup_callback(_jwt_header, jwt_data):
     return Person.query.filter_by(id=identity).one_or_none()
     
 # adding todo app
-@RateLimiter(max_calls=10, period=1)
+@Throttler(rate_limit=10, period=60)
 @app.route("/api/todos", methods=["GET", "POST"])
 @jwt_required(fresh=True)
 #@cross_origin(origin='*',headers=['Content-Type','Authorization'])
@@ -891,7 +892,7 @@ def todoApp():
     #if request.method == "OPTIONS": # CORS preflight
     #    return _build_cors_preflight_response(), 200
     
-@RateLimiter(max_calls=10, period=1)
+@Throttler(rate_limit=10, period=60)
 @app.route("/api/todos/<int:todo_id>/<string:todo_updatedText>", methods=["PUT"])
 @jwt_required(fresh=True)
 #@cross_origin(origin='*',headers=['Content-Type','Authorization','application/json'])
@@ -905,7 +906,7 @@ def todoAppModify(todo_id, todo_updatedText):
         return jsonify({'id': todo.id, 'text': todo.text}), 200
 
     
-@RateLimiter(max_calls=10, period=1)
+@Throttler(rate_limit=10, period=60)
 @app.route("/api/todos/<int:todo_id>", methods=["PUT", "DELETE"])
 @jwt_required(fresh=True)
 #@cross_origin(origin='*',headers=['Content-Type','Authorization','application/json'])

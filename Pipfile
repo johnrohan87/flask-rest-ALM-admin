@@ -19,7 +19,6 @@ gunicorn = "*"
 mysqlclient = "*"
 flask-admin = "*"
 flask-jwt-extended = "*"
-ratelimiter = "*"
 sqlalchemy-orm = "*"
 "sqlalchemy.orm" = "*"
 feedparser = "*"
@@ -27,6 +26,7 @@ requests = "*"
 validators = "*"
 auth0-python = "*"
 python-jose = {extras = ["cryptography"], version = "*"}
+throttler = "*"
 
 [requires]
 python_version = "3.12"
