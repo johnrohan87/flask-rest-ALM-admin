@@ -380,7 +380,10 @@ def user_feed():
 @requires_auth
 def delete_feed(feed_id):
     try:
+        # Retrieve the current user
         user = get_or_create_user()
+
+        # Fetch the feed associated with the user and the feed_id
         feed = Feed.query.filter_by(id=feed_id, user_id=user.id).first()
 
         if not feed:
@@ -389,7 +392,13 @@ def delete_feed(feed_id):
         # Log deletion attempt
         print(f"Attempting to delete feed with ID: {feed_id} for user: {user.email}")
 
-        # Delete the feed (and associated stories via cascading delete)
+        # Validate that stories associated with this feed have valid feed_ids
+        stories = Story.query.filter_by(feed_id=feed_id).all()
+        for story in stories:
+            if story.feed_id is None:
+                return jsonify({'error': f"Story with ID {story.id} has no associated feed_id and cannot be deleted"}), 400
+
+        # Proceed to delete the feed (and associated stories via cascading delete)
         db.session.delete(feed)
         db.session.commit()
 
