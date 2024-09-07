@@ -30,7 +30,7 @@ class Feed(db.Model):
 
 class Story(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    feed_id = db.Column(db.Integer, db.ForeignKey('feed.id'), nullable=False)
+    feed_id = db.Column(db.Integer, db.ForeignKey('feed.id', ondelete='CASCADE'))
     data = db.Column(db.JSON, nullable=False)
     custom_title = db.Column(db.String(200), nullable=True)
     custom_content = db.Column(db.Text, nullable=True)
