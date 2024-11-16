@@ -9,7 +9,7 @@ from flask import Flask, request, jsonify, url_for, make_response, g
 from flask_migrate import Migrate
 from flask_cors import CORS
 from jose import jwt as JOSE
-from jose.exceptions import JWTError, ExpiredSignatureError, JWTClaimsError
+#from jose.exceptions import JWTError, ExpiredSignatureError, JWTClaimsError
 from throttler import Throttler
 import asyncio
 import validators 
