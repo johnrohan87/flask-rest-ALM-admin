@@ -49,7 +49,6 @@ cors = CORS(app)
 setup_admin(app)
 
 
-
 @app.route('/import_feed', methods=['GET'])
 @requires_auth
 def preview_feed():
@@ -335,6 +334,7 @@ def delete_stories():
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+#Older code
 
 @app.route('/debug_stories', methods=['GET'])
 @requires_auth
