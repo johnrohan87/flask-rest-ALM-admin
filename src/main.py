@@ -276,7 +276,7 @@ def get_user_feeds():
 
 @app.route('/fetch_stories', methods=['GET'])
 @requires_auth
-def get_user_stories():
+def fetch_user_stories():
     try:
         user = get_or_create_user()
 
