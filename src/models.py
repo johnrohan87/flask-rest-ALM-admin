@@ -18,7 +18,7 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     feeds = db.relationship('Feed', backref='user', lazy=True)
-    user_stories = db.relationship('UserStory', backref='user_reference', lazy=True, overlaps="user_stories_association")
+    user_stories = db.relationship('UserStory', back_populates='user', lazy=True)
 
 class Feed(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -37,7 +37,7 @@ class Story(db.Model):
     custom_content = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    user_story = db.relationship('UserStory', backref='story_reference', cascade="all, delete-orphan", overlaps="story_user_association")
+    user_stories = db.relationship('UserStory', back_populates='story', cascade="all, delete-orphan")
 
 class UserStory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -47,8 +47,8 @@ class UserStory(db.Model):
     is_watched = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    user = db.relationship('User', backref=db.backref('user_stories_association', cascade="all, delete-orphan"), overlaps="user_reference")
-    story = db.relationship('Story', backref=db.backref('story_user_association', cascade="all, delete-orphan"), overlaps="story_reference")
+    user = db.relationship('User', back_populates='user_stories', overlaps="user_stories_association")
+    story = db.relationship('Story', back_populates='user_stories', overlaps="story_user_association")
 
 #old models
 
