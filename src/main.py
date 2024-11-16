@@ -18,7 +18,7 @@ from auth0.authentication import GetToken
 from auth0.management import Auth0
 from utils import fetch_rss_feed, get_or_create_user, generate_sitemap, decode_jwt, APIException, requires_auth, AuthError, validate_url
 from admin import setup_admin
-from models import db, User, Person, TextFile, FeedPost, Todo, Feed, Story
+from models import db, User, Person, TextFile, FeedPost, Todo, Feed, Story, UserStory
 from flask_jwt_extended import (create_access_token, create_refresh_token, 
                                 get_jwt_identity, get_jwt, current_user,
                                 jwt_required, JWTManager)
@@ -130,13 +130,83 @@ def import_feed():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/user_story', methods=['POST'])
+@requires_auth
+def add_user_story():
+    try:
+        user = get_or_create_user()
+        data = request.get_json()
+        story_id = data.get('story_id')
+        is_saved = data.get('is_saved', False)
+        is_watched = data.get('is_watched', False)
+
+        # Check if the story exists
+        story = Story.query.get(story_id)
+        if not story:
+            return jsonify({'error': 'Story not found'}), 404
+
+        # Create or update UserStory record
+        user_story = UserStory.query.filter_by(user_id=user.id, story_id=story_id).first()
+        if user_story:
+            user_story.is_saved = is_saved
+            user_story.is_watched = is_watched
+        else:
+            user_story = UserStory(user_id=user.id, story_id=story_id, is_saved=is_saved, is_watched=is_watched)
+            db.session.add(user_story)
+
+        db.session.commit()
+
+        return jsonify({'message': 'Story saved or watched successfully'}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+    
+
+@app.route('/user_stories', methods=['GET'])
+@requires_auth
+def get_user_stories():
+    try:
+        user = get_or_create_user()
+        saved = request.args.get('saved', None)
+        watched = request.args.get('watched', None)
+
+        user_stories_query = UserStory.query.filter_by(user_id=user.id)
+        
+        if saved:
+            user_stories_query = user_stories_query.filter_by(is_saved=True)
+        if watched:
+            user_stories_query = user_stories_query.filter_by(is_watched=True)
+        
+        user_stories = user_stories_query.all()
+
+        # Prepare response data
+        story_list = [
+            {
+                'story_id': user_story.story.id,
+                'feed_id': user_story.story.feed_id,
+                'data': user_story.story.data,
+                'custom_title': user_story.story.custom_title,
+                'custom_content': user_story.story.custom_content,
+                'created_at': user_story.story.created_at,
+                'updated_at': user_story.story.updated_at,
+                'is_saved': user_story.is_saved,
+                'is_watched': user_story.is_watched,
+            }
+            for user_story in user_stories
+        ]
+
+        return jsonify({'stories': story_list}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/edit_story/<int:story_id>', methods=['PUT'])
 @requires_auth
 def edit_story(story_id):
     try:
-        userinfo = g.current_user
-        user = get_or_create_user(userinfo)
-
+        user = get_or_create_user()
         story = Story.query.get(story_id)
         if not story or story.feed.user_id != user.id:
             return jsonify({'error': 'Story not found or unauthorized'}), 404
@@ -149,48 +219,31 @@ def edit_story(story_id):
         return jsonify({'message': 'Story updated successfully'}), 200
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 401
-
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/fetch_feeds', methods=['GET'])
 @requires_auth
 def fetch_feeds():
     try:
-        # Get the current user information
-        userinfo = g.current_user
-        current_user_id = userinfo['sub']
-        
-        # Fetch the user by auth0_id
-        user = User.query.filter_by(auth0_id=current_user_id).first()
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
-
-        # Fetch all feeds for this user
+        user = get_or_create_user()
         feeds = Feed.query.filter_by(user_id=user.id).all()
-        if not feeds:
-            return jsonify({'feeds': []}), 200
 
         # Prepare the feed data for response
-        feeds_data = []
-        for feed in feeds:
-            feed_data = {
+        feeds_data = [
+            {
                 'id': feed.id,
                 'url': feed.url,
+                'created_at': feed.created_at,
+                'updated_at': feed.updated_at
             }
-    
-            if hasattr(feed, 'created_at') and feed.created_at:
-                feed_data['created_at'] = feed.created_at
-            
-            if hasattr(feed, 'updated_at') and feed.updated_at:
-                feed_data['updated_at'] = feed.updated_at
-            
-            feeds_data.append(feed_data)
-        
+            for feed in feeds
+        ]
+
         return jsonify({'feeds': feeds_data}), 200
 
     except Exception as e:
-        print(f"Error in fetch_feeds: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 
@@ -260,7 +313,6 @@ def get_user_stories():
 def delete_stories():
     try:
         user = get_or_create_user()
-
         story_ids = request.json.get('story_ids')
         if not story_ids:
             return jsonify({'error': 'No story IDs provided'}), 400
@@ -280,6 +332,7 @@ def delete_stories():
         return jsonify({'message': 'Stories deleted successfully'}), 200
 
     except Exception as e:
+        db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
 
