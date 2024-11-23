@@ -109,6 +109,12 @@ def import_feed():
             print(f"Invalid URL: {url_input}")
             return jsonify({'error': 'Invalid URL'}), 400
 
+        # Check if the feed already exists in the database
+        existing_feed = Feed.query.filter_by(url=url_input, user_id=user.id).first()
+        if existing_feed:
+            print(f"Feed with URL {url_input} already exists for user {user.email}")
+            return jsonify({'message': 'Feed already exists'}), 200
+
         # Fetch the RSS feed
         print(f"Fetching RSS feed from: {url_input}")
         stories, raw_xml = fetch_rss_feed(url_input)
@@ -131,6 +137,7 @@ def import_feed():
         return jsonify({'message': 'Feed imported successfully'}), 200
 
     except Exception as e:
+        db.session.rollback()
         print(f"Error during import_feed: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
