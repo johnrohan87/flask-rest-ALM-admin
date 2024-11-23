@@ -165,6 +165,7 @@ def add_user_story():
 @requires_auth
 def add_story_to_user_feed():
     try:
+        user = get_or_create_user()
         data = request.get_json()
         feed_data = data.get('feed')
         story_data = data.get('story')
@@ -174,7 +175,7 @@ def add_story_to_user_feed():
 
         if not existing_feed:
             # Create a new feed
-            new_feed = Feed(url=feed_data['url'], user_id=current_user.id)
+            new_feed = Feed(url=feed_data['url'], user_id=user.id)
             db.session.add(new_feed)
             db.session.flush()  # Obtain new_feed.id without committing
 
