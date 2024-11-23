@@ -167,8 +167,12 @@ def add_story_to_user_feed():
     try:
         user = get_or_create_user()
         data = request.get_json()
+
         feed_data = data.get('feed')
         story_data = data.get('story')
+
+        if not feed_data or not story_data:
+            return jsonify({'error': 'Feed or Story data missing'}), 400
 
         # Check if the feed exists
         existing_feed = Feed.query.filter_by(url=feed_data['url']).first()
