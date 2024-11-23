@@ -69,11 +69,17 @@ def preview_feed():
         stories, raw_xml = fetch_rss_feed(url_input)
         print(f"Fetched {len(stories)} stories from feed")
 
+        # Add feed information to the response to be used by the front end
+        feed_info = {
+            'url': url_input,
+            'title': 'Feed Title Placeholder',  # You can replace this with the actual title from the feed if available
+            'raw_xml': raw_xml
+        }
+
         # Return the fetched data without saving to the database
         return jsonify({
-            'url': url_input,
-            'stories': stories,
-            'raw_xml': raw_xml
+            'feed': feed_info,
+            'stories': stories
         }), 200
 
     except Exception as e:
