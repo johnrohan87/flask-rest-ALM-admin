@@ -160,6 +160,43 @@ def add_user_story():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+@app.route('/add_story_to_user_feed', methods=['POST'])
+@requires_auth
+def add_story_to_user_feed():
+    try:
+        data = request.get_json()
+        feed_data = data.get('feed')
+        story_data = data.get('story')
+
+        # Check if the feed exists
+        existing_feed = Feed.query.filter_by(url=feed_data['url']).first()
+
+        if not existing_feed:
+            # Create a new feed
+            new_feed = Feed(url=feed_data['url'], user_id=current_user.id)
+            db.session.add(new_feed)
+            db.session.flush()  # Obtain new_feed.id without committing
+
+            feed_id = new_feed.id
+        else:
+            feed_id = existing_feed.id
+
+        # Check if the story already exists for this feed
+        existing_story = Story.query.filter_by(feed_id=feed_id, data=story_data).first()
+        if existing_story:
+            return jsonify({'message': 'Story already exists in this feed'}), 400
+
+        # Add new story
+        new_story = Story(feed_id=feed_id, data=story_data)
+        db.session.add(new_story)
+        db.session.commit()
+
+        return jsonify({'message': 'Story added successfully'}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
     
 
 @app.route('/user_stories', methods=['GET'])
