@@ -113,7 +113,7 @@ def import_feed():
         existing_feed = Feed.query.filter_by(url=url_input, user_id=user.id).first()
         if existing_feed:
             print(f"Feed with URL {url_input} already exists for user {user.email}")
-            return jsonify({'message': 'Feed already exists'}), 200
+            return jsonify({'message': 'Feed already exists'}), 409
 
         # Fetch the RSS feed
         print(f"Fetching RSS feed from: {url_input}")
@@ -134,7 +134,7 @@ def import_feed():
         db.session.commit()
         print("All stories committed to the database.")
 
-        return jsonify({'message': 'Feed imported successfully'}), 200
+        return jsonify({'message': 'Feed imported successfully'}), 201
 
     except Exception as e:
         db.session.rollback()
