@@ -307,23 +307,27 @@ def fetch_feeds():
 def get_user_feeds():
     try:
         user = get_or_create_user()
+        print(f"User processed: {user.email}")
+
         feeds = Feed.query.filter_by(user_id=user.id).all()
 
         if not feeds:
             return jsonify({'feeds': []}), 200
 
-        feed_list = [
-            {
+        feeds_data = []
+        for feed in feeds:
+            feeds_data.append({
                 'id': feed.id,
                 'url': feed.url,
                 'created_at': feed.created_at,
                 'updated_at': feed.updated_at,
-            }
-            for feed in feeds
-        ]
-        return jsonify({'feeds': feed_list}), 200
+                'stories': [{'id': story.id, 'title': story.data.get('title', 'No Title')} for story in feed.stories]
+            })
+
+        return jsonify({'feeds': feeds_data}), 200
 
     except Exception as e:
+        print(f"Error during get_user_feeds: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 
