@@ -30,7 +30,7 @@ class Feed(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    public_token = sa.Column(sa.String(36), unique=True, nullable=True, default=lambda: str(uuid.uuid4()))
+    public_token = db.Column(db.String(36), unique=True, nullable=True, default=lambda: str(uuid.uuid4()))
 
     stories = db.relationship('Story', backref='feed', lazy=True)
 
