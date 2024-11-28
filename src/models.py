@@ -4,7 +4,9 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text, ForeignKey, Table
 from sqlalchemy.orm import relationship, DeclarativeBase, backref
 from sqlalchemy.dialects.mysql import JSON
+from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime, timezone
+import uuid
 
 db = SQLAlchemy()
 
@@ -22,12 +24,18 @@ class User(db.Model):
 
 class Feed(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     url = db.Column(db.String(500), nullable=False)
     raw_xml = db.Column(db.Text, nullable=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    public_token = db.Column(UUID(as_uuid=True), unique=True, default=uuid.uuid4, nullable=True)
+
     stories = db.relationship('Story', backref='feed', lazy=True)
+
+    def __repr__(self):
+        return f'<Feed {self.url}>'
 
 class Story(db.Model):
     id = db.Column(db.Integer, primary_key=True)

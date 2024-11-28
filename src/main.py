@@ -23,6 +23,7 @@ from flask_jwt_extended import (create_access_token, create_refresh_token,
                                 get_jwt_identity, get_jwt, current_user,
                                 jwt_required, JWTManager)
 from services import fetch_rss_feed
+import uuid
 
 throttler = Throttler(rate_limit=10, period=60)
 
@@ -41,6 +42,10 @@ app.config['CORS_AUTOMATIC_OPTIONS'] = True
 app.config["JWT_SECRET_KEY"] = os.environ.get('JWT_SECRET_KEY')
 app.config['AUTH0_DOMAIN'] = os.environ.get('AUTH0_DOMAIN')
 app.config['API_AUDIENCE'] = os.environ.get('API_AUDIENCE')
+
+API_BASE_URL = os.environ.get('API_BASE_URL')
+
+
 jwt = JWTManager(app)
 
 MIGRATE = Migrate(app, db)
@@ -393,7 +398,60 @@ def delete_stories():
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+
+#################################################
+#RSS Feed Token Generator and Public Feed
+#################################################
+
+@app.route('/generate_feed_token', methods=['POST'])
+@requires_auth
+def generate_feed_token():
+    try:
+        user = get_or_create_user()
+        feed_id = request.json.get('feed_id')
+
+        # Check if the user owns the feed
+        feed = Feed.query.filter_by(id=feed_id, user_id=user.id).first()
+        if not feed:
+            return jsonify({'error': 'Feed not found or unauthorized access'}), 404
+
+        # If the feed already has a token, return it
+        if feed.public_token:
+            token = feed.public_token
+        else:
+            # Generate a unique token if it doesn't exist
+            token = uuid.uuid4()
+            feed.public_token = token
+            db.session.commit()
+
+        return jsonify({'token': str(token), 'public_url': f'{API_BASE_URL}/public_user_feed/{token}'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+
+###############
+#Public Feed
+###############    
+
+@app.route('/public_user_feed/<token>', methods=['GET'])
+def get_public_user_feed(token):
+    try:
+        # Find feed by the public token
+        feed = Feed.query.filter_by(public_token=token).first()
+        if not feed:
+            return jsonify({'error': 'Feed not found'}), 404
+
+        # Return feed information publicly
+        stories = [{'id': story.id, 'title': story.data.get('title', 'No Title')} for story in feed.stories]
+        return jsonify({'feed_url': feed.url, 'stories': stories}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+
+##################
 #Older code
+##################
 
 @app.route('/debug_stories', methods=['GET'])
 @requires_auth
@@ -448,7 +506,7 @@ def user_feed():
     try:
         userinfo = g.current_user
         print('userinfo', userinfo)
-        email = userinfo.get('https://voluble-boba-2e3a2e.netlify.app/email')
+        email = userinfo.get(API_BASE_URL+'/email')
         if not email:
             raise Exception("Email not found in token")
 
