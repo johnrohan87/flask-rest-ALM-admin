@@ -4,7 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text, ForeignKey, Table
 from sqlalchemy.orm import relationship, DeclarativeBase, backref
 from sqlalchemy.dialects.mysql import JSON
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.mysql import UUID as MySQL_UUID
 from datetime import datetime, timezone
 import uuid
 
@@ -30,7 +30,7 @@ class Feed(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    public_token = db.Column(UUID(as_uuid=True), unique=True, default=uuid.uuid4, nullable=True)
+    public_token = sa.Column(sa.String(36), unique=True, nullable=True, default=lambda: str(uuid.uuid4()))
 
     stories = db.relationship('Story', backref='feed', lazy=True)
 
