@@ -295,7 +295,8 @@ def fetch_feeds():
                 'id': feed.id,
                 'url': feed.url,
                 'created_at': feed.created_at,
-                'updated_at': feed.updated_at
+                'updated_at': feed.updated_at,
+                'public_token': str(feed.public_token) if feed.public_token else None,
             }
             for feed in feeds
         ]
