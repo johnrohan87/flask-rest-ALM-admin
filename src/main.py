@@ -420,13 +420,14 @@ def get_public_user_feed(token):
                 {
                     'id': story.id,
                     'title': story.data.get('title', 'No Title'),
-                    'published': story.data.get('published'),
-                    'link': story.data.get('link'),
-                    'summary': story.data.get('summary')
+                    'published': story.data.get('published', 'No Publication Date'),
+                    'link': story.data.get('link', 'No Link'),
+                    'summary': story.data.get('summary', 'No Summary Available'),
+                    'data': {key: story.data.get(key, 'N/A') for key in story.data}
                 } for story in feed.stories
             ]
         }
-        
+
         return jsonify(feed_data), 200
 
     except Exception as e:
