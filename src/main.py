@@ -403,31 +403,35 @@ def delete_stories():
 #RSS Feed Token Generator and Public Feed
 #################################################
 
-@app.route('/get_all_feed_tokens', methods=['GET'])
-@requires_auth
-def get_all_feed_tokens():
+@app.route('/public_user_feed/<token>', methods=['GET'])
+def get_public_user_feed(token):
     try:
-        # Retrieve the user
-        user = get_or_create_user()
+        # Find feed by the public token
+        feed = Feed.query.filter_by(public_token=token).first()
+        if not feed:
+            return jsonify({'error': 'Feed not found'}), 404
 
-        # Get all feeds associated with the user
-        feeds = Feed.query.filter_by(user_id=user.id).all()
-
-        # Extract the public tokens and other details
-        feeds_with_tokens = [
-            {
-                'feed_id': feed.id,
-                'feed_url': feed.url,
-                'public_token': str(feed.public_token) if feed.public_token else None,
-                'public_url': f'{API_BASE_URL}/public_user_feed/{feed.public_token}' if feed.public_token else None
-            }
-            for feed in feeds
-        ]
-
-        return jsonify({'feeds': feeds_with_tokens}), 200
+        # Convert feed and its stories to JSON-serializable format
+        feed_data = {
+            'id': feed.id,
+            'url': feed.url,
+            'user_id': feed.user_id,
+            'stories': [
+                {
+                    'id': story.id,
+                    'title': story.data.get('title', 'No Title'),
+                    'published': story.data.get('published'),
+                    'link': story.data.get('link'),
+                    'summary': story.data.get('summary')
+                } for story in feed.stories
+            ]
+        }
+        
+        return jsonify(feed_data), 200
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
     
 
 @app.route('/generate_feed_token', methods=['POST'])
