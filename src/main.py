@@ -403,6 +403,33 @@ def delete_stories():
 #RSS Feed Token Generator and Public Feed
 #################################################
 
+@app.route('/get_all_feed_tokens', methods=['GET'])
+@requires_auth
+def get_all_feed_tokens():
+    try:
+        # Retrieve the user
+        user = get_or_create_user()
+
+        # Get all feeds associated with the user
+        feeds = Feed.query.filter_by(user_id=user.id).all()
+
+        # Extract the public tokens and other details
+        feeds_with_tokens = [
+            {
+                'feed_id': feed.id,
+                'feed_url': feed.url,
+                'public_token': str(feed.public_token) if feed.public_token else None,
+                'public_url': f'{API_BASE_URL}/public_user_feed/{feed.public_token}' if feed.public_token else None
+            }
+            for feed in feeds
+        ]
+
+        return jsonify({'feeds': feeds_with_tokens}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+
 @app.route('/generate_feed_token', methods=['POST'])
 @requires_auth
 def generate_feed_token():
@@ -427,7 +454,7 @@ def generate_feed_token():
         return jsonify({'token': str(token), 'public_url': f'{API_BASE_URL}/public_user_feed/{token}'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-    
+
 
 ###############
 #Public Feed
@@ -442,8 +469,8 @@ def get_public_user_feed(token):
             return jsonify({'error': 'Feed not found'}), 404
 
         # Return feed information publicly
-        stories = [{'id': story.id, 'title': story.data.get('title', 'No Title')} for story in feed.stories]
-        return jsonify({'feed_url': feed.url, 'stories': stories}), 200
+        stories = [{'id': story.id, **(story.data if story.data else {'title': 'No Title', 'content': 'No Content', 'link': 'No Link'})} for story in feed.stories]
+        return jsonify({'feed_url': feed.url, "all feed data": feed, 'all stories data': stories}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
