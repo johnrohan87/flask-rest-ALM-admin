@@ -31,6 +31,7 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
+    feeds = db.relationship('Feed', backref='user', lazy=True)
     user_feeds = db.relationship('UserFeed', back_populates='user', cascade='all, delete-orphan')
     user_stories = db.relationship('UserStory', back_populates='user', lazy=True)
 
