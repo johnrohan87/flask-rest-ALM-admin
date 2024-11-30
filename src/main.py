@@ -307,8 +307,11 @@ def fetch_feeds():
         return jsonify({'error': str(e)}), 500
 
 
+#######################################
+#### All user feeds and stories
+#######################################
 
-@app.route('/user_feeds', methods=['GET'])
+@app.route('/user_feeds_and_stories', methods=['GET'])
 @requires_auth
 def get_user_feeds():
     try:
@@ -321,14 +324,21 @@ def get_user_feeds():
             return jsonify({'feeds': []}), 200
 
         feeds_data = []
+
+        # Iterate through each feed to serialize it along with its stories
         for feed in feeds:
-            feeds_data.append({
-                'id': feed.id,
-                'url': feed.url,
-                'created_at': feed.created_at,
-                'updated_at': feed.updated_at,
-                'stories': [{'id': story.id, 'title': story.data.get('title', 'No Title')} for story in feed.stories]
-            })
+            # Extract all feed columns dynamically
+            feed_dict = {column.name: getattr(feed, column.name) for column in feed.__table__.columns}
+
+            # Extract all story columns dynamically for each story related to the feed
+            stories_data = [
+                {column.name: getattr(story, column.name) for column in story.__table__.columns}
+                for story in feed.stories
+            ]
+
+            # Add stories data to feed dictionary
+            feed_dict['stories'] = stories_data
+            feeds_data.append(feed_dict)
 
         return jsonify({'feeds': feeds_data}), 200
 

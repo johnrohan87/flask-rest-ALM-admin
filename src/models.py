@@ -9,16 +9,29 @@ import uuid
 
 db = SQLAlchemy()
 
+class UserFeed(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
+    feed_id = db.Column(db.Integer, db.ForeignKey('feed.id', ondelete='CASCADE'), nullable=False)
+    is_following = db.Column(db.Boolean, default=True)
+    save_all_new_stories = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', back_populates='user_feeds', overlaps="user_feeds_association")
+    feed = db.relationship('Feed', back_populates='user_feeds', overlaps="feed_user_association")
+
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     auth0_id = db.Column(db.String(100), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    username = db.Column(db.String(80), nullable=False)
+    username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-    feeds = db.relationship('Feed', backref='user', lazy=True)
+    
+    user_feeds = db.relationship('UserFeed', back_populates='user', cascade='all, delete-orphan')
     user_stories = db.relationship('UserStory', back_populates='user', lazy=True)
 
 class Feed(db.Model):
@@ -28,10 +41,11 @@ class Feed(db.Model):
     raw_xml = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    public_token = Column(String(36), unique=True, nullable=True, default=lambda: str(uuid.uuid4()))
+    public_token = db.Column(db.String(36), unique=True, nullable=True, default=lambda: str(uuid.uuid4()))
 
-    stories = db.relationship('Story', backref='feed', lazy=True)
+    user_feeds = db.relationship('UserFeed', back_populates='feed', cascade='all, delete-orphan')
+    stories = db.relationship('Story', back_populates='feed', cascade='all, delete-orphan')
+
 
     def __repr__(self):
         return f'<Feed {self.url}>'
@@ -44,6 +58,8 @@ class Story(db.Model):
     custom_content = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    feed = db.relationship('Feed', back_populates='stories')
     user_stories = db.relationship('UserStory', back_populates='story', cascade="all, delete-orphan")
 
 class UserStory(db.Model):
