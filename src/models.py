@@ -44,7 +44,7 @@ class Feed(db.Model):
     public_token = db.Column(db.String(36), unique=True, nullable=True, default=lambda: str(uuid.uuid4()))
 
     user_feeds = db.relationship('UserFeed', back_populates='feed', cascade='all, delete-orphan')
-    stories = db.relationship('Story', back_populates='feed', cascade='all, delete-orphan')
+    stories = db.relationship('Story', backref='feed', cascade='all, delete-orphan')
 
 
     def __repr__(self):
