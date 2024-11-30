@@ -17,8 +17,8 @@ class UserFeed(db.Model):
     save_all_new_stories = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    user = db.relationship('User', back_populates='user_feeds', overlaps="user_feeds_association")
-    feed = db.relationship('Feed', back_populates='user_feeds', overlaps="feed_user_association")
+    user = db.relationship('User', back_populates='user_feeds')
+    feed = db.relationship('Feed', back_populates='user_feeds')
 
 
 class User(db.Model):
@@ -44,7 +44,7 @@ class Feed(db.Model):
     public_token = db.Column(db.String(36), unique=True, nullable=True, default=lambda: str(uuid.uuid4()))
 
     user_feeds = db.relationship('UserFeed', back_populates='feed', cascade='all, delete-orphan')
-    stories = db.relationship('Story', backref='feed', cascade='all, delete-orphan')
+    stories = db.relationship('Story', back_populates='feed', cascade='all, delete-orphan')
 
 
     def __repr__(self):
@@ -70,8 +70,8 @@ class UserStory(db.Model):
     is_watched = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    user = db.relationship('User', back_populates='user_stories', overlaps="user_stories_association")
-    story = db.relationship('Story', back_populates='user_stories', overlaps="story_user_association")
+    user = db.relationship('User', back_populates='user_stories')
+    story = db.relationship('Story', back_populates='user_stories')
 
 #old models
 
