@@ -290,32 +290,30 @@ def edit_story(story_id):
 @requires_auth
 def fetch_feeds():
     try:
-        # Retrieve or create user
+        # Retrieve or create the user
         user = get_or_create_user()
         print(f"User ID: {user.id}")
 
-        # Query for UserFeed entries related to this user
-        user_feeds = UserFeed.query.filter_by(user_id=user.id).all()
-        print(f"Number of UserFeed records found: {len(user_feeds)}")
+        # Query for all Feed entries related to this user
+        feeds = Feed.query.filter_by(user_id=user.id).all()
+        print(f"Number of Feed records found: {len(feeds)}")
 
-        # Check if user_feeds is empty
-        if not user_feeds:
-            print("No feeds found for this user.")
-            return jsonify({'feeds': []}), 200
+        # Prepare the feed data for response, including related UserFeed data (if it exists)
+        feeds_data = []
+        for feed in feeds:
+            # Find the related UserFeed entry for this feed (if it exists)
+            user_feed = UserFeed.query.filter_by(user_id=user.id, feed_id=feed.id).first()
 
-        feeds_data = [
-            {
-                'id': user_feed.feed.id,
-                'url': user_feed.feed.url,
-                'created_at': user_feed.feed.created_at,
-                'updated_at': user_feed.feed.updated_at,
-                'public_token': str(user_feed.feed.public_token) if user_feed.feed.public_token else None,
-                'is_following': user_feed.is_following,
-                'save_all_new_stories': user_feed.save_all_new_stories,
-                'user_feed_created_at': user_feed.created_at
-            }
-            for user_feed in user_feeds if user_feed.feed is not None  # Ensure feed is not None
-        ]
+            feeds_data.append({
+                'id': feed.id,
+                'url': feed.url,
+                'created_at': feed.created_at,
+                'updated_at': feed.updated_at,
+                'public_token': str(feed.public_token) if feed.public_token else None,
+                'is_following': user_feed.is_following if user_feed else False,
+                'save_all_new_stories': user_feed.save_all_new_stories if user_feed else False,
+                'user_feed_created_at': user_feed.created_at if user_feed else None
+            })
 
         print(f"Feeds Data Prepared: {feeds_data}")
 
@@ -324,6 +322,7 @@ def fetch_feeds():
     except Exception as e:
         print(f"Error during fetch_feeds: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
 
 
 
