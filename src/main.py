@@ -284,7 +284,7 @@ def edit_story(story_id):
 
 ################################################
 ##### Feeds return with UserFeed data included
-################################################
+#################################################
 
 @app.route('/fetch_feeds', methods=['GET'])
 @requires_auth
