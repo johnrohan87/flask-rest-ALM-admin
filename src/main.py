@@ -18,7 +18,7 @@ from auth0.authentication import GetToken
 from auth0.management import Auth0
 from utils import fetch_rss_feed, get_or_create_user, generate_sitemap, decode_jwt, APIException, requires_auth, AuthError, validate_url
 from admin import setup_admin
-from models import db, User, Person, TextFile, FeedPost, Todo, Feed, Story, UserStory
+from models import db, User, UserFeed, Person, TextFile, FeedPost, Todo, Feed, Story, UserStory
 from flask_jwt_extended import (create_access_token, create_refresh_token, 
                                 get_jwt_identity, get_jwt, current_user,
                                 jwt_required, JWTManager)
@@ -282,29 +282,37 @@ def edit_story(story_id):
         return jsonify({'error': str(e)}), 500
 
 
+################################################
+##### Feeds return with UserFeed data included
+################################################
+
 @app.route('/fetch_feeds', methods=['GET'])
 @requires_auth
 def fetch_feeds():
     try:
         user = get_or_create_user()
-        feeds = Feed.query.filter_by(user_id=user.id).all()
+        user_feeds = UserFeed.query.filter_by(user_id=user.id).all()
 
-        # Prepare the feed data for response
+        # Prepare the feed data for response, including related UserFeed data
         feeds_data = [
             {
-                'id': feed.id,
-                'url': feed.url,
-                'created_at': feed.created_at,
-                'updated_at': feed.updated_at,
-                'public_token': str(feed.public_token) if feed.public_token else None,
+                'id': user_feed.feed.id,
+                'url': user_feed.feed.url,
+                'created_at': user_feed.feed.created_at,
+                'updated_at': user_feed.feed.updated_at,
+                'public_token': str(user_feed.feed.public_token) if user_feed.feed.public_token else None,
+                'is_following': user_feed.is_following,
+                'save_all_new_stories': user_feed.save_all_new_stories,
+                'user_feed_created_at': user_feed.created_at
             }
-            for feed in feeds
+            for user_feed in user_feeds
         ]
 
         return jsonify({'feeds': feeds_data}), 200
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 
 #######################################
