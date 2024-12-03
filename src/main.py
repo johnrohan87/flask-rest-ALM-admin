@@ -290,10 +290,19 @@ def edit_story(story_id):
 @requires_auth
 def fetch_feeds():
     try:
+        # Retrieve or create user
         user = get_or_create_user()
-        user_feeds = UserFeed.query.filter_by(user_id=user.id).all()
+        print(f"User ID: {user.id}")
 
-        # Prepare the feed data for response, including related UserFeed data
+        # Query for UserFeed entries related to this user
+        user_feeds = UserFeed.query.filter_by(user_id=user.id).all()
+        print(f"Number of UserFeed records found: {len(user_feeds)}")
+
+        # Check if user_feeds is empty
+        if not user_feeds:
+            print("No feeds found for this user.")
+            return jsonify({'feeds': []}), 200
+
         feeds_data = [
             {
                 'id': user_feed.feed.id,
@@ -305,12 +314,15 @@ def fetch_feeds():
                 'save_all_new_stories': user_feed.save_all_new_stories,
                 'user_feed_created_at': user_feed.created_at
             }
-            for user_feed in user_feeds
+            for user_feed in user_feeds if user_feed.feed is not None  # Ensure feed is not None
         ]
+
+        print(f"Feeds Data Prepared: {feeds_data}")
 
         return jsonify({'feeds': feeds_data}), 200
 
     except Exception as e:
+        print(f"Error during fetch_feeds: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 
