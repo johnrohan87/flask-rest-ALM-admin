@@ -161,7 +161,9 @@ def get_jwks(auth0_domain):
 
 def get_or_create_user():
     userinfo = g.current_user
-    email = userinfo.get('https://voluble-boba-2e3a2e.netlify.app/email')
+    print(f"userinfo : {userinfo}")
+    email = userinfo.get('email')
+    print(f"email : {email}")
     if not email:
         raise Exception("Email not found in token")
 
