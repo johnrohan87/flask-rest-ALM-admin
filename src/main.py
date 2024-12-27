@@ -155,6 +155,9 @@ def import_feed():
 
             new_stories_count = 0
             for story_data in stories:
+
+                print(f"Storing story: {story_data}")
+                
                 # Extract identifiers
                 guid = story_data.get('guid')
                 story_id = story_data.get('id')
