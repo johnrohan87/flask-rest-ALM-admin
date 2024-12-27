@@ -79,17 +79,32 @@ def preview_feed():
         stories, raw_xml = fetch_rss_feed(url_input)
         print(f"Fetched {len(stories)} stories from feed")
 
+        # Decode raw_xml if it's in bytes
+        if isinstance(raw_xml, bytes):
+            raw_xml = raw_xml.decode('utf-8')
+
+        # Decode any bytes in the stories data
+        def decode_story_data(story):
+            if isinstance(story, dict):
+                return {
+                    key: (value.decode('utf-8') if isinstance(value, bytes) else value)
+                    for key, value in story.items()
+                }
+            return story
+
+        decoded_stories = [decode_story_data(story) for story in stories]
+
         # Add feed information to the response to be used by the front end
         feed_info = {
             'url': url_input,
-            'title': 'Feed Title Placeholder',  # You can replace this with the actual title from the feed if available
+            'title': 'Feed Title Placeholder',  # Replace this with the actual title from the feed if available
             'raw_xml': raw_xml
         }
 
         # Return the fetched data without saving to the database
         return jsonify({
             'feed': feed_info,
-            'stories': stories
+            'stories': decoded_stories
         }), 200
 
     except Exception as e:
