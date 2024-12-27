@@ -137,56 +137,39 @@ def import_feed():
         # Check if the feed already exists in the database
         existing_feed = Feed.query.filter_by(url=url_input, user_id=user.id).first()
         if existing_feed:
-            print(f"Feed with URL {url_input} already exists for user {user.email}")
-            
-            # Fetch the latest RSS feed data
-            print(f"Fetching updated RSS feed from: {url_input}")
+            # Fetch new stories and append them to the feed
             stories, raw_xml = fetch_rss_feed(url_input)
 
-            # Update the raw XML for the feed
-            existing_feed.raw_xml = raw_xml
-            existing_feed.updated_at = datetime.now(timezone.utc)
+            new_stories_count = 0
+            for story_data in stories:
+                # Check for existing stories
+                existing_story = Story.query.filter_by(feed_id=existing_feed.id, data=story_data).first()
+                if not existing_story:
+                    new_story = Story(feed_id=existing_feed.id, data=story_data)
+                    db.session.add(new_story)
+                    new_stories_count += 1
 
-            # Check for new stories
-            existing_story_ids = {story.data.get('id') for story in existing_feed.stories if 'id' in story.data}
-            new_stories = [story for story in stories if story.get('id') not in existing_story_ids]
+            if new_stories_count > 0:
+                db.session.commit()
+                return jsonify({'message': f'Appended {new_stories_count} new stories to the feed.'}), 204
+            else:
+                return jsonify({'message': 'No new stories to append.'}), 204
 
-            # Add new stories to the database
-            for story_data in new_stories:
-                story = Story(feed_id=existing_feed.id, data=story_data)
-                db.session.add(story)
-                print(f"New story added: {story_data.get('title', 'No Title')}")
-
-            db.session.commit()
-            print(f"Feed updated with {len(new_stories)} new stories.")
-
-            return jsonify({'message': 'Feed updated with new stories', 'new_stories_count': len(new_stories)}), 200
-
-
-        # Fetch the RSS feed
-        print(f"Fetching RSS feed from: {url_input}")
+        # If no existing feed, create a new one
         stories, raw_xml = fetch_rss_feed(url_input)
-        print(f"Fetched {len(stories)} stories from feed")
-
-        # Create and commit the new feed
         feed = Feed(url=url_input, user_id=user.id, raw_xml=raw_xml)
         db.session.add(feed)
         db.session.commit()
-        print(f"Feed added to database with ID: {feed.id}")
 
-        # Add stories to the database
         for story_data in stories:
-            story = Story(feed_id=feed.id, data=story_data)
-            db.session.add(story)
-            print(f"Story added: {story_data.get('title', 'No Title')}")
+            new_story = Story(feed_id=feed.id, data=story_data)
+            db.session.add(new_story)
         db.session.commit()
-        print("All stories committed to the database.")
 
-        return jsonify({'message': 'Feed imported successfully'}), 201
+        return jsonify({'message': 'Feed imported successfully', 'feed_id': feed.id}), 201
 
     except Exception as e:
         db.session.rollback()
-        print(f"Error during import_feed: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 
