@@ -23,9 +23,9 @@ from auth0.management import Auth0
 from flask_jwt_extended import (create_access_token, create_refresh_token, 
                                 get_jwt_identity, current_user,
                                 jwt_required, JWTManager)
-#from services import fetch_rss_feed
+from services import fetch_rss_feed
 from admin import setup_admin
-from utils import fetch_rss_feed, get_or_create_user, generate_sitemap, decode_jwt, APIException, requires_auth, AuthError, validate_url
+from utils import get_or_create_user, generate_sitemap, decode_jwt, APIException, requires_auth, AuthError, validate_url
 from models import db, User, UserFeed, Person, TextFile, FeedPost, Todo, Feed, Story, UserStory
 import uuid
 import xml.etree.ElementTree as ET
