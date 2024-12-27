@@ -530,14 +530,15 @@ def get_public_user_feed(token):
 # Generate RSS Feed
 #############################################
 
-@app.route('/generate_rss_feed/<feed_id>', methods=['GET'])
-def generate_rss_feed(feed_id):
+@app.route('/generate_rss_feed/<public_token>', methods=['GET'])
+def generate_rss_feed(public_token):
     try:
-        # Retrieve the feed and associated stories from the database
-        feed = Feed.query.get(feed_id)
+        # Retrieve the feed by public token
+        feed = Feed.query.filter_by(public_token=public_token).first()
         if not feed:
-            return {'error': 'Feed not found'}, 404
+            return jsonify({'error': 'Invalid or expired public token'}), 404
 
+        # Retrieve all stories associated with the feed
         stories = Story.query.filter_by(feed_id=feed.id).all()
 
         # Create the RSS feed root
