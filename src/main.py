@@ -140,11 +140,13 @@ def import_feed():
             # Fetch new stories and append them to the feed
             stories, raw_xml = fetch_rss_feed(url_input)
 
+            # Append new stories or re-import deleted ones
             new_stories_count = 0
             for story_data in stories:
-                # Check for existing stories
-                existing_story = Story.query.filter_by(feed_id=existing_feed.id, data=story_data).first()
-                if not existing_story:
+                # Normalize or hash story data for comparison
+                story_exists = Story.query.filter_by(feed_id=existing_feed.id, data=story_data).first()
+                if not story_exists:
+                    # Re-add the story if it doesn't exist
                     new_story = Story(feed_id=existing_feed.id, data=story_data)
                     db.session.add(new_story)
                     new_stories_count += 1
@@ -156,7 +158,6 @@ def import_feed():
                 return jsonify({'message': 'No new stories to append.'}), 204
 
         # If no existing feed, create a new one
-        stories, raw_xml = fetch_rss_feed(url_input)
         feed = Feed(url=url_input, user_id=user.id, raw_xml=raw_xml)
         db.session.add(feed)
         db.session.commit()
