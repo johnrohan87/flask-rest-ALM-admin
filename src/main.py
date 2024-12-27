@@ -136,24 +136,40 @@ def import_feed():
 
         # Check if the feed already exists in the database
         existing_feed = Feed.query.filter_by(url=url_input, user_id=user.id).first()
+        stories, raw_xml = fetch_rss_feed(url_input)
+
+        # If the feed exists, check for missing or new stories
         if existing_feed:
-            # Fetch new stories and append them to the feed
-            stories, raw_xml = fetch_rss_feed(url_input)
+            print(f"Feed with URL {url_input} already exists for user {user.email}")
 
             # Append new stories or re-import deleted ones
+            existing_stories = Story.query.filter_by(feed_id=existing_feed.id).all()
+            existing_story_identifiers = {
+                (
+                    story.data.get('guid'),
+                    story.data.get('id'),
+                    story.data.get('link'),
+                )
+                for story in existing_stories
+            }
+
             new_stories_count = 0
             for story_data in stories:
-                # Normalize or hash story data for comparison
-                story_exists = Story.query.filter_by(feed_id=existing_feed.id, data=story_data).first()
-                if not story_exists:
-                    # Re-add the story if it doesn't exist
+                # Extract identifiers
+                guid = story_data.get('guid')
+                story_id = story_data.get('id')
+                link = story_data.get('link')
+
+                # Check existence in order of guid, id, and link
+                if (guid, story_id, link) not in existing_story_identifiers:
                     new_story = Story(feed_id=existing_feed.id, data=story_data)
                     db.session.add(new_story)
                     new_stories_count += 1
+                    existing_story_identifiers.add((guid, story_id, link))
 
             if new_stories_count > 0:
                 db.session.commit()
-                return jsonify({'message': f'Appended {new_stories_count} new stories to the feed.'}), 204
+                return jsonify({'message': f'Appended {new_stories_count} new stories to the feed.'}), 201
             else:
                 return jsonify({'message': 'No new stories to append.'}), 204
 
@@ -171,7 +187,9 @@ def import_feed():
 
     except Exception as e:
         db.session.rollback()
+        print(f"Error during import_feed: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
 
 
 @app.route('/user_story', methods=['POST'])
