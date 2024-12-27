@@ -1,11 +1,12 @@
 import os
 import json
 import base64
+import datetime
 from logging import FileHandler, WARNING
 from functools import lru_cache
 from datetime import timedelta
 import requests
-from flask import Flask, request, jsonify, url_for, make_response, g
+from flask import Flask, request, jsonify, g, Response
 from flask_migrate import Migrate
 from flask_cors import CORS
 from jose import jwt as JOSE
@@ -16,14 +17,18 @@ import validators
 from sqlalchemy.exc import SQLAlchemyError
 from auth0.authentication import GetToken
 from auth0.management import Auth0
-from utils import fetch_rss_feed, get_or_create_user, generate_sitemap, decode_jwt, APIException, requires_auth, AuthError, validate_url
-from admin import setup_admin
-from models import db, User, UserFeed, Person, TextFile, FeedPost, Todo, Feed, Story, UserStory
+
+
+
 from flask_jwt_extended import (create_access_token, create_refresh_token, 
-                                get_jwt_identity, get_jwt, current_user,
+                                get_jwt_identity, current_user,
                                 jwt_required, JWTManager)
-from services import fetch_rss_feed
+#from services import fetch_rss_feed
+from admin import setup_admin
+from utils import fetch_rss_feed, get_or_create_user, generate_sitemap, decode_jwt, APIException, requires_auth, AuthError, validate_url
+from models import db, User, UserFeed, Person, TextFile, FeedPost, Todo, Feed, Story, UserStory
 import uuid
+import xml.etree.ElementTree as ET
 
 throttler = Throttler(rate_limit=10, period=60)
 
@@ -519,6 +524,57 @@ def get_public_user_feed(token):
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+
+#############################################
+# Generate RSS Feed
+#############################################
+
+@app.route('/generate_rss_feed/<feed_id>', methods=['GET'])
+def generate_rss_feed(feed_id):
+    try:
+        # Retrieve the feed and associated stories from the database
+        feed = Feed.query.get(feed_id)
+        if not feed:
+            return {'error': 'Feed not found'}, 404
+
+        stories = Story.query.filter_by(feed_id=feed.id).all()
+
+        # Create the RSS feed root
+        rss = ET.Element('rss', attrib={'version': '2.0'})
+        channel = ET.SubElement(rss, 'channel')
+
+        # Add all fields from the feed dynamically
+        feed_data = {
+            'title': feed.url or "RSS Feed url empty",
+            'link': feed.url or "link empty: http://example.com",
+            'description': "description empty",
+            'lastBuildDate': datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S +0000'),
+            # Add any additional fields from your feed object dynamically
+        }
+        for key, value in feed_data.items():
+            ET.SubElement(channel, key).text = str(value)
+
+        # Add stories dynamically
+        for story in stories:
+            item = ET.SubElement(channel, 'item')
+
+            # Map all fields in story.data into the RSS item
+            for key, value in story.data.items():
+                ET.SubElement(item, key).text = str(value) if value is not None else 'N/A'
+
+            # Add additional fields from the Story model if needed
+            ET.SubElement(item, 'id').text = str(story.id)
+            ET.SubElement(item, 'feed_id').text = str(story.feed_id)
+
+        # Convert the ElementTree to a string
+        rss_string = ET.tostring(rss, encoding='utf-8')
+
+        # Return the RSS feed as an XML response
+        return Response(rss_string, mimetype='application/rss+xml')
+
+    except Exception as e:
+        return {'error': str(e)}, 500
 
 
 
