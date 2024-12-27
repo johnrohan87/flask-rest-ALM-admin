@@ -123,7 +123,30 @@ def import_feed():
         existing_feed = Feed.query.filter_by(url=url_input, user_id=user.id).first()
         if existing_feed:
             print(f"Feed with URL {url_input} already exists for user {user.email}")
-            return jsonify({'message': 'Feed already exists'}), 409
+            
+            # Fetch the latest RSS feed data
+            print(f"Fetching updated RSS feed from: {url_input}")
+            stories, raw_xml = fetch_rss_feed(url_input)
+
+            # Update the raw XML for the feed
+            existing_feed.raw_xml = raw_xml
+            existing_feed.updated_at = datetime.utcnow()
+
+            # Check for new stories
+            existing_story_ids = {story.data.get('id') for story in existing_feed.stories if 'id' in story.data}
+            new_stories = [story for story in stories if story.get('id') not in existing_story_ids]
+
+            # Add new stories to the database
+            for story_data in new_stories:
+                story = Story(feed_id=existing_feed.id, data=story_data)
+                db.session.add(story)
+                print(f"New story added: {story_data.get('title', 'No Title')}")
+
+            db.session.commit()
+            print(f"Feed updated with {len(new_stories)} new stories.")
+
+            return jsonify({'message': 'Feed updated with new stories', 'new_stories_count': len(new_stories)}), 200
+
 
         # Fetch the RSS feed
         print(f"Fetching RSS feed from: {url_input}")
