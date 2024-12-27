@@ -1,7 +1,7 @@
 import os
 import json
 import base64
-import datetime
+from datetime import datetime, timezone
 from logging import FileHandler, WARNING
 from functools import lru_cache
 from datetime import timedelta
@@ -130,7 +130,7 @@ def import_feed():
 
             # Update the raw XML for the feed
             existing_feed.raw_xml = raw_xml
-            existing_feed.updated_at = datetime.utcnow()
+            existing_feed.updated_at = datetime.now(timezone.utc)
 
             # Check for new stories
             existing_story_ids = {story.data.get('id') for story in existing_feed.stories if 'id' in story.data}
