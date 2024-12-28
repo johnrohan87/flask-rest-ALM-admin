@@ -42,7 +42,7 @@ class Feed(db.Model):
     raw_xml = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    public_token = db.Column(db.String(36), unique=True, nullable=True, default=lambda: str(uuid.uuid4()))
+    public_token = db.Column(db.String(36), unique=True, nullable=True)
 
     user_feeds = db.relationship('UserFeed', back_populates='feed', cascade='all, delete-orphan')
     stories = db.relationship('Story', back_populates='feed', cascade='all, delete-orphan')
@@ -50,6 +50,9 @@ class Feed(db.Model):
 
     def __repr__(self):
         return f'<Feed {self.url}>'
+    
+    def generate_public_token(self):
+        self.public_token = str(uuid.uuid4())
 
 class Story(db.Model):
     id = db.Column(db.Integer, primary_key=True)

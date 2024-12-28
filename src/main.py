@@ -194,6 +194,63 @@ def import_feed():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/update_feed', methods=['PUT'])
+@requires_auth
+def update_feed():
+    try:
+        user = get_or_create_user()
+        data = request.get_json()
+        feed_url = data.get('url')
+
+        if not feed_url:
+            return jsonify({'error': 'Feed URL is required'}), 400
+
+        # Validate the URL
+        if not validate_url(feed_url):
+            return jsonify({'error': 'Invalid URL'}), 400
+
+        # Retrieve the feed
+        feed = Feed.query.filter_by(url=feed_url, user_id=user.id).first()
+        if not feed:
+            return jsonify({'error': 'Feed not found'}), 404
+
+        # Update the public token
+        if data.get('public_token_action') == 'add':
+            if not feed.public_token:
+                feed.generate_public_token()  # Generate a new token if none exists
+            else:
+                return jsonify({'error': 'Public token already exists'}), 400
+        elif data.get('public_token_action') == 'remove':
+            if feed.public_token:
+                feed.public_token = None  # Remove the token
+            else:
+                return jsonify({'error': 'No public token to remove'}), 400
+
+        # Update the UserFeed data
+        user_feed = UserFeed.query.filter_by(feed_id=feed.id, user_id=user.id).first()
+        if not user_feed:
+            # Create UserFeed if it doesn't exist
+            user_feed = UserFeed(
+                feed_id=feed.id,
+                user_id=user.id,
+                is_following=data.get('is_following', False),
+                save_all_new_stories=data.get('save_all_new_stories', False)
+            )
+            db.session.add(user_feed)
+        else:
+            # Update UserFeed if it exists
+            user_feed.is_following = data.get('is_following', user_feed.is_following)
+            user_feed.save_all_new_stories = data.get('save_all_new_stories', user_feed.save_all_new_stories)
+
+        db.session.commit()
+
+        return jsonify({'message': 'Feed updated successfully', 'feed_id': feed.id, 'public_token': feed.public_token}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
 
 @app.route('/user_story', methods=['POST'])
 @requires_auth
