@@ -97,6 +97,35 @@ def import_feed():
 
 
 
+@app.route('/feeds/preview', methods=['POST'])
+@requires_auth
+def preview_feed():
+    try:
+        data = request.get_json()
+        url = data.get('url')
+
+        if not validate_url(url):
+            return jsonify({'error': 'Invalid URL'}), 400
+
+        stories, raw_xml = fetch_rss_feed(url)
+        # Extract dynamic fields for frontend rendering
+        sample_story = stories[0] if stories else {}
+        fields = list(sample_story.keys())
+
+        return jsonify({
+            'metadata': {
+                'title': sample_story.get('title', 'No Title'),
+                'description': sample_story.get('description', 'No Description'),
+                'fields': fields,  # Include available fields
+            },
+            'stories': stories[:10],  # Limit to the first 10 stories
+            'raw_xml': raw_xml.decode('utf-8'),  # Include raw XML if needed
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+
 @app.route('/stories', methods=['GET'])
 @requires_auth
 def get_stories():
