@@ -97,6 +97,38 @@ def import_feed():
 
 
 
+@app.route('/feeds', methods=['PUT'])
+@requires_auth
+def update_feed():
+    try:
+        user = get_or_create_user()
+        data = request.get_json()
+        feed_id = data.get('id')
+
+        feed = Feed.query.filter_by(id=feed_id, user_id=user.id).first()
+        if not feed:
+            return jsonify({'error': 'Feed not found'}), 404
+
+        # Update fields if provided
+        if 'save_all_new_stories' in data:
+            feed.save_all_new_stories = data['save_all_new_stories']
+        if 'is_following' in data:
+            feed.is_following = data['is_following']
+        if 'public_token' in data:
+            if data['public_token'] == "GENERATE":
+                feed.generate_public_token()
+            else:
+                feed.public_token = None
+
+        db.session.commit()
+        return jsonify({'message': 'Feed updated successfully'}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+
 @app.route('/feeds/preview', methods=['POST'])
 @requires_auth
 def preview_feed():
