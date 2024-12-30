@@ -92,16 +92,29 @@ def import_feed():
         if not validate_url(url):
             return jsonify({'error': 'Invalid URL'}), 400
 
-        existing_feed = Feed.query.filter_by(user_id=user.id, url=url).first()
-
+        # Check if the feed already exists for this user
+        existing_feed = (
+            db.session.query(Feed, UserFeed)
+            .join(UserFeed, UserFeed.feed_id == Feed.id)
+            .filter(UserFeed.user_id == user.id, Feed.url == url)
+            .first()
+        )
         if existing_feed:
             return jsonify({'message': 'Feed already exists'}), 409
 
+        # Create the Feed and UserFeed entries
         stories, raw_xml = fetch_rss_feed(url)
         new_feed = Feed(user_id=user.id, url=url, raw_xml=raw_xml)
         db.session.add(new_feed)
+        db.session.flush()  # Ensure `new_feed.id` is available
+
+        user_feed = UserFeed(user_id=user.id, feed_id=new_feed.id, is_following=True)
+        db.session.add(user_feed)
+
+        # Add stories for the feed
         for story_data in stories:
             db.session.add(Story(feed_id=new_feed.id, data=story_data))
+
         db.session.commit()
         return jsonify({'message': 'Feed imported successfully', 'feed_id': new_feed.id}), 201
 
