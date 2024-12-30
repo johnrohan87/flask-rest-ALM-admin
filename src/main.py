@@ -54,12 +54,26 @@ setup_admin(app)
 def get_feeds():
     try:
         user = get_or_create_user()
-        public_only = request.args.get('public', 'false').lower() == 'true'
-        feeds = Feed.query.filter_by(user_id=user.id)
 
-        if public_only:
-            feeds = feeds.filter(Feed.public_token.isnot(None))
-        feeds_data = [{'id': f.id, 'url': f.url, 'public_token': f.public_token} for f in feeds]
+        # Fetch feeds and their user-specific properties
+        feeds = (
+            db.session.query(Feed, UserFeed)
+            .join(UserFeed, UserFeed.feed_id == Feed.id)
+            .filter(UserFeed.user_id == user.id)
+        ).all()
+
+        # Construct the response
+        feeds_data = [
+            {
+                'id': feed.id,
+                'url': feed.url,
+                'public_token': feed.public_token,
+                'save_all_new_stories': user_feed.save_all_new_stories,
+                'is_following': user_feed.is_following,
+            }
+            for feed, user_feed in feeds
+        ]
+
         return jsonify({'feeds': feeds_data}), 200
 
     except Exception as e:
