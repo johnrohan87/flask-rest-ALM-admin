@@ -49,106 +49,109 @@ cors = CORS(app)
 setup_admin(app)
 
 
-@app.route('/feeds', methods=['GET'])
+@app.route('/feeds', methods=['GET', 'POST', 'PUT', 'DELETE'])
 @requires_auth
-def get_feeds():
+def feeds():
     try:
         user = get_or_create_user()
 
-        # Fetch feeds and their user-specific properties
-        feeds = (
-            db.session.query(Feed, UserFeed)
-            .join(UserFeed, UserFeed.feed_id == Feed.id)
-            .filter(UserFeed.user_id == user.id)
-        ).all()
+        if request.method == 'GET':
+            # Fetch feeds and their user-specific properties
+            feeds = (
+                db.session.query(Feed, UserFeed)
+                .join(UserFeed, UserFeed.feed_id == Feed.id)
+                .filter(UserFeed.user_id == user.id)
+            ).all()
 
-        # Construct the response
-        feeds_data = [
-            {
-                'id': feed.id,
-                'url': feed.url,
-                'public_token': feed.public_token,
-                'save_all_new_stories': user_feed.save_all_new_stories,
-                'is_following': user_feed.is_following,
-            }
-            for feed, user_feed in feeds
-        ]
+            feeds_data = [
+                {
+                    'id': feed.id,
+                    'url': feed.url,
+                    'public_token': feed.public_token,
+                    'save_all_new_stories': user_feed.save_all_new_stories,
+                    'is_following': user_feed.is_following,
+                    'created_at': feed.created_at,
+                    'updated_at': feed.updated_at,
+                }
+                for feed, user_feed in feeds
+            ]
+            return jsonify({'feeds': feeds_data}), 200
 
-        return jsonify({'feeds': feeds_data}), 200
+        elif request.method == 'POST':
+            # Add a new feed
+            data = request.get_json()
+            url = data.get('url')
 
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+            if not validate_url(url):
+                return jsonify({'error': 'Invalid URL'}), 400
 
+            # Check if the feed already exists for this user
+            existing_feed = (
+                db.session.query(Feed, UserFeed)
+                .join(UserFeed, UserFeed.feed_id == Feed.id)
+                .filter(UserFeed.user_id == user.id, Feed.url == url)
+                .first()
+            )
+            if existing_feed:
+                return jsonify({'message': 'Feed already exists'}), 409
 
+            stories, raw_xml = fetch_rss_feed(url)
+            new_feed = Feed(user_id=user.id, url=url, raw_xml=raw_xml)
+            db.session.add(new_feed)
+            db.session.flush()  # Ensure `new_feed.id` is available
 
-@app.route('/feeds', methods=['POST'])
-@requires_auth
-def import_feed():
-    try:
-        user = get_or_create_user()
-        data = request.get_json()
-        url = data.get('url')
+            user_feed = UserFeed(user_id=user.id, feed_id=new_feed.id, is_following=True)
+            db.session.add(user_feed)
 
-        if not validate_url(url):
-            return jsonify({'error': 'Invalid URL'}), 400
+            for story_data in stories:
+                db.session.add(Story(feed_id=new_feed.id, data=story_data))
 
-        # Check if the feed already exists for this user
-        existing_feed = (
-            db.session.query(Feed, UserFeed)
-            .join(UserFeed, UserFeed.feed_id == Feed.id)
-            .filter(UserFeed.user_id == user.id, Feed.url == url)
-            .first()
-        )
-        if existing_feed:
-            return jsonify({'message': 'Feed already exists'}), 409
+            db.session.commit()
+            return jsonify({'message': 'Feed imported successfully', 'feed_id': new_feed.id}), 201
 
-        # Create the Feed and UserFeed entries
-        stories, raw_xml = fetch_rss_feed(url)
-        new_feed = Feed(user_id=user.id, url=url, raw_xml=raw_xml)
-        db.session.add(new_feed)
-        db.session.flush()  # Ensure `new_feed.id` is available
+        elif request.method == 'PUT':
+            # Update feed properties
+            data = request.get_json()
+            feed_id = data.get('id')
 
-        user_feed = UserFeed(user_id=user.id, feed_id=new_feed.id, is_following=True)
-        db.session.add(user_feed)
+            feed = Feed.query.filter_by(id=feed_id, user_id=user.id).first()
+            if not feed:
+                return jsonify({'error': 'Feed not found'}), 404
 
-        # Add stories for the feed
-        for story_data in stories:
-            db.session.add(Story(feed_id=new_feed.id, data=story_data))
+            # Update fields if provided
+            if 'save_all_new_stories' in data:
+                feed.save_all_new_stories = data['save_all_new_stories']
+            if 'is_following' in data:
+                feed.is_following = data['is_following']
+            if 'public_token' in data:
+                if data['public_token'] == "GENERATE":
+                    feed.generate_public_token()
+                else:
+                    feed.public_token = None
 
-        db.session.commit()
-        return jsonify({'message': 'Feed imported successfully', 'feed_id': new_feed.id}), 201
+            db.session.commit()
+            return jsonify({'message': 'Feed updated successfully'}), 200
 
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        elif request.method == 'DELETE':
+            # Delete a feed
+            data = request.get_json()
+            feed_id = data.get('feed_id')
 
+            if not feed_id:
+                return jsonify({'error': 'Feed ID is required'}), 400
 
+            user_feed = UserFeed.query.filter_by(user_id=user.id, feed_id=feed_id).first()
+            if not user_feed:
+                return jsonify({'error': 'Feed not found or not authorized'}), 404
 
-@app.route('/feeds', methods=['PUT'])
-@requires_auth
-def update_feed():
-    try:
-        user = get_or_create_user()
-        data = request.get_json()
-        feed_id = data.get('id')
+            # Delete the UserFeed and associated Feed if no other users are linked
+            feed = Feed.query.filter_by(id=feed_id).first()
+            db.session.delete(user_feed)
+            if not UserFeed.query.filter_by(feed_id=feed_id).first():
+                db.session.delete(feed)
 
-        feed = Feed.query.filter_by(id=feed_id, user_id=user.id).first()
-        if not feed:
-            return jsonify({'error': 'Feed not found'}), 404
-
-        # Update fields if provided
-        if 'save_all_new_stories' in data:
-            feed.save_all_new_stories = data['save_all_new_stories']
-        if 'is_following' in data:
-            feed.is_following = data['is_following']
-        if 'public_token' in data:
-            if data['public_token'] == "GENERATE":
-                feed.generate_public_token()
-            else:
-                feed.public_token = None
-
-        db.session.commit()
-        return jsonify({'message': 'Feed updated successfully'}), 200
+            db.session.commit()
+            return jsonify({'message': 'Feed deleted successfully'}), 200
 
     except Exception as e:
         db.session.rollback()
