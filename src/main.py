@@ -121,11 +121,14 @@ def feeds():
             # Update fields if provided
             if 'save_all_new_stories' in data:
                 feed.save_all_new_stories = data['save_all_new_stories']
+                print(f"Updated save_all_new_stories: {feed.save_all_new_stories}")
             if 'is_following' in data:
                 feed.is_following = data['is_following']
+                print(f"Updated is_following: {feed.is_following}")
             if 'public_token' in data:
                 if data['public_token'] == "GENERATE":
                     feed.generate_public_token()
+                    print(f"Updated public_token: {feed.public_token}")
                 else:
                     feed.public_token = None
 
