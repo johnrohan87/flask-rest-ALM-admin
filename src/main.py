@@ -113,6 +113,7 @@ def feeds():
             # Update feed properties
             data = request.get_json()
             feed_id = data.get('id')
+            print(f"data = {data}, feed_id = {feed_id}")
 
             feed = Feed.query.filter_by(id=feed_id, user_id=user.id).first()
             if not feed:
@@ -132,7 +133,9 @@ def feeds():
                 else:
                     feed.public_token = None
 
+            print(f"Before commit: save_all_new_stories={user_feed.save_all_new_stories}, is_following={user_feed.is_following}")
             db.session.commit()
+            print("After commit: Changes committed successfully.")
             return jsonify({'message': 'Feed updated successfully'}), 200
 
         elif request.method == 'DELETE':
