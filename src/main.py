@@ -115,17 +115,24 @@ def feeds():
             feed_id = data.get('id')
             print(f"data = {data}, feed_id = {feed_id}")
 
-            feed = Feed.query.filter_by(id=feed_id, user_id=user.id).first()
-            if not feed:
-                return jsonify({'error': 'Feed not found'}), 404
+            # Fetch the UserFeed record
+            user_feed = UserFeed.query.filter_by(user_id=user.id, feed_id=feed_id).first()
+            if not user_feed:
+                return jsonify({'error': 'UserFeed not found for the given user and feed'}), 404
 
             # Update fields if provided
             if 'save_all_new_stories' in data:
-                feed.save_all_new_stories = data['save_all_new_stories']
-                print(f"Updated save_all_new_stories: {feed.save_all_new_stories}")
+                user_feed.save_all_new_stories = data['save_all_new_stories']
+                print(f"Updated save_all_new_stories: {user_feed.save_all_new_stories}")
             if 'is_following' in data:
-                feed.is_following = data['is_following']
-                print(f"Updated is_following: {feed.is_following}")
+                user_feed.is_following = data['is_following']
+                print(f"Updated is_following: {user_feed.is_following}")
+
+            # Fetch the Feed record to update public_token if necessary
+            feed = Feed.query.filter_by(id=feed_id).first()
+            if not feed:
+                return jsonify({'error': 'Feed not found'}), 404
+
             if 'public_token' in data:
                 if data['public_token'] == "GENERATE":
                     feed.generate_public_token()
@@ -133,10 +140,17 @@ def feeds():
                 else:
                     feed.public_token = None
 
-            print(f"Before commit: save_all_new_stories={user_feed.save_all_new_stories}, is_following={user_feed.is_following}")
-            db.session.commit()
-            print("After commit: Changes committed successfully.")
-            return jsonify({'message': 'Feed updated successfully'}), 200
+            # Commit the changes
+            try:
+                print(f"Before commit: save_all_new_stories={user_feed.save_all_new_stories}, is_following={user_feed.is_following}")
+                db.session.commit()
+                print("After commit: Changes committed successfully.")
+                return jsonify({'message': 'Feed updated successfully'}), 200
+            except Exception as e:
+                db.session.rollback()
+                print(f"Database commit failed: {e}")
+                return jsonify({'error': str(e)}), 500
+
 
         elif request.method == 'DELETE':
             # Delete a feed
