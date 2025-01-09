@@ -268,7 +268,7 @@ def update_story(story_id):
             story.is_watched = data["is_watched"]
 
         db.session.commit()
-        return jsonify({"message": "Story updated successfully"}), 200
+        return jsonify({"id": story.id, "is_saved": story.is_saved, "is_watched": story.is_watched}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
