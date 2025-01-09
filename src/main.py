@@ -251,6 +251,30 @@ def add_story():
 
 
 
+@app.route('/stories/<int:story_id>', methods=['PATCH'])
+@requires_auth
+def update_story(story_id):
+    try:
+        user = get_or_create_user()
+        data = request.get_json()
+        story = Story.query.filter_by(id=story_id).first()
+        if not story:
+            return jsonify({"error": "Story not found"}), 404
+
+        # Update story attributes
+        if "is_saved" in data:
+            story.is_saved = data["is_saved"]
+        if "is_watched" in data:
+            story.is_watched = data["is_watched"]
+
+        db.session.commit()
+        return jsonify({"message": "Story updated successfully"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+
 @app.route('/feeds/public/<token>', methods=['GET'])
 def get_public_feed(token):
     try:
