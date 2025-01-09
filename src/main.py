@@ -214,18 +214,26 @@ def get_stories():
     try:
         user = get_or_create_user()
         feed_id = request.args.get('feed_id')
+        stories_query = Story.query
+
         if feed_id:
-            stories = Story.query.filter_by(feed_id=feed_id).all()
+            stories_query = stories_query.filter_by(feed_id=feed_id)
 
-        else:
-            feeds = Feed.query.filter_by(user_id=user.id).all()
-            feed_ids = [f.id for f in feeds]
-            stories = Story.query.filter(Story.feed_id.in_(feed_ids)).all()
-        stories_data = [{'id': s.id, 'data': s.data} for s in stories]
+        stories = stories_query.all()
+        stories_data = []
+        for story in stories:
+            user_story = UserStory.query.filter_by(user_id=user.id, story_id=story.id).first()
+            stories_data.append({
+                'id': story.id,
+                'data': story.data,
+                'is_saved': user_story.is_saved if user_story else False,
+                'is_watched': user_story.is_watched if user_story else False
+            })
         return jsonify({'stories': stories_data}), 200
-
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
 
 
 @app.route('/stories', methods=['POST'])
@@ -257,21 +265,24 @@ def update_story(story_id):
     try:
         user = get_or_create_user()
         data = request.get_json()
-        story = Story.query.filter_by(id=story_id).first()
-        if not story:
-            return jsonify({"error": "Story not found"}), 404
+        user_story = UserStory.query.filter_by(user_id=user.id, story_id=story_id).first()
 
-        # Update story attributes
-        if "is_saved" in data:
-            story.is_saved = data["is_saved"]
-        if "is_watched" in data:
-            story.is_watched = data["is_watched"]
+        if not user_story:
+            user_story = UserStory(user_id=user.id, story_id=story_id)
+            db.session.add(user_story)
+
+        if 'is_saved' in data:
+            user_story.is_saved = data['is_saved']
+        if 'is_watched' in data:
+            user_story.is_watched = data['is_watched']
 
         db.session.commit()
-        return jsonify({"id": story.id, "is_saved": story.is_saved, "is_watched": story.is_watched}), 200
+        return jsonify({'message': 'Story updated successfully', "id": user_story.id, "is_saved": user_story.is_saved, "is_watched": user_story.is_watched}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        return jsonify({'error': str(e)}), 500
+
+        return jsonify({"id": story.id, "is_saved": story.is_saved, "is_watched": story.is_watched}), 200
 
 
 
