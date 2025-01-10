@@ -247,18 +247,51 @@ def handle_stories():
             }), 200
 
         elif request.method == 'POST':
-            # Add a new story
+            # Add a new feed
             data = request.get_json()
-            feed_id = data.get('feed_id')
-            story_data = data.get('data')
+            url = data.get('url')
 
-            if not feed_id or not story_data:
-                return jsonify({'error': 'Feed ID and story data required'}), 400
+            if not validate_url(url):
+                return jsonify({'error': 'Invalid URL'}), 400
 
-            new_story = Story(feed_id=feed_id, data=story_data)
-            db.session.add(new_story)
-            db.session.commit()
-            return jsonify({'message': 'Story added successfully', 'story_id': new_story.id}), 201
+            # Check if the feed already exists for this user
+            existing_feed = (
+                db.session.query(Feed, UserFeed)
+                .join(UserFeed, UserFeed.feed_id == Feed.id)
+                .filter(UserFeed.user_id == user.id, Feed.url == url)
+                .first()
+            )
+            if existing_feed:
+                return jsonify({'message': 'Feed already exists'}), 409
+
+            try:
+                # Fetch RSS feed and parse stories
+                stories, raw_xml = fetch_rss_feed(url)
+
+                # Create a new feed
+                new_feed = Feed(user_id=user.id, url=url, raw_xml=raw_xml)
+                db.session.add(new_feed)
+                db.session.flush()  # Ensure `new_feed.id` is available
+
+                # Create a UserFeed entry
+                user_feed = UserFeed(user_id=user.id, feed_id=new_feed.id, is_following=True)
+                db.session.add(user_feed)
+
+                # Add stories and associated UserStory entries
+                for story_data in stories:
+                    new_story = Story(feed_id=new_feed.id, data=story_data)
+                    db.session.add(new_story)
+
+                    # Create UserStory for each added story
+                    user_story = UserStory(user_id=user.id, story_id=new_story.id, is_saved=False, is_watched=False)
+                    db.session.add(user_story)
+
+                db.session.commit()
+                return jsonify({'message': 'Feed imported successfully', 'feed_id': new_feed.id}), 201
+
+            except Exception as e:
+                db.session.rollback()
+                return jsonify({'error': str(e)}), 500
 
         elif request.method == 'DELETE':
             # Delete stories (batch delete)
