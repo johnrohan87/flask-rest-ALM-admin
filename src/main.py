@@ -208,50 +208,69 @@ def preview_feed():
 
 
 
-@app.route('/stories', methods=['GET'])
+@app.route('/stories', methods=['GET', 'POST', 'DELETE'])
 @requires_auth
-def get_stories():
+def handle_stories():
     try:
         user = get_or_create_user()
-        feed_id = request.args.get('feed_id')
-        stories_query = Story.query
 
-        if feed_id:
-            stories_query = stories_query.filter_by(feed_id=feed_id)
+        if request.method == 'GET':
+            # Fetch stories for a specific feed
+            feed_id = request.args.get('feed_id')
+            stories_query = Story.query
+            if feed_id:
+                stories_query = stories_query.filter_by(feed_id=feed_id)
 
-        stories = stories_query.all()
-        stories_data = []
-        for story in stories:
-            user_story = UserStory.query.filter_by(user_id=user.id, story_id=story.id).first()
-            stories_data.append({
-                'id': story.id,
-                'data': story.data,
-                'is_saved': user_story.is_saved if user_story else False,
-                'is_watched': user_story.is_watched if user_story else False
-            })
-        return jsonify({'stories': stories_data}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+            stories = stories_query.all()
+            stories_data = []
+            for story in stories:
+                user_story = UserStory.query.filter_by(user_id=user.id, story_id=story.id).first()
+                stories_data.append({
+                    'id': story.id,
+                    'data': story.data,
+                    'is_saved': user_story.is_saved if user_story else False,
+                    'is_watched': user_story.is_watched if user_story else False
+                })
+            return jsonify({'stories': stories_data}), 200
 
+        elif request.method == 'POST':
+            # Add a new story
+            data = request.get_json()
+            feed_id = data.get('feed_id')
+            story_data = data.get('data')
 
+            if not feed_id or not story_data:
+                return jsonify({'error': 'Feed ID and story data required'}), 400
 
+            new_story = Story(feed_id=feed_id, data=story_data)
+            db.session.add(new_story)
+            db.session.commit()
+            return jsonify({'message': 'Story added successfully', 'story_id': new_story.id}), 201
 
-@app.route('/stories', methods=['POST'])
-@requires_auth
-def add_story():
-    try:
-        user = get_or_create_user()
-        data = request.get_json()
-        feed_id = data.get('feed_id')
-        story_data = data.get('data')
+        elif request.method == 'DELETE':
+            # Delete stories (batch delete)
+            data = request.get_json()
+            story_ids = data.get('story_ids')
 
-        if not feed_id or not story_data:
-            return jsonify({'error': 'Feed ID and story data required'}), 400
+            if not story_ids or not isinstance(story_ids, list):
+                return jsonify({'error': 'A list of story IDs is required for deletion'}), 400
 
-        new_story = Story(feed_id=feed_id, data=story_data)
-        db.session.add(new_story)
-        db.session.commit()
-        return jsonify({'message': 'Story added successfully', 'story_id': new_story.id}), 201
+            user_stories = UserStory.query.filter(UserStory.user_id == user.id, UserStory.story_id.in_(story_ids)).all()
+
+            if not user_stories:
+                return jsonify({'error': 'No stories found or authorized for deletion'}), 404
+
+            for user_story in user_stories:
+                db.session.delete(user_story)
+
+            # Optionally remove stories if not linked to other users
+            stories_to_check = Story.query.filter(Story.id.in_(story_ids)).all()
+            for story in stories_to_check:
+                if not UserStory.query.filter_by(story_id=story.id).first():
+                    db.session.delete(story)
+
+            db.session.commit()
+            return jsonify({'message': 'Stories deleted successfully', 'deleted_story_ids': story_ids}), 200
 
     except Exception as e:
         db.session.rollback()
@@ -277,12 +296,16 @@ def update_story(story_id):
             user_story.is_watched = data['is_watched']
 
         db.session.commit()
-        return jsonify({'message': 'Story updated successfully', "id": user_story.id, "is_saved": user_story.is_saved, "is_watched": user_story.is_watched}), 200
+        return jsonify({
+            'message': 'Story updated successfully',
+            'id': user_story.story_id,
+            'is_saved': user_story.is_saved,
+            'is_watched': user_story.is_watched
+        }), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-        return jsonify({"id": story.id, "is_saved": story.is_saved, "is_watched": story.is_watched}), 200
 
 
 
