@@ -262,46 +262,43 @@ def handle_stories():
             return jsonify({'message': 'Story added successfully', 'story_id': new_story.id}), 201
 
         elif request.method == 'DELETE':
-            # Delete stories (batch delete)
             data = request.get_json()
             story_ids = data.get('story_ids')
 
-            # Log received data
-            print(f"[DEBUG] Received DELETE request with story_ids: {story_ids}, user_id: {user.id}")
-
             # Validate input
             if not story_ids or not isinstance(story_ids, list):
-                print("[ERROR] Invalid or missing story_ids")
                 return jsonify({'error': 'A list of story IDs is required for deletion'}), 400
 
-            # Query UserStory
-            user_stories = UserStory.query.filter(
-                UserStory.user_id == user.id,
-                UserStory.story_id.in_(story_ids)
-            ).all()
-            print(f"[DEBUG] Queried UserStory results: {user_stories}")
+            print(f"[DEBUG] Received DELETE request with story_ids: {story_ids}, user_id: {user.id}")
 
-            if not user_stories:
-                print("[ERROR] No UserStory entries found for the provided story_ids and user")
+            # Query stories directly, ensuring they belong to the user's feeds
+            stories_to_delete = Story.query.filter(
+                Story.id.in_(story_ids),
+                Story.feed_id.in_(
+                    db.session.query(UserFeed.feed_id).filter(UserFeed.user_id == user.id)
+                )
+            ).all()
+            print(f"[DEBUG] Queried Stories for deletion: {stories_to_delete}")
+
+            if not stories_to_delete:
                 return jsonify({'error': 'No stories found or authorized for deletion'}), 404
 
-            # Delete UserStory entries
             try:
-                for user_story in user_stories:
-                    print(f"[DEBUG] Deleting UserStory: {user_story}")
-                    db.session.delete(user_story)
+                # Remove associated UserStory entries
+                for story in stories_to_delete:
+                    user_stories = UserStory.query.filter_by(story_id=story.id).all()
+                    print(f"[DEBUG] UserStory entries for Story {story.id}: {user_stories}")
+                    for user_story in user_stories:
+                        print(f"[DEBUG] Deleting UserStory: {user_story}")
+                        db.session.delete(user_story)
 
-                # Optionally delete orphaned Story entries
-                stories_to_check = Story.query.filter(Story.id.in_(story_ids)).all()
-                print(f"[DEBUG] Queried Stories to check for orphans: {stories_to_check}")
-
-                for story in stories_to_check:
-                    if not UserStory.query.filter_by(story_id=story.id).first():
-                        print(f"[DEBUG] Deleting orphaned Story: {story}")
-                        db.session.delete(story)
+                # Delete the stories themselves
+                for story in stories_to_delete:
+                    print(f"[DEBUG] Deleting Story: {story}")
+                    db.session.delete(story)
 
                 db.session.commit()
-                print(f"[SUCCESS] Stories deleted successfully: {story_ids}")
+                print(f"[SUCCESS] Stories and associated UserStory entries deleted successfully: {story_ids}")
                 return jsonify({'message': 'Stories deleted successfully', 'deleted_story_ids': story_ids}), 200
 
             except Exception as e:
