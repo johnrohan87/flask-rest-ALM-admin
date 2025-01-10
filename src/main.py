@@ -215,13 +215,17 @@ def handle_stories():
         user = get_or_create_user()
 
         if request.method == 'GET':
-            # Fetch stories for a specific feed
+            # Fetch stories with pagination
+            page = int(request.args.get('page', 1))
+            limit = int(request.args.get('limit', 10))
             feed_id = request.args.get('feed_id')
             stories_query = Story.query
             if feed_id:
                 stories_query = stories_query.filter_by(feed_id=feed_id)
 
-            stories = stories_query.all()
+            total_stories = stories_query.count()
+            stories = stories_query.offset((page - 1) * limit).limit(limit).all()
+            
             stories_data = []
             for story in stories:
                 user_story = UserStory.query.filter_by(user_id=user.id, story_id=story.id).first()
@@ -231,7 +235,16 @@ def handle_stories():
                     'is_saved': user_story.is_saved if user_story else False,
                     'is_watched': user_story.is_watched if user_story else False
                 })
-            return jsonify({'stories': stories_data}), 200
+            
+            return jsonify({
+                'stories': stories_data,
+                'pagination': {
+                    'current_page': page,
+                    'page_size': limit,
+                    'total_count': total_stories,
+                    'total_pages': (total_stories + limit - 1) // limit,
+                }
+            }), 200
 
         elif request.method == 'POST':
             # Add a new story
