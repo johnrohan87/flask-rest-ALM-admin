@@ -269,6 +269,7 @@ def handle_stories():
                 return jsonify({'error': 'A list of story IDs is required for deletion'}), 400
 
             user_stories = UserStory.query.filter(UserStory.user_id == user.id, UserStory.story_id.in_(story_ids)).all()
+            print(f"Received story_ids: {story_ids}, user_id: {user.id}, user_stories: {user_stories}")
 
             if not user_stories:
                 return jsonify({'error': 'No stories found or authorized for deletion'}), 404
