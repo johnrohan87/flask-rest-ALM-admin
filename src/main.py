@@ -265,30 +265,49 @@ def handle_stories():
             data = request.get_json()
             story_ids = data.get('story_ids')
 
+            # Log received data
+            print(f"[DEBUG] Received DELETE request with story_ids: {story_ids}, user_id: {user.id}")
+
+            # Validate input
             if not story_ids or not isinstance(story_ids, list):
+                print("[ERROR] Invalid or missing story_ids")
                 return jsonify({'error': 'A list of story IDs is required for deletion'}), 400
 
-            user_stories = UserStory.query.filter(UserStory.user_id == user.id, UserStory.story_id.in_(story_ids)).all()
-            print(f"Received story_ids: {story_ids}, user_id: {user.id}, user_stories: {user_stories}")
+            # Query UserStory
+            user_stories = UserStory.query.filter(
+                UserStory.user_id == user.id,
+                UserStory.story_id.in_(story_ids)
+            ).all()
+            print(f"[DEBUG] Queried UserStory results: {user_stories}")
 
             if not user_stories:
+                print("[ERROR] No UserStory entries found for the provided story_ids and user")
                 return jsonify({'error': 'No stories found or authorized for deletion'}), 404
 
-            for user_story in user_stories:
-                db.session.delete(user_story)
+            # Delete UserStory entries
+            try:
+                for user_story in user_stories:
+                    print(f"[DEBUG] Deleting UserStory: {user_story}")
+                    db.session.delete(user_story)
 
-            # Optionally remove stories if not linked to other users
-            stories_to_check = Story.query.filter(Story.id.in_(story_ids)).all()
-            for story in stories_to_check:
-                if not UserStory.query.filter_by(story_id=story.id).first():
-                    db.session.delete(story)
+                # Optionally delete orphaned Story entries
+                stories_to_check = Story.query.filter(Story.id.in_(story_ids)).all()
+                print(f"[DEBUG] Queried Stories to check for orphans: {stories_to_check}")
 
-            db.session.commit()
-            return jsonify({'message': 'Stories deleted successfully', 'deleted_story_ids': story_ids}), 200
+                for story in stories_to_check:
+                    if not UserStory.query.filter_by(story_id=story.id).first():
+                        print(f"[DEBUG] Deleting orphaned Story: {story}")
+                        db.session.delete(story)
 
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+                db.session.commit()
+                print(f"[SUCCESS] Stories deleted successfully: {story_ids}")
+                return jsonify({'message': 'Stories deleted successfully', 'deleted_story_ids': story_ids}), 200
+
+            except Exception as e:
+                print(f"[ERROR] Exception during deletion: {e}")
+                db.session.rollback()
+                return jsonify({'error': str(e)}), 500
+
 
 
 
