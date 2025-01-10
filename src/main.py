@@ -309,16 +309,76 @@ def update_story(story_id):
 
 
 
+def generate_dynamic_rss(feed, stories):
+    """
+    Dynamically generates an RSS feed XML based on the feed and its stories.
+    """
+    root = ET.Element('rss', version="2.0")
+    channel = ET.SubElement(root, 'channel')
+
+    # Add channel metadata
+    ET.SubElement(channel, 'title').text = f"Public Feed: {feed.url}"
+    ET.SubElement(channel, 'link').text = feed.url
+    ET.SubElement(channel, 'description').text = "This is a dynamically generated RSS feed."
+
+    # Add stories dynamically
+    for story in stories:
+        item = ET.SubElement(channel, 'item')
+        
+        # Add common fields
+        title = story.get('title', 'No Title')
+        ET.SubElement(item, 'title').text = title
+        
+        link = story.get('link', '')
+        ET.SubElement(item, 'link').text = link
+        
+        description = story.get('description', 'No Description')
+        ET.SubElement(item, 'description').text = description
+        
+        pub_date = story.get('published', datetime.utcnow().isoformat())
+        ET.SubElement(item, 'pubDate').text = pub_date
+        
+        # Handle additional fields dynamically
+        for key, value in story.items():
+            if key not in ['title', 'link', 'description', 'published']:
+                sub_element = ET.SubElement(item, key)
+                sub_element.text = str(value)
+
+    # Generate XML string
+    return ET.tostring(root, encoding='utf-8', method='xml')
+
+
 @app.route('/feeds/public/<token>', methods=['GET'])
 def get_public_feed(token):
+    """
+    Fetches a public feed and returns it as JSON or RSS-XML based on client request.
+    """
     try:
+        # Fetch the feed using the public token
         feed = Feed.query.filter_by(public_token=token).first()
 
         if not feed:
             return jsonify({'error': 'Feed not found'}), 404
 
+        # Extract stories from the feed
         stories = [{'id': s.id, 'data': s.data} for s in feed.stories]
-        return jsonify({'feed': {'url': feed.url, 'stories': stories}}), 200
+
+        # Determine the response format
+        format_query = request.args.get('format', '').lower()
+        accept_header = request.headers.get('Accept', '')
+
+        if format_query == 'rss' or 'application/rss+xml' in accept_header:
+            # Generate RSS XML
+            rss_xml = generate_dynamic_rss(feed, [s['data'] for s in stories])
+            return Response(rss_xml, mimetype='application/rss+xml')
+        else:
+            # Default to JSON
+            return jsonify({
+                'feed': {
+                    'url': feed.url,
+                    'stories': stories
+                }
+            }), 200
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
