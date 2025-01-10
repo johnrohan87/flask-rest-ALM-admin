@@ -219,13 +219,14 @@ def handle_stories():
             page = int(request.args.get('page', 1))
             limit = int(request.args.get('limit', 10))
             feed_id = request.args.get('feed_id')
+
             stories_query = Story.query
             if feed_id:
                 stories_query = stories_query.filter_by(feed_id=feed_id)
 
             total_stories = stories_query.count()
             stories = stories_query.offset((page - 1) * limit).limit(limit).all()
-            
+
             stories_data = []
             for story in stories:
                 user_story = UserStory.query.filter_by(user_id=user.id, story_id=story.id).first()
@@ -235,7 +236,7 @@ def handle_stories():
                     'is_saved': user_story.is_saved if user_story else False,
                     'is_watched': user_story.is_watched if user_story else False
                 })
-            
+
             return jsonify({
                 'stories': stories_data,
                 'pagination': {
@@ -308,6 +309,10 @@ def handle_stories():
                 db.session.rollback()
                 return jsonify({'error': str(e)}), 500
 
+    except Exception as e:
+        db.session.rollback()
+        print(f"[ERROR] Exception in /stories route: {e}")
+        return jsonify({'error': str(e)}), 500
 
 
 
