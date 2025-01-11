@@ -19,6 +19,7 @@ from admin import setup_admin
 from utils import get_or_create_user, generate_sitemap, decode_jwt, APIException, requires_auth, AuthError, validate_url
 from models import db, User, UserFeed, Person, TextFile, FeedPost, Todo, Feed, Story, UserStory
 import xml.etree.ElementTree as ET
+from xml.sax.saxutils import escape
 
 throttler = Throttler(rate_limit=10, period=60)
 
@@ -352,34 +353,32 @@ def generate_dynamic_rss(feed, stories):
     channel = ET.SubElement(root, 'channel')
 
     # Add channel metadata
-    ET.SubElement(channel, 'title').text = f"Public Feed: {feed.url}"
-    ET.SubElement(channel, 'link').text = feed.url
+    ET.SubElement(channel, 'title').text = f"Public Feed: {escape(feed.url)}"
+    ET.SubElement(channel, 'link').text = escape(feed.url)
     ET.SubElement(channel, 'description').text = "This is a dynamically generated RSS feed."
 
-    # Add stories dynamically
+    # Add stories
     for story in stories:
         item = ET.SubElement(channel, 'item')
-        
-        # Add common fields
-        title = story.get('title', 'No Title')
-        ET.SubElement(item, 'title').text = title
-        
-        link = story.get('link', '')
-        ET.SubElement(item, 'link').text = link
-        
-        description = story.get('description', 'No Description')
-        ET.SubElement(item, 'description').text = description
-        
-        pub_date = story.get('published', datetime.utcnow().isoformat())
-        ET.SubElement(item, 'pubDate').text = pub_date
-        
-        # Handle additional fields dynamically
-        for key, value in story.items():
-            if key not in ['title', 'link', 'description', 'published']:
-                sub_element = ET.SubElement(item, key)
-                sub_element.text = str(value)
 
-    # Generate XML string
+        # Safely extract and encode fields
+        title = story.get('title', 'No Title')
+        link = story.get('link', '#')
+        description = story.get('description', 'No Description')
+        pub_date = story.get('published', datetime.utcnow().isoformat())
+
+        ET.SubElement(item, 'title').text = escape(title)
+        ET.SubElement(item, 'link').text = escape(link)
+        ET.SubElement(item, 'description').text = escape(description)
+        ET.SubElement(item, 'pubDate').text = pub_date
+
+        # Remove non-RSS-compliant fields
+        # Dynamically add extra fields if necessary (only strings)
+        for key, value in story.items():
+            if key not in ['title', 'link', 'description', 'published'] and isinstance(value, str):
+                sub_element = ET.SubElement(item, key)
+                sub_element.text = escape(value)
+
     return ET.tostring(root, encoding='utf-8', method='xml')
 
 
