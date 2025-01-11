@@ -20,6 +20,7 @@ from utils import get_or_create_user, generate_sitemap, decode_jwt, APIException
 from models import db, User, UserFeed, Person, TextFile, FeedPost, Todo, Feed, Story, UserStory
 import xml.etree.ElementTree as ET
 from xml.sax.saxutils import escape
+from email.utils import formatdate
 
 throttler = Throttler(rate_limit=10, period=60)
 
@@ -345,11 +346,38 @@ def update_story(story_id):
 
 
 
-def generate_dynamic_rss(feed, stories):
+##########################################
+####### RSS Handler Below
+##########################################
 
+
+
+def sanitize_cdata(content):
+    """
+    Wraps content in CDATA if it contains special characters or HTML.
+    """
+    if "<" in content or ">" in content or "&" in content:
+        return f"<![CDATA[{content}]]>"
+    return content
+
+
+def ensure_single_encoding(value):
+    """
+    Ensures that the value is not over-encoded (e.g., '&amp;amp;' -> '&amp;').
+    """
+    if isinstance(value, str):
+        return value.replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">")
+    return value
+
+
+def generate_dynamic_rss(feed, stories):
+    """
+    Dynamically generates an RSS feed XML based on the feed and its stories.
+    """
     root = ET.Element('rss', version="2.0")
     channel = ET.SubElement(root, 'channel')
 
+    # Add channel metadata
     ET.SubElement(channel, 'title').text = escape(feed.url)
     ET.SubElement(channel, 'link').text = escape(feed.url)
     ET.SubElement(channel, 'description').text = "This is a dynamically generated RSS feed."
@@ -358,13 +386,30 @@ def generate_dynamic_rss(feed, stories):
     for story in stories:
         item = ET.SubElement(channel, 'item')
 
-        ET.SubElement(item, 'title').text = escape(story.get('title', 'No Title'))
-        ET.SubElement(item, 'link').text = escape(story.get('link', '#'))
-        ET.SubElement(item, 'description').text = f"<![CDATA[{story.get('description', 'No Description')}]]>"
-        ET.SubElement(item, 'pubDate').text = story.get('published', 'Wed, 8 Jan 2025 03:36:00 +0000')
-        ET.SubElement(item, 'guid', isPermaLink="true").text = escape(story.get('link', '#'))
+        # Validate and sanitize each field
+        title = story.get('title', 'No Title')
+        link = story.get('link', '#')
+        description = story.get('description', 'No Description')
+        pub_date = story.get('published', formatdate())
+
+        # Fix over-encoded values
+        title = ensure_single_encoding(title)
+        description = ensure_single_encoding(description)
+
+        # Add fields to RSS item
+        ET.SubElement(item, 'title').text = escape(title)
+        ET.SubElement(item, 'link').text = escape(link)
+        ET.SubElement(item, 'description').text = sanitize_cdata(description)
+        ET.SubElement(item, 'pubDate').text = pub_date
+
+        # Add optional GUID
+        guid = story.get('link', None)  # Use the link as GUID if available
+        if guid:
+            ET.SubElement(item, 'guid', isPermaLink="true").text = escape(guid)
 
     return ET.tostring(root, encoding='utf-8', method='xml')
+
+
 
 
 @app.route('/feeds/public/<token>', methods=['GET'])
