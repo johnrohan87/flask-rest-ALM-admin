@@ -346,38 +346,23 @@ def update_story(story_id):
 
 
 def generate_dynamic_rss(feed, stories):
-    """
-    Dynamically generates an RSS feed XML based on the feed and its stories.
-    """
+
     root = ET.Element('rss', version="2.0")
     channel = ET.SubElement(root, 'channel')
 
-    # Add channel metadata
-    ET.SubElement(channel, 'title').text = f"Public Feed: {escape(feed.url)}"
+    ET.SubElement(channel, 'title').text = escape(feed.url)
     ET.SubElement(channel, 'link').text = escape(feed.url)
     ET.SubElement(channel, 'description').text = "This is a dynamically generated RSS feed."
+    ET.SubElement(channel, 'language').text = "en-US"
 
-    # Add stories
     for story in stories:
         item = ET.SubElement(channel, 'item')
 
-        # Safely extract and encode fields
-        title = story.get('title', 'No Title')
-        link = story.get('link', '#')
-        description = story.get('description', 'No Description')
-        pub_date = story.get('published', datetime.utcnow().isoformat())
-
-        ET.SubElement(item, 'title').text = escape(title)
-        ET.SubElement(item, 'link').text = escape(link)
-        ET.SubElement(item, 'description').text = escape(description)
-        ET.SubElement(item, 'pubDate').text = pub_date
-
-        # Remove non-RSS-compliant fields
-        # Dynamically add extra fields if necessary (only strings)
-        for key, value in story.items():
-            if key not in ['title', 'link', 'description', 'published'] and isinstance(value, str):
-                sub_element = ET.SubElement(item, key)
-                sub_element.text = escape(value)
+        ET.SubElement(item, 'title').text = escape(story.get('title', 'No Title'))
+        ET.SubElement(item, 'link').text = escape(story.get('link', '#'))
+        ET.SubElement(item, 'description').text = f"<![CDATA[{story.get('description', 'No Description')}]]>"
+        ET.SubElement(item, 'pubDate').text = story.get('published', 'Wed, 8 Jan 2025 03:36:00 +0000')
+        ET.SubElement(item, 'guid', isPermaLink="true").text = escape(story.get('link', '#'))
 
     return ET.tostring(root, encoding='utf-8', method='xml')
 
