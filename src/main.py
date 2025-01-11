@@ -396,7 +396,7 @@ def get_public_feed(token):
             return jsonify({'error': 'Feed not found'}), 404
 
         # Extract stories from the feed
-        stories = [{'id': s.id, 'data': s.data} for s in feed.stories]
+        stories = [story.data for story in feed.stories]
 
         # Determine the response format
         format_query = request.args.get('format', '').lower()
@@ -404,7 +404,7 @@ def get_public_feed(token):
 
         if format_query == 'rss' or 'application/rss+xml' in accept_header:
             # Generate RSS XML
-            rss_xml = generate_dynamic_rss(feed, [s['data'] for s in stories])
+            rss_xml = generate_dynamic_rss(feed, stories)
             return Response(rss_xml, mimetype='application/rss+xml')
         else:
             # Default to JSON
@@ -417,6 +417,7 @@ def get_public_feed(token):
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 
 
