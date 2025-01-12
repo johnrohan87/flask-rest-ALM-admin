@@ -410,9 +410,6 @@ def generate_dynamic_rss(feed, stories):
 
 @app.route('/feeds/public/<token>', methods=['GET'])
 def get_public_feed(token):
-    """
-    Fetches a public feed and returns it as JSON or RSS-XML based on client request.
-    """
     try:
         print(f"Incoming Headers: {request.headers}")
         feed = Feed.query.filter_by(public_token=token).first()
@@ -424,12 +421,20 @@ def get_public_feed(token):
 
         # Determine response format
         format_query = request.args.get('format', '').lower()
-        accept_header = request.headers.get('Accept', '')
+        accept_header = request.headers.get('Accept', '').lower()
 
         if format_query == 'rss' or 'application/rss+xml' in accept_header:
             rss_xml = generate_dynamic_rss(feed, stories)
             return Response(rss_xml, mimetype='application/rss+xml')
+        elif format_query == 'json' or 'application/json' in accept_header or '*/*' in accept_header:
+            return jsonify({
+                'feed': {
+                    'url': feed.url,
+                    'stories': stories,
+                }
+            }), 200
         else:
+            # Default to JSON if the format is not explicitly defined
             return jsonify({
                 'feed': {
                     'url': feed.url,
@@ -439,7 +444,6 @@ def get_public_feed(token):
     except Exception as e:
         print(f"[ERROR] Failed to fetch public feed: {e}")
         return jsonify({'error': str(e)}), 500
-
 
 
 
