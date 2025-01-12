@@ -414,6 +414,7 @@ def get_public_feed(token):
     Fetches a public feed and returns it as JSON or RSS-XML based on client request.
     """
     try:
+        print(f"Incoming Headers: {request.headers}")
         feed = Feed.query.filter_by(public_token=token).first()
 
         if not feed:
