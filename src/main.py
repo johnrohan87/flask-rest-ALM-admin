@@ -19,8 +19,9 @@ from admin import setup_admin
 from utils import get_or_create_user, generate_sitemap, decode_jwt, APIException, requires_auth, AuthError, validate_url
 from models import db, User, UserFeed, Person, TextFile, FeedPost, Todo, Feed, Story, UserStory
 import xml.etree.ElementTree as ET
-from xml.sax.saxutils import escape
+from html import unescape
 from email.utils import formatdate
+from xml.sax.saxutils import escape
 
 throttler = Throttler(rate_limit=10, period=60)
 
@@ -361,15 +362,6 @@ def sanitize_cdata(content):
     return content
 
 
-def ensure_single_encoding(value):
-    """
-    Ensures that the value is not over-encoded (e.g., '&amp;amp;' -> '&amp;').
-    """
-    if isinstance(value, str):
-        return value.replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">")
-    return value
-
-
 def generate_dynamic_rss(feed, stories):
     """
     Dynamically generates an RSS feed XML based on the feed and its stories.
@@ -378,37 +370,41 @@ def generate_dynamic_rss(feed, stories):
     channel = ET.SubElement(root, 'channel')
 
     # Add channel metadata
-    ET.SubElement(channel, 'title').text = escape(feed.url)
-    ET.SubElement(channel, 'link').text = escape(feed.url)
+    ET.SubElement(channel, 'title').text = escape(feed.url or "Untitled Feed")
+    ET.SubElement(channel, 'link').text = escape(feed.url or "#")
     ET.SubElement(channel, 'description').text = "This is a dynamically generated RSS feed."
     ET.SubElement(channel, 'language').text = "en-US"
 
     for story in stories:
         item = ET.SubElement(channel, 'item')
 
-        # Validate and sanitize each field
-        title = story.get('title', 'No Title')
-        link = story.get('link', '#')
-        description = story.get('description', 'No Description')
-        pub_date = story.get('published', formatdate())
+        # Decode and sanitize fields
+        title = unescape(story.get('title', 'No Title'))
+        link = unescape(story.get('link', '#'))
+        description = unescape(story.get('description', 'No Description'))
+        pub_date_raw = story.get('published')
 
-        # Fix over-encoded values
-        title = ensure_single_encoding(title)
-        description = ensure_single_encoding(description)
+        # Format pubDate
+        if pub_date_raw:
+            try:
+                pub_date = formatdate()
+            except Exception:
+                pub_date = formatdate()
+        else:
+            pub_date = formatdate()
 
-        # Add fields to RSS item
+        # Populate RSS fields
         ET.SubElement(item, 'title').text = escape(title)
         ET.SubElement(item, 'link').text = escape(link)
         ET.SubElement(item, 'description').text = sanitize_cdata(description)
         ET.SubElement(item, 'pubDate').text = pub_date
 
         # Add optional GUID
-        guid = story.get('link', None)  # Use the link as GUID if available
+        guid = story.get('link')
         if guid:
             ET.SubElement(item, 'guid', isPermaLink="true").text = escape(guid)
 
     return ET.tostring(root, encoding='utf-8', method='xml')
-
 
 
 
@@ -418,33 +414,30 @@ def get_public_feed(token):
     Fetches a public feed and returns it as JSON or RSS-XML based on client request.
     """
     try:
-        # Fetch the feed using the public token
         feed = Feed.query.filter_by(public_token=token).first()
 
         if not feed:
             return jsonify({'error': 'Feed not found'}), 404
 
-        # Extract stories from the feed
         stories = [story.data for story in feed.stories]
 
-        # Determine the response format
+        # Determine response format
         format_query = request.args.get('format', '').lower()
         accept_header = request.headers.get('Accept', '')
 
         if format_query == 'rss' or 'application/rss+xml' in accept_header:
-            # Generate RSS XML
             rss_xml = generate_dynamic_rss(feed, stories)
             return Response(rss_xml, mimetype='application/rss+xml')
         else:
-            # Default to JSON
             return jsonify({
                 'feed': {
                     'url': feed.url,
-                    'stories': stories
+                    'stories': stories,
                 }
             }), 200
 
     except Exception as e:
+        print(f"[ERROR] Failed to fetch public feed: {e}")
         return jsonify({'error': str(e)}), 500
 
 
