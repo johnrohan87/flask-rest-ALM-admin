@@ -435,7 +435,6 @@ def get_public_feed(token):
                     'stories': stories,
                 }
             }), 200
-
     except Exception as e:
         print(f"[ERROR] Failed to fetch public feed: {e}")
         return jsonify({'error': str(e)}), 500
