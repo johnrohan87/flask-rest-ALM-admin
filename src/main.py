@@ -408,10 +408,12 @@ def generate_dynamic_rss(feed, stories):
 
 
 
-@app.route('/feeds/public/<token>', methods=['GET'])
-def get_public_feed(token):
+@app.route('/feeds/public/rss/<token>', methods=['GET'])
+def get_public_rss_feed(token):
+    """
+    Fetch and return the RSS feed for a given public token.
+    """
     try:
-        print(f"Incoming Headers: {request.headers}")
         feed = Feed.query.filter_by(public_token=token).first()
 
         if not feed:
@@ -419,30 +421,36 @@ def get_public_feed(token):
 
         stories = [story.data for story in feed.stories]
 
-        # Determine response format
-        format_query = request.args.get('format', '').lower()
-        accept_header = request.headers.get('Accept', '').lower()
-
-        if format_query == 'rss' or 'application/rss+xml' in accept_header:
-            rss_xml = generate_dynamic_rss(feed, stories)
-            return Response(rss_xml, mimetype='application/rss+xml')
-        elif format_query == 'json' or 'application/json' in accept_header or '*/*' in accept_header:
-            return jsonify({
-                'feed': {
-                    'url': feed.url,
-                    'stories': stories,
-                }
-            }), 200
-        else:
-            # Default to JSON if the format is not explicitly defined
-            return jsonify({
-                'feed': {
-                    'url': feed.url,
-                    'stories': stories,
-                }
-            }), 200
+        # Generate RSS XML dynamically
+        rss_xml = generate_dynamic_rss(feed, stories)
+        return Response(rss_xml, mimetype='application/rss+xml')
     except Exception as e:
-        print(f"[ERROR] Failed to fetch public feed: {e}")
+        print(f"[ERROR] Failed to fetch public RSS feed: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/feeds/public/json/<token>', methods=['GET'])
+def get_public_json_feed(token):
+    """
+    Fetch and return the JSON feed for a given public token.
+    """
+    try:
+        feed = Feed.query.filter_by(public_token=token).first()
+
+        if not feed:
+            return jsonify({'error': 'Feed not found'}), 404
+
+        stories = [story.data for story in feed.stories]
+
+        # Return JSON response
+        return jsonify({
+            'feed': {
+                'url': feed.url,
+                'stories': stories,
+            }
+        }), 200
+    except Exception as e:
+        print(f"[ERROR] Failed to fetch public JSON feed: {e}")
         return jsonify({'error': str(e)}), 500
 
 
