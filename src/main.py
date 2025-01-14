@@ -12,7 +12,7 @@ from auth0.authentication import GetToken
 from auth0.management import Auth0
 
 
-
+import json
 from flask_jwt_extended import (current_user, JWTManager)
 from services import fetch_rss_feed
 from admin import setup_admin
@@ -404,37 +404,39 @@ def rss_to_json(raw_xml):
 
 
 
-def json_to_rss(json_data):
+def json_to_rss(json_data, flatten_metadata=True):
     """
-    Convert JSON format back to RSS XML, including unexpected data from 'raw_metadata'.
+    Convert JSON format back to RSS XML, optionally flattening custom metadata fields.
     """
     root = ET.Element('rss', version="2.0")
     channel = ET.SubElement(root, 'channel')
 
     for story in json_data.get('stories', []):
         item = ET.SubElement(channel, 'item')
+
+        # Add standard fields
         ET.SubElement(item, 'title').text = escape(story.get('title', 'No Title'))
         ET.SubElement(item, 'link').text = escape(story.get('link', '#'))
         ET.SubElement(item, 'description').text = sanitize_cdata(story.get('description', 'No Description'))
         if story.get('published'):
             ET.SubElement(item, 'pubDate').text = story['published']
-        if story.get('author'):
-            ET.SubElement(item, 'author').text = story['author']
-        if 'categories' in story and isinstance(story['categories'], list):
-            for category in story['categories']:
-                ET.SubElement(item, 'category').text = escape(category)
 
-        # Handle raw_metadata
-        if 'custom_metadata' in story and 'raw_metadata' in story['custom_metadata']:
-            for tag, value in story['custom_metadata']['raw_metadata'].items():
-                ET.SubElement(item, tag).text = sanitize_cdata(value)
+        # Handle flattening of custom metadata
+        custom_metadata = story.get('custom_metadata', {})
+        raw_metadata = custom_metadata.get('raw_metadata', {})
 
-        # Handle other custom metadata
-        if story.get('custom_metadata'):
-            custom_metadata = story['custom_metadata']
-            if 'raw_metadata' in custom_metadata:
-                del custom_metadata['raw_metadata']
-            ET.SubElement(item, 'custom:metadata').text = sanitize_cdata(json.dumps(custom_metadata))
+        if flatten_metadata:
+            # Promote raw metadata fields to top-level elements
+            for tag, value in raw_metadata.items():
+                if isinstance(value, list):
+                    for item_value in value:
+                        ET.SubElement(item, tag).text = escape(item_value)
+                else:
+                    ET.SubElement(item, tag).text = escape(value)
+        else:
+            # Embed raw metadata as a single element
+            raw_metadata_element = ET.SubElement(item, 'custom:metadata')
+            raw_metadata_element.text = sanitize_cdata(json.dumps(raw_metadata))
 
     return ET.tostring(root, encoding='utf-8', method='xml')
 
