@@ -79,8 +79,9 @@ def feeds():
                 for feed, user_feed in feeds
             ]
             return jsonify({'feeds': feeds_data}), 200
+        
 
-        elif request.method == 'POST':
+        if request.method == 'POST':
             # Add a new feed
             data = request.get_json()
             url = data.get('url')
@@ -98,7 +99,12 @@ def feeds():
             if existing_feed:
                 return jsonify({'message': 'Feed already exists'}), 409
 
+            # Fetch RSS feed and parse it using rss_to_json
             stories, raw_xml = fetch_rss_feed(url)
+            parsed_data = rss_to_json(raw_xml)
+            parsed_stories = parsed_data['stories']
+
+            # Save feed and stories in the database
             new_feed = Feed(user_id=user.id, url=url, raw_xml=raw_xml)
             db.session.add(new_feed)
             db.session.flush()  # Ensure `new_feed.id` is available
@@ -106,11 +112,13 @@ def feeds():
             user_feed = UserFeed(user_id=user.id, feed_id=new_feed.id, is_following=True)
             db.session.add(user_feed)
 
-            for story_data in stories:
-                db.session.add(Story(feed_id=new_feed.id, data=story_data))
+            for story_data in parsed_stories:
+                normalized_story = normalize_story_data(story_data)
+                db.session.add(Story(feed_id=new_feed.id, data=normalized_story))
 
             db.session.commit()
             return jsonify({'message': 'Feed imported successfully', 'feed_id': new_feed.id}), 201
+
 
         elif request.method == 'PUT':
             # Update feed properties
@@ -192,22 +200,24 @@ def preview_feed():
         if not validate_url(url):
             return jsonify({'error': 'Invalid URL'}), 400
 
+        # Fetch and parse RSS feed
         stories, raw_xml = fetch_rss_feed(url)
-        # Extract dynamic fields for frontend rendering
-        sample_story = stories[0] if stories else {}
-        fields = list(sample_story.keys())
+        parsed_data = rss_to_json(raw_xml)
+        parsed_stories = parsed_data['stories']
+        fields = list(parsed_stories[0].keys()) if parsed_stories else []
 
         return jsonify({
             'metadata': {
-                'title': sample_story.get('title', 'No Title'),
-                'description': sample_story.get('description', 'No Description'),
-                'fields': fields,  # Include available fields
+                'title': parsed_stories[0].get('title', 'No Title') if parsed_stories else 'No Title',
+                'description': parsed_stories[0].get('description', 'No Description') if parsed_stories else 'No Description',
+                'fields': fields,
             },
-            'stories': stories[:10],  # Limit to the first 10 stories
+            'stories': parsed_stories[:10],  # Limit to the first 10 stories
             'raw_xml': raw_xml.decode('utf-8'),  # Include raw XML if needed
         }), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 
 
@@ -233,9 +243,10 @@ def handle_stories():
             stories_data = []
             for story in stories:
                 user_story = UserStory.query.filter_by(user_id=user.id, story_id=story.id).first()
+                normalized_story = normalize_story_data(story.data)
                 stories_data.append({
                     'id': story.id,
-                    'data': story.data,
+                    'data': normalized_story,
                     'is_saved': user_story.is_saved if user_story else False,
                     'is_watched': user_story.is_watched if user_story else False
                 })
@@ -259,7 +270,8 @@ def handle_stories():
             if not feed_id or not story_data:
                 return jsonify({'error': 'Feed ID and story data required'}), 400
 
-            new_story = Story(feed_id=feed_id, data=story_data)
+            normalized_story = normalize_story_data(story_data)
+            new_story = Story(feed_id=feed_id, data=normalized_story)
             db.session.add(new_story)
             db.session.commit()
             return jsonify({'message': 'Story added successfully', 'story_id': new_story.id}), 201
@@ -352,6 +364,81 @@ def update_story(story_id):
 ##########################################
 
 
+def rss_to_json(raw_xml):
+    """
+    Convert RSS XML to JSON format, including unexpected data in a 'raw_metadata' field.
+    """
+    root = ET.fromstring(raw_xml)
+    channel = root.find('channel')
+    stories = []
+
+    for item in channel.findall('item'):
+        story = {
+            'title': item.find('title').text if item.find('title') is not None else None,
+            'link': item.find('link').text if item.find('link') is not None else None,
+            'description': item.find('description').text if item.find('description') is not None else None,
+            'published': item.find('pubDate').text if item.find('pubDate') is not None else None,
+            'author': item.find('author').text if item.find('author') is not None else None,
+            'categories': [category.text for category in item.findall('category')] if item.findall('category') else [],
+            'custom_metadata': {}
+        }
+
+        # Capture unexpected tags
+        raw_metadata = {}
+        for child in item:
+            tag = child.tag
+            if tag not in ['title', 'link', 'description', 'pubDate', 'author', 'category', 'custom:metadata']:
+                raw_metadata[tag] = child.text
+
+        # Add raw_metadata if present
+        if raw_metadata:
+            story['custom_metadata']['raw_metadata'] = raw_metadata
+
+        # Handle custom metadata
+        if item.find('custom:metadata') is not None:
+            story['custom_metadata'].update(json.loads(item.find('custom:metadata').text))
+
+        stories.append(story)
+
+    return {'stories': stories}
+
+
+
+def json_to_rss(json_data):
+    """
+    Convert JSON format back to RSS XML, including unexpected data from 'raw_metadata'.
+    """
+    root = ET.Element('rss', version="2.0")
+    channel = ET.SubElement(root, 'channel')
+
+    for story in json_data.get('stories', []):
+        item = ET.SubElement(channel, 'item')
+        ET.SubElement(item, 'title').text = escape(story.get('title', 'No Title'))
+        ET.SubElement(item, 'link').text = escape(story.get('link', '#'))
+        ET.SubElement(item, 'description').text = sanitize_cdata(story.get('description', 'No Description'))
+        if story.get('published'):
+            ET.SubElement(item, 'pubDate').text = story['published']
+        if story.get('author'):
+            ET.SubElement(item, 'author').text = story['author']
+        if 'categories' in story and isinstance(story['categories'], list):
+            for category in story['categories']:
+                ET.SubElement(item, 'category').text = escape(category)
+
+        # Handle raw_metadata
+        if 'custom_metadata' in story and 'raw_metadata' in story['custom_metadata']:
+            for tag, value in story['custom_metadata']['raw_metadata'].items():
+                ET.SubElement(item, tag).text = sanitize_cdata(value)
+
+        # Handle other custom metadata
+        if story.get('custom_metadata'):
+            custom_metadata = story['custom_metadata']
+            if 'raw_metadata' in custom_metadata:
+                del custom_metadata['raw_metadata']
+            ET.SubElement(item, 'custom:metadata').text = sanitize_cdata(json.dumps(custom_metadata))
+
+    return ET.tostring(root, encoding='utf-8', method='xml')
+
+
 
 def sanitize_cdata(content):
     """
@@ -362,47 +449,56 @@ def sanitize_cdata(content):
     return content
 
 
+def normalize_story_data(story):
+    """
+    Ensure consistency of story data during conversions.
+    """
+    return {
+        'title': story.get('title', '').strip(),
+        'link': story.get('link', '').strip(),
+        'description': story.get('description', '').strip(),
+        'published': story.get('published', '').strip(),
+        'custom_metadata': story.get('custom_metadata', {})
+    }
+
+
+
 def generate_dynamic_rss(feed, stories):
     """
-    Dynamically generates an RSS feed XML based on the feed and its stories.
+    Generate RSS feed, embedding additional metadata where necessary.
     """
     root = ET.Element('rss', version="2.0")
     channel = ET.SubElement(root, 'channel')
 
-    # Add channel metadata
+    # Add standard RSS metadata
     ET.SubElement(channel, 'title').text = escape(feed.url or "Untitled Feed")
     ET.SubElement(channel, 'link').text = escape(feed.url or "#")
-    ET.SubElement(channel, 'description').text = "This is a dynamically generated RSS feed."
+    ET.SubElement(channel, 'description').text = "Generated RSS Feed with Custom Metadata"
     ET.SubElement(channel, 'language').text = "en-US"
 
     for story in stories:
         item = ET.SubElement(channel, 'item')
 
-        # Decode and sanitize fields
-        title = unescape(story.get('title', 'No Title'))
-        link = unescape(story.get('link', '#'))
-        description = unescape(story.get('description', 'No Description'))
+        # Add basic RSS fields
+        ET.SubElement(item, 'title').text = escape(story.get('title', 'No Title'))
+        ET.SubElement(item, 'link').text = escape(story.get('link', '#'))
+        ET.SubElement(item, 'description').text = sanitize_cdata(story.get('description', 'No Description'))
         pub_date_raw = story.get('published')
-
-        # Format pubDate
-        if pub_date_raw:
-            try:
-                pub_date = formatdate()
-            except Exception:
-                pub_date = formatdate()
-        else:
-            pub_date = formatdate()
-
-        # Populate RSS fields
-        ET.SubElement(item, 'title').text = escape(title)
-        ET.SubElement(item, 'link').text = escape(link)
-        ET.SubElement(item, 'description').text = sanitize_cdata(description)
+        pub_date = formatdate() if pub_date_raw else formatdate()
         ET.SubElement(item, 'pubDate').text = pub_date
 
-        # Add optional GUID
-        guid = story.get('link')
-        if guid:
-            ET.SubElement(item, 'guid', isPermaLink="true").text = escape(guid)
+        # Additional fields
+        if story.get('author'):
+            ET.SubElement(item, 'author').text = story['author']
+        if 'categories' in story:
+            for category in story['categories']:
+                ET.SubElement(item, 'category').text = escape(category)
+
+        # Embed additional JSON metadata
+        custom_metadata = story.get('custom_metadata', {})
+        raw_metadata = custom_metadata.get('raw_metadata', {})
+        for tag, value in raw_metadata.items():
+            ET.SubElement(item, tag).text = sanitize_cdata(value)
 
     return ET.tostring(root, encoding='utf-8', method='xml')
 
@@ -447,6 +543,7 @@ def get_public_json_feed(token):
             'feed': {
                 'url': feed.url,
                 'stories': stories,
+                'raw_xml': feed.raw_xml
             }
         }), 200
     except Exception as e:
