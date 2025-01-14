@@ -512,12 +512,19 @@ def get_public_rss_feed(token):
     Fetch and return the RSS feed for a given public token.
     """
     try:
+        print(f"[DEBUG] Token received: {token}")
         feed = Feed.query.filter_by(public_token=token).first()
 
         if not feed:
+            print("[ERROR] Feed not found for the given token.")
             return jsonify({'error': 'Feed not found'}), 404
+        
+        # Ensure feed.stories is not None
+        if not feed.stories:
+            return jsonify({'error': 'No stories available for this feed'}), 404
 
         stories = [story.data for story in feed.stories]
+        print(f"[DEBUG] Stories fetched: {stories}")
 
         # Generate RSS XML dynamically
         rss_xml = generate_dynamic_rss(feed, stories)
