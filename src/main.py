@@ -485,22 +485,31 @@ def generate_dynamic_rss(feed, stories):
         ET.SubElement(item, 'title').text = escape(story.get('title', 'No Title'))
         ET.SubElement(item, 'link').text = escape(story.get('link', '#'))
         ET.SubElement(item, 'description').text = sanitize_cdata(story.get('description', 'No Description'))
-        pub_date_raw = story.get('published')
-        pub_date = formatdate() if pub_date_raw else formatdate()
-        ET.SubElement(item, 'pubDate').text = pub_date
+
+        pub_date_raw = story.get('published', None)
+        if pub_date_raw:
+            ET.SubElement(item, 'pubDate').text = pub_date_raw
+        else:
+            ET.SubElement(item, 'pubDate').text = formatdate()
 
         # Additional fields
         if story.get('author'):
-            ET.SubElement(item, 'author').text = story['author']
+            ET.SubElement(item, 'author').text = escape(story['author'])
         if 'categories' in story:
-            for category in story['categories']:
+            categories = story.get('categories', [])
+            for category in categories:
                 ET.SubElement(item, 'category').text = escape(category)
 
         # Embed additional JSON metadata
         custom_metadata = story.get('custom_metadata', {})
         raw_metadata = custom_metadata.get('raw_metadata', {})
         for tag, value in raw_metadata.items():
-            ET.SubElement(item, tag).text = sanitize_cdata(value)
+            if value is not None:  # Check for None values
+                if isinstance(value, list):  # Handle lists
+                    for sub_value in value:
+                        ET.SubElement(item, tag).text = escape(sub_value)
+                else:
+                    ET.SubElement(item, tag).text = escape(value)
 
     return ET.tostring(root, encoding='utf-8', method='xml')
 
