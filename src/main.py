@@ -1,4 +1,5 @@
 import os
+import re
 from datetime import datetime, timezone
 from logging import FileHandler, WARNING
 from datetime import timedelta
@@ -51,6 +52,86 @@ db.init_app(app)
 cors = CORS(app)
 setup_admin(app)
 
+##############################
+##  ADMIN ENDPOINTS & MGMT
+#############################
+
+
+def admin_required(f):
+    """Decorator to check if the requesting user has admin privileges."""
+    def wrapper(*args, **kwargs):
+        user = get_or_create_user()
+        if not user or "Admin" not in user.roles:
+            return jsonify({"error": "Access denied. Admin privileges required."}), 403
+        return f(*args, **kwargs)
+    return wrapper
+
+@app.route('/admin/users', methods=['GET'])
+@requires_auth
+@admin_required
+def get_all_users():
+    """Returns all users (Admin only)."""
+    users = User.query.all()
+    return jsonify([{
+        "id": user.id,
+        "email": user.email,
+        "username": user.username,
+        "is_active": user.is_active,
+        "created_at": user.created_at.isoformat(),
+    } for user in users]), 200
+
+@app.route('/admin/users/<int:user_id>', methods=['PATCH'])
+@requires_auth
+@admin_required
+def update_user(user_id):
+    """Update a user's details (Admin only)."""
+    data = request.json
+    user = User.query.get(user_id)
+    
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    if 'username' in data:
+        user.username = data['username']
+    if 'is_active' in data:
+        user.is_active = data['is_active']
+
+    db.session.commit()
+    return jsonify({"message": "User updated successfully"}), 200
+
+@app.route('/admin/users/<int:user_id>', methods=['DELETE'])
+@requires_auth
+@admin_required
+def delete_user(user_id):
+    """Delete a user (Admin only)."""
+    user = User.query.get(user_id)
+    
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    db.session.delete(user)
+    db.session.commit()
+    return jsonify({"message": "User deleted successfully"}), 200
+
+
+# Validate URL function
+def is_valid_url(url):
+    url_regex = re.compile(
+        r'^(https?|ftp):\/\/(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+$'
+    )
+    return re.match(url_regex, url) is not None
+
+# Securely parse XML
+def parse_securely(xml_content):
+    try:
+        return ET.fromstring(xml_content)
+    except ET.ParseError:
+        return None
+    
+
+##############################
+##  FEEDS MGMT
+#############################
 
 @app.route('/feeds', methods=['GET', 'POST', 'PUT', 'DELETE'])
 @requires_auth
@@ -220,6 +301,9 @@ def preview_feed():
 
 
 
+##############################
+##  STORY MGMT
+#############################
 
 @app.route('/stories', methods=['GET', 'POST', 'DELETE'])
 @requires_auth
