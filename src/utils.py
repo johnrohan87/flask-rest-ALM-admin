@@ -163,6 +163,8 @@ def get_or_create_user():
     userinfo = g.current_user
     print(f"userinfo : {userinfo}")
     email = userinfo.get('https://voluble-boba-2e3a2e.netlify.app/email')
+    roles = userinfo.get('https://voluble-boba-2e3a2e.netlify.app/roles', [])
+
     print(f"email : {email}")
     if not email:
         raise Exception("Email not found in token")
@@ -182,7 +184,8 @@ def get_or_create_user():
         )
         db.session.add(user)
         db.session.commit()
-
+        
+    user.auth0_roles = roles
     return user
 
 

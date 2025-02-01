@@ -63,7 +63,7 @@ def admin_required(f):
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
         user = get_or_create_user()
-        if not user or "Admin" not in user.roles:
+        if not user or "Admin" not in user.auth0_roles:
             return jsonify({"error": "Access denied. Admin privileges required."}), 403
         return f(*args, **kwargs)
     return wrapper
