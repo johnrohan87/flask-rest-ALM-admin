@@ -1,5 +1,6 @@
 import os
 import re
+import functools
 from datetime import datetime, timezone
 from logging import FileHandler, WARNING
 from datetime import timedelta
@@ -59,6 +60,7 @@ setup_admin(app)
 
 def admin_required(f):
     """Decorator to check if the requesting user has admin privileges."""
+    @functools.wraps(f)
     def wrapper(*args, **kwargs):
         user = get_or_create_user()
         if not user or "Admin" not in user.roles:
@@ -302,7 +304,7 @@ def preview_feed():
 
 
 ##############################
-##  STORY MGMT
+##  STORYheroku  MGMT
 #############################
 
 @app.route('/stories', methods=['GET', 'POST', 'DELETE'])
