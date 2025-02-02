@@ -304,7 +304,7 @@ def preview_feed():
 
 
 ##############################
-##  STORYheroku  MGMT
+##  STORY MGMT
 #############################
 
 @app.route('/stories', methods=['GET', 'POST', 'DELETE'])

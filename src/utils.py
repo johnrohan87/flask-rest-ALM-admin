@@ -3,7 +3,7 @@ import os
 import json
 import base64
 import re
-from flask import request, g, url_for
+from flask import jsonify, request, g, url_for
 from functools import wraps, lru_cache
 from jose import jwt as JOSE
 from jose.utils import base64url_decode
@@ -99,9 +99,19 @@ def requires_auth(f):
         try:
             payload = decode_jwt(token, AUTH0_DOMAIN, API_AUDIENCE)
             g.current_user = payload
+
+            user = User.query.filter_by(auth0_id=payload['sub']).first()
+
+            if not user:
+                return jsonify({"error": "User not found"}), 404
+            if not user.is_active:
+                return jsonify({"error": "User account is disabled"}), 403
+
         except AuthError as e:
             return jsonify(e.error), e.status_code
+
         return f(*args, **kwargs)
+
     return decorated
 
 def decode_jwt(token, auth0_domain, api_audience):
@@ -184,7 +194,7 @@ def get_or_create_user():
         )
         db.session.add(user)
         db.session.commit()
-        
+
     user.auth0_roles = roles
     return user
 
