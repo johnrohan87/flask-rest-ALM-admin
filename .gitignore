@@ -66,3 +66,8 @@ errorlog.txt
 *.bak
 *.backup
 *.orig
+
+# Database backups
+backup_*.sql
+*.sql.backup
+db_backup_*

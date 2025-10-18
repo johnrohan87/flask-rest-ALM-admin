@@ -95,8 +95,19 @@ def get_token_auth_header():
 def requires_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        token = get_token_auth_header()
+        # Development mode bypass
+        if os.environ.get('FLASK_ENV') == 'development' and os.environ.get('DEV_ADMIN_BYPASS') == 'true':
+            print("[DEV] Using development admin bypass")
+            # Create a mock admin user payload for development
+            g.current_user = {
+                'sub': 'dev_admin_user',
+                'https://voluble-boba-2e3a2e.netlify.app/email': 'admin@localhost.dev',
+                'https://voluble-boba-2e3a2e.netlify.app/roles': ['Admin']
+            }
+            return f(*args, **kwargs)
+            
         try:
+            token = get_token_auth_header()
             payload = decode_jwt(token, AUTH0_DOMAIN, API_AUDIENCE)
             g.current_user = payload
 
@@ -181,7 +192,6 @@ def get_or_create_user():
 
     user = User.query.filter_by(auth0_id=userinfo['sub']).first()
     if not user:
-
         # Set username to email if no nickname is provided
         username = userinfo.get('nickname', email)
 
@@ -194,6 +204,7 @@ def get_or_create_user():
         )
         db.session.add(user)
         db.session.commit()
+        print(f"Created new user: {email} with roles: {roles}")
 
     user.auth0_roles = roles
     return user

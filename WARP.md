@@ -17,6 +17,15 @@ pipenv run migrate             # Create new migrations after model changes
 pipenv run upgrade             # Apply migrations to database
 ```
 
+### Database Synchronization
+```bash
+pipenv run db-check            # Check if local and remote databases are in sync
+pipenv run db-sync-to-remote   # Sync local database to remote (deploy changes)
+pipenv run db-sync-to-local    # Sync remote database to local (pull updates) 
+pipenv run db-backup-local     # Create backup of local database
+pipenv run db-backup-remote    # Create backup of remote database
+```
+
 ### Running the Application
 ```bash
 pipenv run start              # Start Flask development server on port 3000

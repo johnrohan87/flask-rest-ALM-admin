@@ -660,7 +660,7 @@ def get_public_json_feed(token):
 
 @app.route('/')
 def sitemap():
-    return jsonify(generate_sitemap(app))
+    return generate_sitemap(app)
 
 
 # this only runs if `$ python src/main.py` is executed
