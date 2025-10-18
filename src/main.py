@@ -660,14 +660,10 @@ def get_public_json_feed(token):
 
 @app.route('/')
 def sitemap():
-    return generate_sitemap(app)
+    return jsonify(generate_sitemap(app))
 
 
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':
     PORT = int(os.environ.get('PORT', 3000))
     app.run(host='0.0.0.0', port=PORT, debug=True)
-
-
-if __name__ == "__main__":
-    app.run()

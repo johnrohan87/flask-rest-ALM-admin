@@ -1,10 +1,68 @@
+# Environment variables and secrets
 .env
+.env.local
+.env.production
+.env.staging
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Virtual environments
 .venv
+venv/
+env/
+
+# Database files
 database.database
 database.db
+*.db
+*.sqlite
+*.sqlite3
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Application specific
 diagram.png
 public/*
-dist/*
 package.json
+errorlog.txt
+*.log
 
-__pycache__/
+# Backup files
+*.bak
+*.backup
+*.orig
